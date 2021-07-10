@@ -1,0 +1,137 @@
+.error-handler-page {
+    position:fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999;
+    background: gray;
+    background: rgb(24, 91, 122);
+    background: linear-gradient(to bottom right, rgb(65, 143, 179), rgb(16, 61, 82));
+    padding: 50px 0;
+    overflow-y: scroll;
+    color: black;
+}
+
+.error-handler-page a {
+
+    text-decoration: underline !important;
+    color: rgb(24, 91, 122) !important;
+    font-weight: bold !important;
+
+}
+
+.error-handler-page .error-handler-box {
+
+    background-color: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 0 30px rgba(0,0,0,.3);
+    animation: shakeError 0.5s;
+    max-width: 90%;
+    margin: 0 auto;
+}
+
+@keyframes shakeError {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+  }
+
+.error-handler-page .error-handler-box .error-page-title {
+
+    color: rgb(59, 129, 161) !important;
+    font-size: 36px !important;
+    font-weight: bold !important;
+    text-align: center;
+    text-transform: uppercase;
+
+}
+
+.error-handler-page .error-handler-box .error-page-subtitle {
+
+    color: rgb(48, 104, 131) !important;
+    font-size: 20px !important;
+    font-weight: bold !important;
+    text-align: center;
+    margin-top: 7px;
+    margin-bottom: 40px;
+
+}
+
+.error-handler-page .error-handler-box .error-detail {
+    text-align: center;
+}
+
+.error-handler-page .error-handler-box .file-box {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    border: solid 2px gray;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    margin-top: 30px;
+}
+.error-handler-page .error-handler-box .file-box .file-location {
+    flex: 1;
+}
+.error-handler-page .error-handler-box .file-box .file-line {
+    font-weight: bold;
+}
+
+.error-handler-page .error-handler-box .code-box {
+    background-color:#4e4e4e;
+    color: white;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    padding: 20px;
+}
+.error-handler-page .error-handler-box .code-box .guilty {
+    color: rgb(255, 163, 163);
+}
+
+
+.error-handler-page .error-handler-box .file-box > div {
+    padding: 10px;
+}
+
+.error-handler-page .error-report {
+    display: flex;
+    margin-top: 30px;
+}
+.error-handler-page .error-report > div {
+    flex: 0 0 50%;
+}
+.error-handler-page .error-report .error-suggestions {
+    padding-left: 20px;
+}
+
+.error-handler-page .error-report .report-col .error-section-title {
+    color: rgb(48, 104, 131) !important;
+    font-size: 20px !important;
+    font-weight: bold !important;
+    margin-bottom: 30px;
+}
+
+.error-handler-page .error-report .error-backtrace-list {
+    overflow: hidden;
+    border: solid 2px gray;
+    border-radius: 10px;
+}
+
+.error-handler-page .error-report .error-backtrace-list .error-backtrace-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-bottom: solid 1px gray;
+}
+
+.error-handler-page .error-report .error-backtrace-list .error-backtrace-item .error-backtrace-file {
+    flex: 0 0 85%;
+    overflow-wrap: anywhere;
+}
+
+.error-handler-page .error-report .error-backtrace-list .error-backtrace-item .error-backtrace-line {
+    font-weight: bold;
+    flex: 0 0 15%;
+    text-align: right;
+}

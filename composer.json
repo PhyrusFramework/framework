@@ -1,0 +1,16 @@
+{
+    "name": "phyrus/framework",
+    "description": "Phyrus PHP Framework",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Phyrus",
+            "email": "framework@phyrus.org"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "files": ["/index.php"]
+    }
+}

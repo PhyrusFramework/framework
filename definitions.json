@@ -1,0 +1,13 @@
+{
+    "src": "src",
+    "homepage": "$homepage",
+    "404": "$404",
+    "foot": "footer",
+    "components": "components",
+    "code": "code",
+    "pages": "pages",
+    "middlewares": "middlewares",
+    "modules": "modules",
+    "frameworkFont": "Ubuntu",
+    "tests": "tests"
+}
