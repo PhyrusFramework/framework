@@ -26,6 +26,15 @@ class Middleware extends Controller {
     }
 
     /**
+     * [Managed by framework] Page controller
+     */
+    private Controller $controller;
+
+    public function setController(Controller $controller) {
+        $this->controller = $controller;
+    }
+
+    /**
      * Get the Middleware by the name of the folder.
      * 
      * @param string $name
@@ -98,19 +107,26 @@ class Middleware extends Controller {
     }
 
     /**
-     * Overrides the prepare method and receives the controller as a parameter.
+     * Displays the middleware content.
      */
-    public function prepare($controller = null) {
-
+    public function display() {
+        // Override
+        if ($this->controller == null) return;
+        $this->controller->display();
     }
 
     /**
-     * Displays the middleware content.
+     * If exists, displays the View file in the same folder.
+     * 
+     * @param mixed $parameters array or Arr object.
      */
-    public function display($controller = null) {
-        // Override
-        if ($controller == null) return;
-        $controller->display();
+    public function view($parameters = []) {
+        $file = str_replace('controller.php', 'view.php', $this->file);
+        $parameters['controller'] = $this->controller;
+
+        if (file_exists($file)) {
+            view($file, $parameters);
+        }
     }
 
 }

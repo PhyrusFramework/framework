@@ -3,7 +3,7 @@
 class Cookie
 {
     /**
-     * Cookie expiration time in adys [Default 365].
+     * Cookie expiration time in days [Default 365].
      * 
      * @var float $expiration
      */

@@ -37,7 +37,8 @@ class WebLoader {
         $controller = Controller::current();
         $middleware = self::middleware();
         if ($controller->middleware != null) {
-            $controller->middleware->prepare($controller);
+            $controller->middleware->setController($controller);
+            $controller->middleware->prepare();
         }
         $controller->prepare();
     }
@@ -80,7 +81,7 @@ class WebLoader {
 if (!$controller->found)
     response('not_found');
 
-$middleware->display($controller);
+$middleware->display();
 
 if (!$controller->raw){
     self::footlines();

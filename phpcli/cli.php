@@ -162,6 +162,7 @@ class CLI {
         - generate: generate pages, components, classes, etc.
         - config: manage the config.json file.
         - framework: check the framework version or changelog.
+        - test: run tests.
         - cron: manage cronjobs from cli.
         - clear-caches: clear all kind of project caches.
         - serve: starts a local server at localhost:8000.

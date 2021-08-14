@@ -4,7 +4,7 @@ class Validator {
 
     private $value;
 
-    private $operations = [];
+    private $checks = [];
 
     function __construct($value) {
         $this->value = $value;
@@ -21,6 +21,10 @@ class Validator {
         return new Validator($value);
     }
 
+    public function clear() {
+        $this->checks = [];
+    }
+
     // OPERATIONS
 
     /**
@@ -29,9 +33,83 @@ class Validator {
     public function isString() {
         $this->checks[] = [
             'function' => function($value) {
-                return isString($value);
+                return is_string($value);
             }
         ];
+
+        return $this;
+    }
+
+    /**
+     * Check if value is equal to.
+     * 
+     * @param mixed $e
+     */
+    public function is($e) {
+
+        $this->checks[] = [
+            'function' => function($value, $param) {
+                return $value === $param;
+            },
+            'parameter' => $e
+        ];
+
+        return $this;
+
+    }
+
+    /**
+     * Check if value is not equal to.
+     * 
+     * @param mixed $e
+     */
+    public function isNot($e) {
+
+        $this->checks[] = [
+            'function' => function($value, $param) {
+                return $value !== $param;
+            },
+            'parameter' => $e
+        ];
+
+        return $this;
+
+    }
+
+    /**
+     * Check if value's type is
+     * 
+     * @param string $type
+     */
+    public function typeIs(string $type) {
+
+        $this->checks[] = [
+            'function' => function($value, $param) {
+                return mb_strtolower(gettype($value)) == $param;
+            },
+            'parameter' => $type
+        ];
+
+        return $this;
+
+    }
+
+    /**
+     * Check if value's type is not
+     * 
+     * @param string $type
+     */
+    public function typeIsNot(string $type) {
+
+        $this->checks[] = [
+            'function' => function($value, $param) {
+                return mb_strtolower(gettype($value)) != $param;
+            },
+            'parameter' => $type
+        ];
+
+        return $this;
+
     }
 
     /**
@@ -57,6 +135,8 @@ class Validator {
             ];
         }
 
+        return $this;
+
     }
 
     /**
@@ -80,6 +160,8 @@ class Validator {
                 'parameter' => $length
             ];
         }
+
+        return $this;
     }
 
     /**
@@ -103,6 +185,8 @@ class Validator {
                 'parameter' => $length
             ];
         }
+
+        return $this;
     }
 
     /**
@@ -119,6 +203,8 @@ class Validator {
                 return true;
             }
         ];
+
+        return $this;
     }
 
     /**
@@ -128,9 +214,11 @@ class Validator {
         $this->checks[] = [
             'function' => function($value) {
                 if (!is_string($value)) return false;
-                return ctype_upper($value);
+                return $value == mb_strtoupper($value);
             }
         ];
+
+        return $this;
     }
 
     /**
@@ -140,9 +228,11 @@ class Validator {
         $this->checks[] = [
             'function' => function($value) {
                 if (!is_string($value)) return false;
-                return ctype_lower($value);
+                return $value == mb_strtolower($value);
             }
         ];
+
+        return $this;
     }
 
     /**
@@ -171,6 +261,8 @@ class Validator {
             },
             'parameter' => $min
         ];
+
+        return $this;
     }
 
     /**
@@ -190,6 +282,8 @@ class Validator {
                 return true;
             }
         ];
+
+        return $this;
     }
 
     /**
@@ -218,6 +312,8 @@ class Validator {
             },
             'parameter' => $min
         ];
+
+        return $this;
     }
 
     /**
@@ -237,6 +333,8 @@ class Validator {
                 return true;
             }
         ];
+
+        return $this;
     }
 
     /**
@@ -248,6 +346,8 @@ class Validator {
                 return is_numeric($value);
             }
         ];
+
+        return $this;
     }
 
     /**
@@ -258,7 +358,7 @@ class Validator {
     public function hasNumbers($min = 1) {
 
         $this->checks[] = [
-            'function' => function($value, $param) {
+            'function' => function($value, $param = 1) {
                 
                 $v = "$value";
                 $count = 0;
@@ -277,6 +377,8 @@ class Validator {
             },
             'parameter' => $min
         ];
+
+        return $this;
 
     }
 
@@ -300,6 +402,8 @@ class Validator {
             }
         ];
 
+        return $this;
+
     }
 
     /**
@@ -309,9 +413,17 @@ class Validator {
         $this->checks[] = [
             'function' => function($value) {
                 if (!is_string($value)) return false;
-                return ctype_alpha($value);
+
+                for($i = 0; $i < strlen($value); ++$i) {
+                    if (!ctype_alpha($value[$i]) && $value[$i] != ' ') {
+                        return false;
+                    }
+                }
+                return true;
             }
         ];
+
+        return $this;
     }
 
     /**
@@ -321,7 +433,7 @@ class Validator {
      */
     public function hasLetters($min = 1) {
         $this->checks[] = [
-            'function' => function($value) {
+            'function' => function($value, $param) {
                 if (!is_string($value)) return false;
 
                 $count = 0;
@@ -330,15 +442,18 @@ class Validator {
                     if (ctype_alpha($value[$i])) {
                         $count += 1;
 
-                        if ($count >= $min) {
+                        if ($count >= $param) {
                             return true;
                         }
                     }
                 }
 
                 return false;
-            }
+            },
+            'parameter' => $min
         ];
+
+        return $this;
     }
 
     /**
@@ -358,6 +473,8 @@ class Validator {
                 return true;
             }
         ];
+
+        return $this;
     }
 
     /**
@@ -370,6 +487,8 @@ class Validator {
                 return ctype_punct($value);
             }
         ];
+
+        return $this;
     }
 
     /**
@@ -379,7 +498,7 @@ class Validator {
      */
     public function hasSpecialChars($min = 1) {
         $this->checks[] = [
-            'function' => function($value) {
+            'function' => function($value, $param) {
                 if (!is_string($value)) return false;
 
                 $count = 0;
@@ -388,15 +507,18 @@ class Validator {
                     if (ctype_punct($value[$i])) {
                         $count += 1;
 
-                        if ($count >= $min) {
+                        if ($count >= $param) {
                             return true;
                         }
                     }
                 }
 
                 return false;
-            }
+            },
+            'parameter' => $min
         ];
+
+        return $this;
     }
 
     /**
@@ -416,6 +538,8 @@ class Validator {
                 return true;
             }
         ];
+
+        return $this;
     }
 
     /**
@@ -423,16 +547,22 @@ class Validator {
      */
     public function isPhone() {
 
-        $v = "$this->value";
+        $this->checks[] = [
+            'function' => function($value) {
+                $v = "$value";
 
-        $valid = '+0123456789 -';
-        for($i = 0; $i < strlen($v); ++$i) {
-            if (strpos($valid, $v[$i]) === FALSE) {
-                return false;
+                $valid = '+0123456789 -()';
+                for($i = 0; $i < strlen($v); ++$i) {
+                    if (strpos($valid, $v[$i]) === FALSE) {
+                        return false;
+                    }
+                }
+                
+                return true;
             }
-        }
-        
-        return true;
+        ];
+
+        return $this;
     }
 
     /**
@@ -443,7 +573,9 @@ class Validator {
             'function' => function($value) {
                 return is_bool($value);
             }
-        ]; 
+        ];
+
+        return $this;
     }
 
     /**
@@ -460,6 +592,8 @@ class Validator {
             },
             'parameter' => $property
         ]; 
+
+        return $this;
     }
 
     /**
@@ -481,6 +615,8 @@ class Validator {
             },
             'parameter' => $property
         ]; 
+
+        return $this;
     }
 
 
@@ -495,9 +631,9 @@ class Validator {
 
             $valid = true;
             if ($param == null)
-                $valid = $check($this->value);
+                $valid = $function($this->value);
             else
-                $valid = $check($this->value, $param);
+                $valid = $function($this->value, $param);
 
             if (!$valid) {
                 return false;

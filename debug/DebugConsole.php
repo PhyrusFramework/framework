@@ -97,9 +97,9 @@ class DebugConsole {
      */
     public static function print() {
         ?>
-            <div class='debug-console' style='display: none'>
+            <div id='debug-console' style='display: none'>
             <style>
-            .debug-console {
+            #debug-console {
                 position: fixed;
                 left: 0;
                 top: 0;
@@ -111,11 +111,11 @@ class DebugConsole {
                 color: white;
                 overflow-y: scroll;
             }
-            .debug-console .debug-console-line {
+            #debug-console .debug-console-line {
                 color: white;
                 margin-bottom: 10px;
             }
-            .debug-console .debug-console-message:hover {
+            #debug-console .debug-console-message:hover {
                 cursor: pointer;
                 font-weight: bold;
             }
@@ -143,7 +143,7 @@ class DebugConsole {
             $(document).ready(function() {
                 $('body').keyup(function(e) {
                     if (e.keyCode == <?php echo (detectOS() == 'windows' ? '220' : '192') ?>) { // º is 220 in Windows, 192 in Mac
-                        $('.debug-console').fadeToggle(100);
+                        $('#debug-console').fadeToggle(100);
                     }
                 });
                 $(".debug-console-message").click(function() {

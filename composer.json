@@ -1,6 +1,6 @@
 {
     "name": "phyrus/framework",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Phyrus PHP Framework",
     "type": "library",
     "license": "MIT",
@@ -10,7 +10,12 @@
             "email": "framework@phyrus.org"
         }
     ],
-    "require": {},
+    "require": {
+        "php": ">=5.6.0",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*"
+    },
     "autoload": {
         "files": ["/index.php"]
     }

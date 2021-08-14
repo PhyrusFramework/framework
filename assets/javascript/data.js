@@ -1,565 +1,666 @@
-class DataBinding {
+class DataBindNode {
 
-    fors = [];
+    /**
+     * jQuery elements.
+     * 
+     */
+    elements = {
+        this: null,
+        parent: null
+    }
 
-    set(path, value, target = null, refresh = true) {
+    /**
+     * Nodes
+     * 
+     */
+    nodes = {
+        parent: null,
+        before: null,
+        after: null,
+        children: []
+    }
 
-        let varname = replacer(path, "[", "]", content => {
-            return "." + content;
-        });
+    /**
+     * This node has operations? (class, style, if, click...)
+     */
+    used = false;
 
-        let tar = target ? target : window;
+    /**
+     * This node has used children?
+     */
+    needed = false;
 
-        let parts = varname.split(".");
-        if (parts.length == 0) return;
-        if (parts.length == 1) {
-            tar[parts[0]] = value;
-            if (refresh)
-                this.Refresh();
+    /**
+     * Is this element currently in the DOM?
+     */
+    inDOM = true;
+
+    /**
+     * :class property
+     */
+    class_template;
+
+    /**
+     * :style property
+     */
+    style_template;
+
+    /**
+     * :model property
+     */
+    model_template;
+
+    /**
+     * :if property
+     */
+    condition_template;
+
+    /**
+     * Events: click, mouseover, focus...
+     */
+    events = {}
+
+    /**
+     * :component property
+     */
+    component_name;
+
+    /**
+     * HTML of this element. Used only for lists.
+     */
+    template = '';
+
+    /**
+     * :for property
+     */
+    list_template;
+
+    /**
+     * List of nodes generated in a :for list.
+     */
+    list_nodes = [];
+
+    /**
+     * Data to be loaded when working with this node.
+     */
+    state = {};
+
+    /**
+     * Previous window values before loading state.
+     */
+    _savedState = {}
+
+    constructor(options) {
+
+        let e = $(options.element);
+
+        this.elements = {
+            this: e,
+            parent: e.parent()
+        }
+
+        this.nodes = {
+            parent: options.parent,
+            children: [],
+            before: null
+        }
+
+        // If has attribute static, avoid data-binding
+        if (e.attr('static') !== undefined) {
             return;
         }
 
-        Data.__setProp(tar, parts, value);
-
-        if (refresh)
-        this.Refresh();
-    }
-
-    __setProp(target, path, value) {
-        if (path.length == 0) return {};
-
-        let key = path[0];
-
-        if (path.length == 1) {
-            target[key] = value;
-            return target;
+        // Get Node data
+        if (options.data) {
+            Object.keys(options.data).forEach(k => {
+                this.state[k] = options.data[k];
+            });
         }
-        else {
-            if (!target[key]) target[key] = {}
-            let obj = target[key];
-            let aux = [];
-            for(let i = 1; i<path.length; ++i) {
-                aux.push(path[i]);
+
+        // Check all tags;
+
+        let tag = e.prop('tagName');
+
+        if (e.attr(':component')) {
+            this.component_name = e.attr(':component');
+            e.removeAttr(':component');
+            this.used = true;
+            Component.init(this);
+            return;
+        }
+
+        if (e.attr(':for')) {
+            this.list_template = e.attr(':for');
+            e.removeAttr(':for');
+            this.template = e.get(0).outerHTML;
+            this.used = true;
+            //e.remove();
+            e.hide();
+            return;
+        }
+
+        let attrs = {
+            class: value => {
+                this.class_template = value;
+            },
+            style: value => {
+                this.style_template = value;
+            },
+            model: value => {
+                this.model_template = value;
+
+                if (tag) {
+
+                    let type = e.attr('type');
+                    let isCheckbox = type == 'checkbox';
+
+                    if (!isCheckbox && [
+                        'input',
+                        'textarea'
+                    ].includes(tag.toLowerCase())) {
+                        e.keyup(function() {
+                            let val = $(this).val();
+                            eval(value + ' = val');
+                            View.update();
+                        });
+                    }
+
+                    if (isCheckbox || [
+                        'select'
+                    ].includes(tag.toLowerCase())) {
+                        e.change(function() {
+
+                            if (isCheckbox) {
+                                let val = $(this).is(':checked');
+                                eval(value + ' = val')
+                            } else {
+                                let op = $(this).find('option:selected').val();
+                                eval(value + ' = op')
+                            }
+
+                            View.update();
+                        });
+                    }
+                }
+            },
+            if: value => {
+                this.condition_template = value;
             }
-
-            target[key] = Data.__setProp(obj, aux, value);
-            return target;
         }
-    }
 
-    checkPropExists(path, target = null) {
-        let tar = target ? target : window;
-        if (!path) return null;
-
-        let varname = replacer(path, "[", "]", content => {
-            return "." + content;
+        Object.keys(attrs).forEach(k => {
+            if (e.hasAttr(':' + k)) {
+                let value = e.attr(':' + k);
+                attrs[k](value);
+                this.used = true;
+                e.removeAttr(':'+k);
+            }
         });
 
-        let parts = varname.split(".");
-        if (parts.length == 0) return null;
-        if (parts.length == 1) {
-            return window[parts[0]] !== null && window[parts[0]] !== undefined;
-        }
+        let events = [
+            'click',
+            'change',
+            'keyup',
+            'mouseover',
+            'mouseenter',
+            'mouseleave',
+            'update',
+            'pressEnter',
+            'focus',
+            'blur'
+        ];
 
-        let obj = tar;
-        for(let p of parts) {
-
-            if (!Object.keys(obj).includes(p)) {
-                return null;
+        for(let ev of events) {
+            if (e.hasAttr(':' + ev)) {
+                let value = e.attr(':' + ev);
+                this.used = true;
+                this.events[ev] = value;
+                e.removeAttr(':'+ev);
             }
-            obj = obj[p];
         }
-        return obj;
+
+        this.reloadEvents();
+
+        if (!options.loadChildren) return;
+
+        this.loadChildren();
     }
 
-    getProp(path, target = null, defaultValue = "") {
+    /**
+     * Load Node children elements.
+     */
+    loadChildren() {
+        let children = this.elements.this.children();
 
-        let tar = target ? target : window;
+        let beforeNode = null;
 
-        let varname = replacer(path, "[", "]", content => {
-            return "." + content;
-        });
+        for(let i = 0; i < children.length; ++i) {
 
-        let parts = varname.split(".");
-        let obj = tar;
+            let child = children.get(i);
+            if (!child) continue;
+            let tag = $(child).prop('tagName');
+            if (!tag) continue;
 
-        for(let i = 0; i<parts.length; ++i) {
-            let p = parts[i];
+            if (['script', 'style'].includes(tag.toLowerCase())) continue;
 
-            if (!Object.keys(obj).includes(p)) {
-                if (i < parts.length - 1)
-                    obj[p] = {};
-                else
-                    obj[p] = defaultValue;
+            let childNode = new DataBindNode({
+                element: child,
+                data: null,
+                parent: this,
+                loadChildren: true
+            });
+
+            childNode.nodes.before = beforeNode;
+            beforeNode = childNode;
+
+            if (childNode.used || childNode.needed) {
+                this.needed = true;
+                this.nodes.children.push(childNode);
             }
-            obj = obj[p];
-        }
-        return obj;
-    }
-
-    constructor() {
-        $(document).ready(() => {
-            this.analyze($("body"));
-            this.Refresh();
-        });
-    }
-
-    Run(cb) {
-        cb();
-        this.Refresh();
-    }
-
-    analyze(body) {
-
-        // WRITE EVENTS
-        this.analyzeVars(body);
-
-        //// FORS
-
-        let elements = $("*[forList]");
-        elements.each(function() {
-
-            let prop = $(this).attr("forList");
-            $(this).removeAttr("forList");
-
-            //let list = Data.getProp(prop, window, []);
-
-            let forObject = {
-                container: $(this),
-                template: $(this).html(),
-                listname: prop,
-                views: {},
-                count: 0
-            };
-            $(this).empty();
-            Data.fors.push(forObject);
-        });
-    }
-
-    toJson(t) {
-        let obj = {};
-
-        let values = t.split(",");
-        for(let val of values) {
-
-            let ind = val.indexOf(":");
-
-            let key = val.substring(0, ind).replace(/ /g, "");
-            let condition = val.substr(ind + 1);
-
-            obj[key] = condition;
-
-        }
-
-        return obj;
-    }
-
-    setViewValue(e, value) {
-
-        if (value === null) return;
-
-        let tag = e.prop("tagName").toLowerCase();
-
-        if (tag == "input" || tag == "textarea")
-        {
-            if (e.attr("type") == "checkbox") {
-                e.prop("checked", value ? true : false);
-            } else {
-                e.val(value);
-            }
-
-        }
-        else if (tag == "select")
-        {
-            e.val(value);
-        } 
-        else if (["img", "audio", "video", "source"].includes(tag)) {
-            e.attr("src", value);
-        }
-        else {
-
-            e.text(value);
         }
     }
 
-    analyzeVars(e = null, target = null) {
+    /**
+     * Get previous element when reinserting this node into the DOM.
+     */
+    getAnchorElement() {
 
-        let body = e ? e : $("body");
+        if (this.inDOM) {
+            return this.elements.this;
+        }
 
+        if (!this.nodes.before) {
+            return null;
+        }
+
+        return this.nodes.before.getAnchorElement();
+
+    }
+
+    /**
+     * [Managed automatically]
+     * Re-add events for the jQuery element.
+     * This is needed when the element is removed and re-added.
+     */
+    reloadEvents() {
+
+        let e = this.elements.this;
         let ref = this;
 
-        let elements = body.find("*[var]").andSelf();
-        elements.each(function(){
-    
-            let tag = $(this).prop("tagName").toLowerCase();
-            let varname = $(this).attr("var");
-            if (!varname) return;
-    
-            if (tag == "input" || tag == "textarea")
-            {
-                let type = $(this).attr("type");
-                if (type == "checkbox")
+        Object.keys(this.events).forEach(ev => {
+
+            if (['update', 'pressEnter'].includes(ev)) {
+                return;
+            }
+
+            let value = this.events[ev];
+            e.on(ev, function() {
+                ref.setupState();
+                eval(value);
+                View.update();
+                ref.recoverPreviousState();
+            });
+        });
+
+        if (this.events.pressEnter) {
+            let value = this.events.pressEnter;
+            e.keyup(function() {
+                if($ev.keyCode == 13)
                 {
-                    $(this).change(function(){
-                        ref.set(varname, $(this).is(":checked"), target);
-                    });
+                    ref.setupState();
+                    eval(value);
+                    ref.recoverPreviousState();
                 }
-                else if (type == "color") {
-                    $(this).change(function(){
-                        ref.set(varname, $(this).val(), target);
-                    });
-                }
-                else{
+            });
+        }
 
-                    let update = function(){
+        if (this.events.update) {
+            let value = this.events.update;
+            e.change(function() {
+                ref.setupState();
+                eval(value);
+                ref.recoverPreviousState();
+            });
+            e.keyup(function() {
+                ref.setupState();
+                eval(value);
+                ref.recoverPreviousState();
+            });
+        }
 
-                        let val = $(this).val();
-                        let type = $(this).attr("type");
-                        if (type && ["number", "numeric"].includes(type))
-                            val = parseFloat(val);
+        for(let child of this.nodes.children) {
+            child.reloadEvents();
+        }
+    }
 
-                        ref.set(varname, val, target);
+    /**
+     * Return Node to the page after the element
+     * had been removed.
+     */
+    returnToView() {
+        let e = this.elements.this;
+        if (!this.nodes.parent) return;
+
+        View.disableNextAddition = true;
+
+        if (!this.nodes.before) {
+            this.elements.parent.prepend(e);
+        } else {
+            let anchor = this.nodes.before.getAnchorElement();
+            if (anchor) {
+                anchor.after(e);
+            } else
+                this.elements.parent.prepend(e);
+        }
+
+        this.reloadEvents();
+        this.inDOM = true;
+    }
+
+    /**
+     * Update :for list elements.
+     */
+    _updateList() {
+
+        // 'item of list'   item -> itemName  list -> listname
+        let listname = this.list_template.split(/ /g);
+        let itemName = listname[0];
+        listname = listname[listname.length - 1];
         
-                    }
-                    $(this).keyup(update);
-                    $(this).change(update);
-                }
-    
-            }
-            else if (tag == "select")
-            {
-                $(this).change(function(){
-                    let val = $(this).find("option:selected").val();
-                    ref.set(varname, val, target);
-                });
-            }
-    
-        });
+        let __list__ = [];
+        eval('__list__ = ' + listname);
+        if (!__list__) return;
 
-        let code = "";
-        if (target) {
-            Object.keys(target).forEach(k => {
-                code += "let " + k + " = target['" + k + "']; ";
-            });
+        let i = 0;
+        for(i = 0; i < __list__.length; ++i) {
+
+            let bondData = {}
+            bondData[itemName] = __list__[i];
+
+            if (this.list_nodes.length < i+1) {
+                // Add new
+                let el = $(this.template);
+
+                View.disableNextAddition = true;
+
+                if (this.list_nodes.length > 0) {
+                    this.list_nodes[this.list_nodes.length - 1].elements.this.after(el);
+                } else{
+                    this.elements.this.after(el);
+                }
+
+                this.list_nodes.push(new DataBindNode({
+                    element: el.get(0), 
+                    data: bondData,
+                    parent: this.nodes.parent,
+                    loadChildren: true
+                }));
+
+            } else {
+                this.list_nodes[i].state = bondData;
+            }
+
         }
 
-        ///// EVENTS
-        let events = ["click", "mouseenter", "mouseleave", "mousemove", "change", "keyup"];
+        this.elements.this.remove();
 
-        for(let i = 0; i<events.length; ++i) {
-
-            elements = body.find("*[" + events[i] + "]").andSelf();
-            elements.each(function() {
-                $(this)[events[i]](function($e) {
-                    let ev = $(this).attr(events[i]);
-                    if(!ev) return;
-
-                    let $this = $(this);
-
-                    eval(code + ev);
-                    Data.Refresh();
-                });
-            });
+        if (this.list_nodes.length > __list__.length) {
+            while(this.list_nodes.length > __list__.length) {
+                this.list_nodes[this.list_nodes.length - 1].elements.this.remove();
+                this.list_nodes.splice(this.list_nodes.length - 1, 1);
+            }
         }
-        elements = body.find("*[update]").andSelf();
-        elements.each(function($e) {
-            $(this).change(function($e) {
-                let ev = $(this).attr("update");
-                if (!ev) return;
-                eval(code + ev);
-                Data.Refresh();
-            });
 
-            $(this).keyup(function($e) {
-                let ev = $(this).attr("update");
-                if (!ev) return;
-                eval(code + ev);
-                Data.Refresh();
-            });
-        });
-    
-        elements = body.find("*[pressEnter]").andSelf();
-        elements.each(function() {
-            $(this).keyup(function($e) {
-                if($e.keyCode == 13)
-                {
-                    let ev = $(this).attr("pressEnter");
-                    if (!ev) return;
-                    eval(code + ev);
-                    Data.Refresh();
-                }
-            });
-        });
 
-        // alias
-        elements = body.find("*[alias]").andSelf();
-        elements.each(function() {
-            let alias = $(this).attr("alias");
-            if (!alias) return;
-            window[alias] = $(this);
-        });
-
-        // Load
-        elements = body.find("*[load]").andSelf();
-        elements.each(function() {
-            let onload = $(this).attr("load");
-            if (!onload) return;
-            $(this).removeAttr("load");
-            eval(onload);
-        });
+        for(let i = 0; i < __list__.length; ++i) {
+            let node = this.list_nodes[i];
+            node.update(true);
+        }
 
     }
 
-    Refresh() {
+    /**
+     * Obtain the value from the :model
+     */
+    _modelValue() {
+        let val = null;
+        try {
+            eval('val = ' + this.model_template);
+        } catch(exc) {
+            val = '';
+        }
 
-        // Fors
-        for(let f of this.fors) {
+        return val;
+    }
 
-            // Check if list exists
-            if (!f || !f.listname || !Data.checkPropExists(f.listname))
-                continue;
-            //
+    setupState() {
 
-            let list = Data.getProp(f.listname);
+        this._savedState = {}
 
-            // If not items added or removed, nothing to do here.
-            if (f.count == list.length) {
-                continue;
+        if (this.state) {
+            Object.keys(this.state).forEach(k => {
+                this._savedState[k] = window[k];
+                window[k] = this.state[k];
+            });
+        }
+    }
+
+    recoverPreviousState() {
+        Object.keys(this._savedState).forEach(k => {
+            this.state[k] = window[k];
+            window[k] = this._savedState[k];
+        });
+        this._savedState = {}
+    }
+
+    update(propagate = true) {
+
+        this.setupState();
+
+        if (this.used) {
+
+            let e = this.elements.this;
+
+            // FOR
+            if (this.list_template) {
+                this._updateList();
+                this.recoverPreviousState();
+                return;
             }
 
-            for(let $index = 0; $index < list.length; ++$index) {
-                if (f.views[$index]) {
-                    f.views[$index].inList = false;
+            // IF
+            if (this.condition_template) {
+                let b = true;
+                eval('b = ' + this.condition_template);
+                if (!b && this.inDOM) {
+                    e.remove();
+                    this.inDOM = false;
+                    this.recoverPreviousState();
+                    return;
+                } else if (b && !this.inDOM) {
+                    this.returnToView();
                 }
             }
 
-            for(let $index = 0; $index < list.length; ++$index) {
-                let item = list[$index];
+            // MODEL
+            if (this.model_template) {
 
-                let generateHTML = () => {
-                    return replacer(f.template, '[[', ']]', content => {
+                let val = this._modelValue();
 
-                        let str = content.replace(/\$item/g, f.listname +"["+$index+"]");
-                        str = str.replace(/$index/g, $index);
-                        return eval(str);
+                let tag = e.prop('tagName');
+                if (tag && [
+                    'input',
+                    'textarea',
+                    'select'
+                ].includes(tag.toLowerCase())) {
 
-                    });
-                }
+                    let type = e.attr('type');
+                    let isCheckbox = type == 'checkbox';
 
-                let e = $(generateHTML());
-
-                if (!f.views[$index]) {
-                    f.views[$index] = {
-                        element: e,
-                        inList: true,
-                        item: item
+                    if (isCheckbox) {
+                        e.prop('checked', val);
+                    } else {
+                        e.val(val);
                     }
-                    f.container.append(e);
-                    e.show();
+
                 } else {
-                    f.views[$index].inList = true;
-                }
-                
-                // When item has been added or removed, update all
-                if (f.count != list.length) {
-                    f.views[$index].element.replaceWith(e);
-                    f.views[$index].element = e;
-                    e.show();
-                    f.views[$index].item = item;
-                    f.views[$index].inList = true;
-                }
 
-            }
-            f.count = list.length;
-
-            for(let $index = 0; $index < list.length; ++$index) {
-                if (f.views[$index]) {
-                    if (!f.views[$index].inList) {
-                        let v = f.views[$index];
-                        if (!v.inList) {
-                            console.log("REMOVING", $index);
-                            v.element.remove();
-                            delete f.views[$index];
-                        }
+                    if (val !== null && val !== undefined) {
+                        e.html(val);
+                    } else {
+                        e.html('');
                     }
                 }
+
             }
 
-        }
-
-        this.refresh();
-
-    }
-
-    refresh(e = null, target = null) {
-
-        let body = e ? e : $("body");
-
-        let ref = this;
-
-        let code = "";
-        if (target) {
-            Object.keys(target).forEach(k => {
-                code += "let " + k + " = target['" + k + "']; ";
-            });
-        }
-
-        let elements = body.find("*[var]");
-        elements.each(function() {
-            let varname = $(this).attr("var");
-            let value = ref.getProp(varname, target);
-
-            ref.setViewValue($(this), value);
-        });
-
-        // conditions
-        elements = body.find("*[if]");
-        elements.each(function(){
-
-            let condition = $(this).attr("if");
-
-            let transition = $(this).attr("transition");
-            let duration = $(this).attr("transition-duration");
-
-            transition = ["fade", "slide"].includes(transition) ? transition : "auto";
-            duration = duration ? parseInt(duration) : 200;
-
-            let c = {
-                element: $(this),
-                condition: condition,
-                transition: transition,
-                duration: duration
-            };
-
-            let b = false;
-            try { 
-                eval(code + "b = " + c.condition); 
-
-                if (c.transition == "fade") {
-                    if (b) c.element.fadeIn(c.duration);
-                    if (!b) c.element.fadeOut(c.duration);
-                }
-                else if (c.transition == "slide") {
-                    if (b) c.element.slideDown(c.duration);
-                    if (!b) c.element.slideUp(c.duration);
-                }
-                else {
-                    if (b) c.element.show();
-                    if (!b) c.element.hide();
-                }
-            
-            } catch(e) {
-                console.log("ERROR for conditional if ", c, e);
-            }
-
-        });
-
-        // classes
-        elements = body.find("*[_class]");
-        elements.each(function(){
-
-            let condition = $(this).attr("_class");
-            let c = {
-                element: $(this),
-                json: ref.toJson(condition)
-            };
-
-            Object.keys(c.json).forEach( k => {
-                let condition = c.json[k];
-                let b = false;
-
-                try {
-                    eval(code + "b = " + condition); 
-
-                    if (b) c.element.addClass(k);
-                    else c.element.removeClass(k);
-                
-                } catch(e) {  }
-            });
-
-        });
-
-        // styles
-        elements = body.find("*[_style]");
-        elements.each(function() {
-
-            let prop = $(this).attr("_style");
-            let s = {
-                element: $(this),
-                json: ref.toJson(prop)
-            };
-
-            Object.keys(s.json).forEach( k => {
-
-                let b = false;
-                try {
-                    eval(code + "b = " + s.json[k]);
-                    s.element.css( k, b );
-                } catch(e){ }
-
-            });
-        });
-
-    }
-
-
-    /////////// Extras
-
-    Form(args) {
-
-        let form = {
-            _clear: () => {},
-            submit: function() {
-
-                if (args.ajax) {
-                    Ajax.request({
-                        method: args.method ? args.method : "POST",
-                        action: args.ajax,
-                        onSuccess: response => {
-                            args.onSubmit(response);
-                            form._clear();
-                        },
-                        onError: args.onError ? args.onError : null,
-                        data: args.data ? args.data() : {}
+            // CLASS
+            if (this.class_template) {
+                let obj = null;
+                eval('obj = ' + this.class_template);
+                if (obj) {
+                    Object.keys(obj).forEach(k => {
+                        if (obj[k]) {
+                            e.addClass(k);
+                        }
                     });
                 }
-                else {
-                    args.onSubmit();
-                    form._clear();
-                }
-
-                return form;
-            },
-            bindButton: function(selector) {
-                $(selector).click(() => {
-                    form.submit();
-                });
-                return form;
-            },
-            bindForm: function(selector) {
-                $(selector).on('submit', function(e){
-                    e.preventDefault();
-                    form.submit();
-                });
-                return form;
-            },
-            clear: function(onClear) {
-                form._clear = () => {
-                    onClear();
-                    Data.Refresh();
-                };
-                return form;
             }
-        }
-        return form;
 
+            // STYLE
+            if (this.style_template) {
+                let obj = null;
+                eval('obj = ' + this.style_template);
+                if (obj) {
+                    e.styles(obj);
+                }
+            }
+
+        }
+
+        if (!propagate) {
+            this.recoverPreviousState();
+            return;
+        }
+
+        for(let child of this.nodes.children) {
+            child.update(propagate);
+        }
+
+        this.recoverPreviousState();
+
+    }
+
+    addChild(node) {
+        if (!node.needed && !node.used) {
+            return;
+        }
+        this.elements.children.push(node);
+    }
+
+    removeChild(node) {
+        let pos = this.nodes.children.indexOf(node);
+        if (pos >= 0)
+        this.nodes.children.splice( pos, 1 );
+    }
+
+    remove() {
+        this.elements.this.remove();
+        this.used = false;
+        this.needed = false;
+
+        this.nodes.parent.removeChild(this);
+    }
+
+    replace(e, data = {}) {
+        View.disableNextAddition = true;
+        this.elements.this.replace(e);
+        this.remove();
+
+        let d = {}
+        Object.keys(this.state).forEach(k => {
+            d[k] = this.state[k];
+        });
+        Object.keys(data).forEach(k => {
+            d[k] = data[k];
+        });
+
+        let newNode = new DataBindNode({
+            element: e.get(0),
+            data: d,
+            parent: this.nodes.parent,
+            loadChildren: true
+        });
+
+        if (newNode.used || newNode.needed) {
+            this.nodes.parent.needed = true;
+            this.nodes.parent.nodes.children.push(newNode);
+        }
+        return newNode;
     }
 }
 
-var Data = new DataBinding();
+class DataBinding {
+
+    disableNextAddition = false;
+    root;
+
+    constructor() { }
+
+    setRoot(element) {
+        this.root = new DataBindNode({
+            element: $(element).get(0),
+            loadChildren: false
+        });
+
+        this.root.loadChildren();
+    }
+
+    update() {
+        this.root.update();
+    }
+
+    recalculate() {
+        this.setRoot('body');
+    }
+
+    add(element, data = {}) {
+        if (this.disableNextAddition) {
+            this.disableNextAddition = false;
+            return;
+        }
+        if (!this.root) return;
+        this.root.nodes.children.push(new DataBindNode({
+            element: element,
+            loadChildren: true,
+            data: data
+        }));
+    }
+
+}
+
+var View = new DataBinding();
+
+$(document).ready(() => {
+    View.recalculate();
+    View.update();
+});
 
 // JQuery
 onInsertElement(e => {
     if (!e || !e['find']) return;
-    Data.analyze(e);
+    View.add(e.get(0));
 });
+
+function delay(millis) {
+    return new Promise((resolve, reject) => {
+
+        setTimeout(() => {
+            resolve(true);
+            setTimeout(() => {
+                View.update();
+            }, 5);
+        }, millis);
+
+    });
+}

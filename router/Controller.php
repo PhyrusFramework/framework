@@ -206,13 +206,18 @@ class Controller {
 
         // Components
         foreach($this->components as $cmp) {
-            if (in_array($cmp, self::$_loaded['components'])) {
-                continue;
-            }
-            self::$_loaded['components'][] = $cmp;
-            ComponentController::findController(Path::components() . "/$cmp");
-        }
 
+            if (is_string($cmp)) {
+                if (in_array($cmp, self::$_loaded['components'])) {
+                    continue;
+                }
+                self::$_loaded['components'][] = $cmp;
+                ComponentController::findController(Path::components() . "/$cmp");
+            } else {
+                $cmp->initialize();
+            }
+        }
+        
         // Assets
         Assets::assets_in("$directory/assets");
 

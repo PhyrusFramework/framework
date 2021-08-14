@@ -15,7 +15,8 @@ spl_autoload_register(function($name) {
         'htmlparser' => ['HTMLParser'],
         'mails' => ['Mail', 'PHPMailer\PHPMailer\PHPMailer'],
         'pdf' => ['PDF', 'Dompdf\Dompdf'],
-        'googlefonts' => ['GoogleFonts']
+        'googlefonts' => ['GoogleFonts'],
+        'jwt' => ['JWT']
     );
 
     foreach($assoc as $k => $v) {

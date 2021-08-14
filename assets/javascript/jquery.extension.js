@@ -166,21 +166,23 @@ $.fn.getOptions = function() {
 }
 
 $.fn.checked = function() {
+    if (arguments.length == 0)
     return this.is(":checked");
-}
 
-$.fn.setChecked = function() {
-
-    let checked = true;
-    if (arguments.length) {
-        checked = arguments[0];
-    }
-
+    checked = arguments[0];
     return this.prop('checked', checked);
-
 }
 
 $.fn.getFile = function() {
     if (this.length == 0) return null;
     return this.target.files[i];
+}
+
+$.fn.visible = function() {
+    return this.is(':visible');
+}
+
+$.fn.tag = function() {
+    if (this.length == 0) return '';
+    return this.prop('tagName');
 }

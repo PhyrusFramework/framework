@@ -12,10 +12,10 @@
 }
 
 .modal-container .modal-box {
-
     background: white;
     border-radius: 10px;
     padding: 25px;
     overflow: hidden;
-    overflow-y: scroll;
+    overflow-y: auto;
+    position: relative;
 }

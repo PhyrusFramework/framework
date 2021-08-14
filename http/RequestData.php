@@ -115,7 +115,7 @@ class RequestData{
                 return;
             }
         }
-        response('not_allowed');
+        response('forbidden');
         die();
     }
 

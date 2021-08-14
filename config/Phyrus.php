@@ -154,6 +154,7 @@ class Phyrus {
         $scripts = [];
 
         if (Config::get('framework-assets.javascript.jquery')) {
+            
             $scripts = [
                 'jquery',
                 'jquery.extension',
@@ -163,11 +164,18 @@ class Phyrus {
 
             if (Config::get('framework-assets.javascript.data-binding')) {
                 $scripts[] = 'data';
-            }
-
-            if (Config::get('framework-assets.javascript.modals')) {
+                $scripts[] = 'components';
                 $scripts[] = 'modals';
             }
+
+        }
+
+        if (Config::get('framework-assets.javascript.validator')) {
+            $scripts[] = 'validator';
+        }
+
+        if (Config::get('framework-assets.javascript.http')) {
+            $scripts[] = 'http';
         }
 
         return $scripts;
