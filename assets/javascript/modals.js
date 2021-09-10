@@ -1,5 +1,17 @@
 var Modal  = {
 
+    currents: [],
+
+    close: () => {
+        if (Modal.currents.length == 0) {
+            return;
+        }
+
+        let last = Modal.currents[Modal.currents.length - 1];
+        Modal.currents.splice(Modal.currents.length - 1, 1);
+        last.close();
+    },
+
     create: () => {
 
         let body = $("<div class='modal-container' style='display: none'></div>");
@@ -59,6 +71,7 @@ var Modal  = {
 
                 $("body").append(body);
                 body.fadeIn(obj.transition);
+                Modal.currents.push(obj);
                 return obj;
             },
             close: (param = null) => {

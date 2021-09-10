@@ -51,6 +51,11 @@ class DataBindNode {
     model_template;
 
     /**
+     * Element alias.
+     */
+    alias;
+
+    /**
      * :if property
      */
     condition_template;
@@ -89,6 +94,11 @@ class DataBindNode {
      * Previous window values before loading state.
      */
     _savedState = {}
+
+    /**
+     * Any attribute starting with :
+     */
+     genericAttributes = {}
 
     constructor(options) {
 
@@ -185,6 +195,10 @@ class DataBindNode {
             },
             if: value => {
                 this.condition_template = value;
+            },
+            alias: value => {
+                window[value] = this.elements.this;
+                this.alias = value;
             }
         }
 
@@ -220,6 +234,14 @@ class DataBindNode {
         }
 
         this.reloadEvents();
+
+        attrs = e.getAttributes();
+        Object.keys(attrs).forEach(attr => {
+            if (attr[0] != ':') return;
+            this.used = true;
+            this.genericAttributes[attr.substr(1)] = attrs[attr];
+            e.removeAttr(attr);
+        });
 
         if (!options.loadChildren) return;
 
@@ -304,7 +326,7 @@ class DataBindNode {
 
         if (this.events.pressEnter) {
             let value = this.events.pressEnter;
-            e.keyup(function() {
+            e.keyup(function($ev) {
                 if($ev.keyCode == 13)
                 {
                     ref.setupState();
@@ -342,6 +364,10 @@ class DataBindNode {
         if (!this.nodes.parent) return;
 
         View.disableNextAddition = true;
+
+        if (this.alias) {
+            window[alias] = e;
+        }
 
         if (!this.nodes.before) {
             this.elements.parent.prepend(e);
@@ -473,6 +499,11 @@ class DataBindNode {
                 let b = true;
                 eval('b = ' + this.condition_template);
                 if (!b && this.inDOM) {
+
+                    if (this.alias) {
+                        window[alias] = null;
+                    }
+
                     e.remove();
                     this.inDOM = false;
                     this.recoverPreviousState();
@@ -535,6 +566,11 @@ class DataBindNode {
                     e.styles(obj);
                 }
             }
+
+            // GENERIC ATTRIBUTES
+            Object.keys(this.genericAttributes).forEach(attr => {
+                e.attr(attr, eval(this.genericAttributes[attr]));
+            });
 
         }
 

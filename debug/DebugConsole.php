@@ -22,10 +22,12 @@ class DebugConsole {
 
         $str = '';
         foreach($args as $arg) {
-            if (is_array($arg)) {
 
+            if ($v === NULL) {
+                $str .= 'null';
+            }
+            else if (is_array($arg)) {
                 $str .= self::array2string($arg);
-
             } else if (is_object($arg)) {
 
                 ob_flush();
@@ -64,7 +66,10 @@ class DebugConsole {
         foreach($arr as $k => $v) {
             $str .= "[$k] = ";
 
-            if (is_array($v)) {
+            if ($v === NULL) {
+                $str .= 'null';
+            }
+            else if (is_array($v)) {
                 $str .= self::array2string($v);
             } else if (is_string($v)) {
                 $str .= "'$v'";

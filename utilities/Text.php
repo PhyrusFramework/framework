@@ -288,4 +288,16 @@ class Text {
         return mb_convert_encoding($this->_txt, $encoding);
     }
 
+    /**
+     * Check the string agains a regex pattern.
+     * 
+     * @param string $pattern
+     * 
+     * @return bool
+     */
+    public function match(string $pattern) : bool {
+        $regex = '|^'. str_replace('\*', '.*', preg_quote($pattern)) .'$|is';
+        return (bool) preg_match($regex, $this->_txt);
+    }
+
 }

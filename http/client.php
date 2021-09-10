@@ -122,7 +122,7 @@ class http {
                     $resolve($result);
                     return;
 
-                } else if ($onError != null) {
+                } else {
 
                     $reject([
                         'code' => $code,

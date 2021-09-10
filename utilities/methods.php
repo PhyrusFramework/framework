@@ -14,7 +14,15 @@ function autoload($classnames, $files, callable $callback = null) {
 
         $classes = is_array($classnames) ? $classnames : [$classnames];
 
-        if (!in_array($name, $classes)) return;
+        $found = false;
+        foreach($classes as $cl) {
+            if ($name == $cl || Text::instance($name)->match($cl)) {
+                $found = true;
+                break;
+            }
+        }
+
+        if (!$found) return;
 
         $filesarr = is_array($files) ? $files : [$files];
 

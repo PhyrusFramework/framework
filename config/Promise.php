@@ -71,7 +71,7 @@ class Promise {
         return $this;
     }
 
-    public function anyway(callable $func) {
+    public function finally(callable $func) {
         if ($this->result == 'success') {
             $func($this->response);
         } else if ($this->result == 'error') {

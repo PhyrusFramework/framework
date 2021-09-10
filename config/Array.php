@@ -26,7 +26,7 @@ class Arr extends ArrayObject {
      * @return Arr
      */
     public static function instance(array $array) : Arr {
-        $arr = new Arr($array);
+        return new Arr($array);
     }
 
     /**

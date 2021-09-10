@@ -63,6 +63,19 @@ class Time {
     }
 
     /**
+     * Build a Time object from a timestamp number.
+     * 
+     * @param int $timestamp
+     * 
+     * @return Time
+     */
+    public static function fromTimestamp(int $timestamp) : Time {
+        $datetime = new DateTime();
+        $datetime->setTimestamp($timestamp);
+        return new Time($datetime);
+    }
+
+    /**
      * Format date to text
      * 
      * @param string $format

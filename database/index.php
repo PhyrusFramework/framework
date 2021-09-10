@@ -13,6 +13,7 @@ require_once(__DIR__.'/Medoo.php');
 require_once(__DIR__.'/Database.php');
 require_once(__DIR__.'/DBQueryResult.php');
 require_once(__DIR__.'/DB.php');
+require_once(__DIR__.'/DBTable.php');
 
 global $DATABASE;
 try{

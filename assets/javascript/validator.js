@@ -4,7 +4,7 @@ class Validator {
     value;
     checks = [];
 
-    constructor(value) {
+    constructor(value = null) {
         this.value = value;
     }
 
@@ -447,14 +447,21 @@ class Validator {
         return this;
     }
 
-    notEmpty(property = null) {
+    notEmpty() {
         this.checks.push({
-            function: function(value, param) {
+            function: function(value) {
                 if (!value) return false;
-                if (!value[param]) return false;
+                
+                if (Array.isArray(value)) {
+                    if (value.length == 0) return false;
+                } else {
+                    if (value == '') {
+                        return false;
+                    }
+                }
+
                 return true;
-            },
-            parameter: property
+            }
         }); 
 
         return this;

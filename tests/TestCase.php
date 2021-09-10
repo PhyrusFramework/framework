@@ -50,7 +50,7 @@ class TestCase {
         ])->getArray();
         
         http::request($ops)
-        ->anyway(function($response) {
+        ->finally(function($response) {
             $this->response = $response;
         });
     }

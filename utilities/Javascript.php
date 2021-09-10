@@ -99,22 +99,22 @@ class Javascript {
             echo "\t";
     
             if ($v === null) {
-                echo "$k: null,\n";
+                echo "'$k': null,\n";
             }
             else if (is_string($v)) {
                 $val = str_replace("'", "\\'", $v);
                 $val = str_replace("\n", "\\n", $val);
-                echo "$k: '$val',\n";
+                echo "'$k': '$val',\n";
             }
             else if (is_bool($v)) {
                 if ($v)
-                    echo "$k: true,\n";
+                    echo "'$k': true,\n";
                 else
-                    echo "$k: false,\n";
+                    echo "'$k': false,\n";
             }
             else if (is_array($v)) {
 
-                echo "$k: ";
+                echo "'$k': ";
 
                 if (arr($v)->isAssoc()) {
                     echo "{\n";
@@ -136,7 +136,7 @@ class Javascript {
 
             }
             else {
-                echo "$k: $v,\n";
+                echo "'$k': $v,\n";
             }
         }
     }

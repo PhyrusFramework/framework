@@ -175,4 +175,17 @@ class PDF {
         return $aux;
     }
 
+    /**
+     * Display a PDF from a File. This must be done before any output.
+     * In a controller, use inside of the prepare method instead of display.
+     * 
+     * @param string $path
+     * @param string? $filename
+     */
+    public static function displayFile(string $path, $filename = 'document') {
+        header("Content-type: application/pdf");
+        header("Content-Disposition: inline; filename=$filename.pdf");
+        @readfile($path);
+    }
+
 }

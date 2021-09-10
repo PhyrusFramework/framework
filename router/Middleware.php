@@ -111,8 +111,7 @@ class Middleware extends Controller {
      */
     public function display() {
         // Override
-        if ($this->controller == null) return;
-        $this->controller->display();
+        $this->view();
     }
 
     /**
@@ -126,6 +125,8 @@ class Middleware extends Controller {
 
         if (file_exists($file)) {
             view($file, $parameters);
+        } else if ($this->controller != null) {
+            $this->controller->view();
         }
     }
 
