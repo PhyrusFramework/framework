@@ -147,7 +147,9 @@ class ORM {
         if ($columns == null) return [];
         array_unshift($columns, [
             'name' => 'ID',
-            'type' => 'BIGINT'
+            'type' => 'BIGINT',
+            'notnull' => true,
+            'auto_increment' => true
         ]);
         return $columns;
     }

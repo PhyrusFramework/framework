@@ -129,8 +129,6 @@ class DataBindNode {
 
         // Check all tags;
 
-        let tag = e.prop('tagName');
-
         if (e.attr(':component')) {
             this.component_name = e.attr(':component');
             e.removeAttr(':component');
@@ -144,7 +142,6 @@ class DataBindNode {
             e.removeAttr(':for');
             this.template = e.get(0).outerHTML;
             this.used = true;
-            //e.remove();
             e.hide();
             return;
         }
@@ -158,40 +155,6 @@ class DataBindNode {
             },
             model: value => {
                 this.model_template = value;
-
-                if (tag) {
-
-                    let type = e.attr('type');
-                    let isCheckbox = type == 'checkbox';
-
-                    if (!isCheckbox && [
-                        'input',
-                        'textarea'
-                    ].includes(tag.toLowerCase())) {
-                        e.keyup(function() {
-                            let val = $(this).val();
-                            eval(value + ' = val');
-                            View.update();
-                        });
-                    }
-
-                    if (isCheckbox || [
-                        'select'
-                    ].includes(tag.toLowerCase())) {
-                        e.change(function() {
-
-                            if (isCheckbox) {
-                                let val = $(this).is(':checked');
-                                eval(value + ' = val')
-                            } else {
-                                let op = $(this).find('option:selected').val();
-                                eval(value + ' = op')
-                            }
-
-                            View.update();
-                        });
-                    }
-                }
             },
             if: value => {
                 this.condition_template = value;
@@ -307,11 +270,15 @@ class DataBindNode {
     reloadEvents() {
 
         let e = this.elements.this;
+        let tag = e.prop('tagName');
+        let type = e.attr('type');
+        let isCheckbox = type == 'checkbox';
+
         let ref = this;
 
         Object.keys(this.events).forEach(ev => {
 
-            if (['update', 'pressEnter'].includes(ev)) {
+            if (['update', 'pressEnter', 'change', 'keyup'].includes(ev)) {
                 return;
             }
 
@@ -324,17 +291,65 @@ class DataBindNode {
             });
         });
 
-        if (this.events.pressEnter) {
-            let value = this.events.pressEnter;
-            e.keyup(function($ev) {
-                if($ev.keyCode == 13)
-                {
-                    ref.setupState();
-                    eval(value);
-                    ref.recoverPreviousState();
+        e.keyup(function($ev) {
+
+            ref.setupState();
+
+            // Update :model if set
+            if (ref.model_template && tag) {
+                if (!isCheckbox && [
+                    'input',
+                    'textarea'
+                ].includes(tag.toLowerCase())) {
+                    let val = $(this).val();
+                    eval(ref.model_template + ' = val');
                 }
-            });
-        }
+            }
+
+            // Normal event
+            eval(ref.events.keyup);
+
+            // Press enter
+            if (ref.events.pressEnter && $ev.keyCode == 13) {
+                eval(ref.events.pressEnter);
+            }
+
+            // Update view
+            View.update();
+            ref.recoverPreviousState();
+
+        });
+
+        e.change(function($ev) {
+
+            ref.setupState();
+
+            // Update :model if set
+            if (ref.model_template && tag) {
+                if (isCheckbox || [
+                    'select'
+                ].includes(tag.toLowerCase())) {
+    
+                    if (isCheckbox) {
+                        let val = $(this).is(':checked');
+                        eval(ref.model_template + ' = val')
+                    } else {
+                        let op = $(this).find('option:selected').val();
+                        eval(ref.model_template + ' = op')
+                    }
+    
+                    View.update();
+                }
+            }
+
+            // Normal event
+            eval(ref.events.change);
+
+            // Update view
+            View.update();
+            ref.recoverPreviousState();
+
+        });
 
         if (this.events.update) {
             let value = this.events.update;

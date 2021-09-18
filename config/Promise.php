@@ -46,8 +46,8 @@ class Promise {
 
     }
 
-    public static function create(callable $resolve, callable $reject = null) {
-        return new Promise($resolve, $reject);
+    public static function create(callable $action) {
+        return new Promise($action);
     }
 
     public function then(callable $func) {

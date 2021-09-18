@@ -115,6 +115,7 @@ function uploadFile(options)
             cache: false,
             contentType: false,
             processData: false,
+            headers: options.headers ? options.headers : {},
             timeout: options.timeout ? options.timeout : 60000
         });
 

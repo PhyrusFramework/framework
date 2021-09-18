@@ -470,7 +470,7 @@ class DATABASE
         }
 
         if (empty($primary))
-            $q .= 'ID INT NOT NULL AUTO_INCREMENT, ';
+            $q .= 'ID BIGINT NOT NULL AUTO_INCREMENT, ';
 
         $uniques = [];
         $foreign = [];
@@ -483,6 +483,9 @@ class DATABASE
     
             if (!empty($field['notnull']) && $field['notnull'])
                 $q .= ' NOT NULL';
+
+            if (!empty($field['auto_increment']) && $field['auto_increment'])
+                $q .= ' AUTO_INCREMENT ';
     
             if (!empty($field['unique']) && $field['unique'])
                 $uniques[] = $fname;

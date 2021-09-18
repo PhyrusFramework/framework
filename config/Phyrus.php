@@ -163,7 +163,7 @@ class Phyrus {
             ];
 
             if (Config::get('framework-assets.javascript.data-binding')) {
-                $scripts[] = 'data';
+                $scripts[] = 'view';
                 $scripts[] = 'components';
                 $scripts[] = 'modals';
             }

@@ -26,8 +26,13 @@ if (!defined('USING_CLI')) {
         if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
             header('Access-Control-Allow-Methods: ' . Config::get('CORS.methods', 'GET, POST, OPTIONS, PUT, DELETE, PATCH'));         
 
-        if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
-            header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
+        if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])) {
+            if (Config::get('CORS.headers') == '*') {
+                header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
+            } else {
+                header('Access-Control-Allow-Headers: ' . Config::get('CORS.headers'));
+            }
+        }
 
         exit(0);
     }

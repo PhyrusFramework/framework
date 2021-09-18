@@ -28,7 +28,7 @@ class Middleware extends Controller {
     /**
      * [Managed by framework] Page controller
      */
-    private Controller $controller;
+    protected Controller $controller;
 
     public function setController(Controller $controller) {
         $this->controller = $controller;
@@ -126,7 +126,7 @@ class Middleware extends Controller {
         if (file_exists($file)) {
             view($file, $parameters);
         } else if ($this->controller != null) {
-            $this->controller->view();
+            $this->controller->display();
         }
     }
 

@@ -19,12 +19,16 @@ class DBTable {
     public function select($columns, $where = []) {
         $query = 'SELECT '; 
 
-        $keys = array_keys($columns);
-        for($i = 0; $i < sizeof($keys); ++$i) {
-            $query .= $keys[$i];
-            if ($i < sizeof($keys) - 1) {
-                $query .= ', ';
+        if (is_array($columns)) {
+            $keys = array_keys($columns);
+            for($i = 0; $i < sizeof($keys); ++$i) {
+                $query .= $keys[$i];
+                if ($i < sizeof($keys) - 1) {
+                    $query .= ', ';
+                }
             }
+        } else {
+            $query .= $columns;
         }
 
         $query .= ' FROM ' . $this->_name . ' WHERE ';
@@ -56,6 +60,7 @@ class DBTable {
                 $query .= ', ';
             }
         }
+        
         $query .= ') VALUES (';
         for($i = 0; $i < sizeof($keys); ++$i) {
             $query .= ':' . $keys[$i];
