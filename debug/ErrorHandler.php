@@ -203,6 +203,12 @@ class ErrorHandler {
             return "Variable $name is not defined. Give it some value first.";
         }
 
+        if (strpos($msg, 'Undefined index:') !== false) {
+            $name = str_replace('Undefined index: ', '', $msg);
+
+            return "You are trying to access the property '$name' of an array, but that array does not have any key named '$name'.";
+        }
+
         if (strpos($msg, 'Class') !== false && strpos($msg, 'not found') !== false) {
             return "Possibly you are not including the PHP file that defines this class, or you are executing this script too soon and the class hasn't been declared yet.<br><br>Also make sure that the class name is spelled correctly. You can check if a class exists with <b>if (class_exists('class name'))</b> or get a list of declared classes with <b>get_declared_classes()</b>";
         }

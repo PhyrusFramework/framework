@@ -289,7 +289,7 @@ class Text {
     }
 
     /**
-     * Check the string agains a regex pattern.
+     * Check the string agains a regex pattern. Ex: {{ param }}
      * 
      * @param string $pattern
      * 
@@ -298,6 +298,67 @@ class Text {
     public function match(string $pattern) : bool {
         $regex = '|^'. str_replace('\*', '.*', preg_quote($pattern)) .'$|is';
         return (bool) preg_match($regex, $this->_txt);
+    }
+
+    /**
+     * Find parameters in the text and replace them dynamically.
+     * 
+     * @param string $opener
+     * @param string $closer
+     * @param callable $replacer
+     * 
+     * @return string
+     */
+    public function replacer(string $opener, string $closer, callable $replacer) : string {
+
+        $str = '';
+        $in = false;
+        $current = '';
+        $tag = '';
+        $pos = 0;
+
+        for($i = 0; $i < strlen($this->_txt); ++$i) {
+
+            $ch = $this->_txt[$i];
+
+            if (!$in) {
+
+                if ($pos < strlen($opener) && $ch == $opener[$pos]) {
+                    $tag .= $ch;
+                    $pos += 1;
+
+                    if ($pos == strlen($opener)) {
+                        $in = true;
+                        $pos = 0;
+                        $current = '';
+                        $tag = '';
+                    }
+                } else {
+                    $str .= $tag . $ch;
+                }
+
+            } else {
+
+                if ($pos < strlen($closer) && $ch == $closer[$pos]) {
+                    $pos += 1;
+
+                    if ($pos == strlen($closer)) {
+                        $in = false;
+                        $pos = 0;
+                        $str .= $replacer(trim($current));
+                        $current = '';
+                        $tag = '';
+                    }
+                } else {
+                    $current .= $tag . $ch;
+                }
+
+            }
+
+        }
+
+        return $str;
+
     }
 
 }

@@ -78,7 +78,7 @@ class Translate {
     public static function use(string $language) : Translate {
 
         if ($language == 'user') {
-            $lang = self::browserSupportedLanguage();
+            $lang = self::getLanguage();
         }
         else if ($language == 'default') {
             $lang = Translate::defaultLanguage();
@@ -185,10 +185,14 @@ class Translate {
      * 
      * @return mixed
      */
-    public function get(string $key, array $parameters = []) {
+    public function get($key = null, array $parameters = []) {
 
         if (!isset(self::$translations[$this->language])) {
             return $key;
+        }
+
+        if (empty($key)) {
+            return self::$translations[$this->language]->getArray();
         }
 
         $translation = self::$translations[$this->language]->get($key);

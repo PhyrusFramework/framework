@@ -126,22 +126,16 @@ class Phyrus {
     public static function frameworkStyles() : array {
 
         $styles = [];
-        if (Config::get('framework-assets.css.grid')) {
+        if (Config::get('assets.css.grid')) {
             $styles[] = 'grid';
         }
-        $styles[] = 'icon';
-        if (Config::get('framework-assets.css.lib')) {
+        if (Config::get('assets.css.lib')) {
             $styles[] = 'lib';
         }
-        if (Config::get('framework-assets.javascript.modals')) {
-            $styles[] = 'modal';
-        }
-        if (Config::get('framework-assets.css.reset')) {
+        if (Config::get('assets.css.reset')) {
             $styles[] = 'reset';
         }
-
         return $styles;
-
     }
 
     /**
@@ -153,29 +147,21 @@ class Phyrus {
 
         $scripts = [];
 
-        if (Config::get('framework-assets.javascript.jquery')) {
-            
-            $scripts = [
-                'jquery',
-                'jquery.extension',
-                'utils',
-                'ajax'
-            ];
-
-            if (Config::get('framework-assets.javascript.data-binding')) {
-                $scripts[] = 'view';
-                $scripts[] = 'components';
-                $scripts[] = 'modals';
-            }
-
+        if (Config::get('assets.js.utils')) {
+            $scripts[] = 'utils/utils';
+            $scripts[] = 'utils/validator';
+            $scripts[] = 'utils/elem';
         }
 
-        if (Config::get('framework-assets.javascript.validator')) {
-            $scripts[] = 'validator';
+        if (Config::get('assets.js.http')) {
+            $scripts[] = 'http/http';
+            $scripts[] = 'http/ajax';
         }
 
-        if (Config::get('framework-assets.javascript.http')) {
-            $scripts[] = 'http';
+        if (Config::get('assets.js.time')) {
+            $scripts[] = 'time/moment';
+            $scripts[] = 'time/moment-timezone';
+            $scripts[] = 'time/time';
         }
 
         return $scripts;

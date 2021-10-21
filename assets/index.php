@@ -3,29 +3,24 @@ require_once(__DIR__.'/Assets.php');
 
 // Framework assets
 // JS
-$importJS = function() {
+$_importJS = function() {
 
     $frameworkPath = Path::framework(true) . '/assets/javascript';
+
+    if (Config::get('assets.js.vue')) {
+        Footer::add(function() use ($frameworkPath) {?>
+<script src="<?= $frameworkPath ?>/vue/phyrus.js"></script>
+<script src="<?= $frameworkPath ?><?= Config::get('development_mode') ? '/vue/vue.dev.js' : '/vue/vue.min.js'?>" async defer onload="_vueLoaded()"></script>
+<?php 
+        });
+    }
 
     foreach(Phyrus::frameworkScripts() as $script) {
         Assets::include_js("$frameworkPath/$script.js");
     }
 
-    foreach([
-        'dom'
-    ] as $script) {
-        Assets::include_js("$frameworkPath/$script.js", true);
-    }
-
 };
-$importJS();
+$_importJS();
 
 // CSS
 Assets::css_in(__DIR__ . '/css', false);
-
-// Modal ajax function
-Ajax::add('_modal_get_component', function($req) {
-
-    component($req->component, $req->has('parameters') ? $req->parameters : []);
-
-});

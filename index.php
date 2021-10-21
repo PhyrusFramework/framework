@@ -19,18 +19,12 @@ $FRAMEWORK_PATH = __DIR__;
 
 ///////////
 
-spl_autoload_register(function($name) {
+require_once(__DIR__ . '/config/index.php');
 
-    if ($name == 'Ajax') {
-        require_once(__DIR__ . '/ajax/index.php');
-    }
-    else if ($name == 'DB' || $name == 'DATABASE' || $name == 'InsecureString') {
-        require_once(__DIR__ . '/database/index.php');
-    }
-});
+autoload(['Ajax'], [__DIR__ . '/ajax/index.php']);
+autoload(['DB', 'DB*', 'DATABASE', 'Backup_Database', 'InsecureString'], [__DIR__ . '/database/index.php']);
 
 $components = [
-    'config',
     'utilities',
     'debug',
     'ajax',

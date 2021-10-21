@@ -11,10 +11,6 @@ spl_autoload_register(function($name) {
         'translate' => ['Translate'],
         'orm' => ['ORM', 'AdvancedORM', 'RelationORM'],
         'mobile_detect' => ['MobileDetect', 'Mobile_Detect'],
-        'mysqlbackup' => ['BackupDatabase', 'Backup_Database'],
-        'htmlparser' => ['HTMLParser'],
-        'mails' => ['Mail', 'PHPMailer\PHPMailer\PHPMailer'],
-        'pdf' => ['PDF', 'Dompdf\Dompdf'],
         'googlefonts' => ['GoogleFonts'],
         'jwt' => ['JWT']
     );

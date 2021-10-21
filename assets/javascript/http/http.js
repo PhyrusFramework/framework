@@ -18,9 +18,6 @@ class http {
                 }       
 
                 resolve(data);
-                setTimeout(() => {
-                    View.update();
-                }, 5);
             }
 
             xhr.onerror = function() {
@@ -28,9 +25,6 @@ class http {
                     status: xhr.status,
                     response: xhr.response
                 });
-                setTimeout(() => {
-                    View.update();
-                }, 5);
             }
 
             let url = req.url;

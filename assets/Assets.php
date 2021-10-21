@@ -100,10 +100,13 @@ class Assets {
      * @param string $src path to css
      */
     public static function include_css(string $src) {
+
+        $cache = Config::get('assets.disable-browser-cache') ? '?cache=' . Text::random(5) : '';
+
         if (self::$minify) {
-            self::$css_imports[] = $src;
+            self::$css_imports[] = $src . $cache;
         } else {
-            Head::add('<link rel="stylesheet" href="' . $src . '">');
+            Head::add('<link rel="stylesheet" href="' . $src . $cache . '">');
         }
     }
 
@@ -114,10 +117,13 @@ class Assets {
      * @param bool $footer (default false)
      */
     public static function include_js(string $src, bool $footer = false) {
-        $line = '<script type="text/javascript" src="' . $src .'"></script>';
+
+        $cache = Config::get('assets.disable-browser-cache') ? '?cache=' . Text::random(5) : '';
+        $line = '<script type="text/javascript" src="' . $src . $cache .'"></script>';
+
         if (!$footer) {
             if (self::$minify)
-                self::$js_imports[] = $src;
+                self::$js_imports[] = $src . $cache;
             else
                 Head::add($line);
         } else {
@@ -132,10 +138,9 @@ class Assets {
      * @param bool $recursive (default true) Check subfolders
      */
     public static function assets_in(string $path, bool $recursive = true) {
-        self::css_in("$path/css", $recursive);
-        self::scss_in("$path/scss", $recursive);
-        self::js_in("$path/js", $recursive);
-        self::js_in("$path/js-footer", $recursive, true);
+        self::css_in("$path", $recursive);
+        self::scss_in("$path", $recursive);
+        self::js_in("$path", $recursive);
     }
 
     /**

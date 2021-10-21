@@ -1,9 +1,6 @@
 <?php
 ob_start();
 
-// Require framework
-//require_once('../index.php');
-
 // Get page
 $req = new RequestData(true);
 $req->require('ajaxActionName');

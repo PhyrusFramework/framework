@@ -239,8 +239,9 @@ class Arr extends ArrayObject {
             $arr = $defaults->getArray();
         }
 
+        $keys = array_keys($arr);
         foreach($this as $k => $v) {
-            if (!isset($arr[$k])) {
+            if (!in_array($k, $keys)) {
                 unset($this[$k]);
             }
         }
@@ -476,6 +477,21 @@ class Arr extends ArrayObject {
         }
 
         return $this;
+    }
+
+    /**
+     * Map an array to another array by converting each item
+     * 
+     * @param callable
+     * 
+     * @return array
+     */
+    public function map(callable $forItem) : array {
+        $list = [];
+        foreach($this as $i) {
+            $list[] = $forItem($i);
+        }
+        return $list;
     }
 
 }

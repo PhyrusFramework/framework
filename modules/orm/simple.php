@@ -285,7 +285,7 @@ class ORM {
 
         $i = 0;
         foreach($cols as $name) {
-            if ($name == 'ID' || $name == 'createdAt') {
+            if ($name == 'ID') {
                 $i += 1;
                 continue;
             }
@@ -293,7 +293,7 @@ class ORM {
             $q .= "$name = :$name";
             $parameters[$name] = $this->{$name};
 
-            if ($i < sizeof($cols) - 2) {
+            if ($i < sizeof($cols) - 1) {
                 $q .= ', ';
             }
             $i += 1;
