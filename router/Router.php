@@ -43,7 +43,6 @@ class Router {
         self::findController($path);
         EventListener::trigger('afterRouter');
         Assets::stopMinify();
-        Controller::current()->load();
 
         if (defined('PERFORMANCE_ANALYZER')) {
             CLI_Performance::record('Router loaded the page');
@@ -111,7 +110,6 @@ class Router {
 
         // Auto-routing
         $parameters = [];
-        $current_parameter = 0;
         $root = Path::src();
 
         for($i = 0; $i < sizeof($parts); ++$i) {
@@ -123,27 +121,32 @@ class Router {
 
             if (!is_dir($next)) {
 
-                // Check if perhaps it's a Homepage parameter
-                if ($controller == null) {
-                    $next = Path::pages() . '/' . Definition('homepage');
-                    $controller = self::findPageController($next);
-                    $root = $next;
+                $parameter = null;
+                $dirs = array_filter(glob("$root/pages/*"), 'is_dir');
+                foreach($dirs as $dir) {
+                    $basename = basename($dir);
+                    if ($basename[0] == '_') {
+                        $parameter = substr($basename, 1);
+                        break;
+                    }
                 }
 
-                if (empty($controller) || $current_parameter >= sizeof($controller->parameters)) {
+                if ($parameter == null) {
                     return self::load404();
+                } else {
+                    $parameters[$parameter] = $part;
+                    $root = "$root/pages/_$parameter";
+                    self::findPageController($root);
                 }
-                else {
-                    $parameters[$controller->parameters[$current_parameter]] = $part;
-                    $current_parameter += 1;
-                }
+
 
             } else {
 
+                // Continue routing
                 $root = $next;
 
+                // If there is a controller here that specifies automatic disabled, stop.
                 self::findPageController($next);
-
                 if ($controller != null && $controller->automatic === false) {
                     return self::load404();
                 }
@@ -173,8 +176,8 @@ class Router {
                 $subpages = "$folder/pages";
                 if (!is_dir($subpages)) {
                     throw new FrameworkException('404 Not found, Controller missing',
-                'You are trying to access a route that exists in your project but has no controller or subpages, so it\'s useless.'
-                .'<br><br>Perhaps you forgot creating the controller?<br><br>'
+                'You are trying to access the route "'.$folder.'" that exists in your project but has no controller or subpages, so it\'s useless.'
+                .'<br><br>Perhaps you forgot to create the controller?<br><br>'
                 .'<b>This message is only displayed in debug mode, in production the 404 screen will be displayed.</b>'
                 . '<h4>Possible solutions</h4>'
                 . '<ul><li>If you want a page here, create the controller. Remember to extend the Controller class.</li>'

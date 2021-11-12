@@ -270,4 +270,54 @@ class Assets {
         $h = $height != null ? $height : intval($width * (3/4));
         return 'https://picsum.photos/seed/'. Text::random(6) ."/$width/$h";
     }
+
+    
+    public static function importFrameworkAssets() {
+        // Framework assets
+        // JS
+        $frameworkPath = Path::framework(true) . '/assets/javascript';
+
+        if (Config::get('assets.js.vue')) {
+            Footer::add(function() use ($frameworkPath) {?>
+    <script src="<?= $frameworkPath ?>/vue/phyrus.js"></script>
+    <script src="<?= $frameworkPath ?><?= Config::get('development_mode') ? '/vue/vue.dev.js' : '/vue/vue.min.js'?>" async defer onload="_vueLoaded()"></script>
+    <?php 
+
+    if (Config::get('development_mode')) {?>
+        <script src="<?= $frameworkPath ?>/debug-console.js"></script>
+    <?php }
+            });
+
+        }
+
+        if (Config::get('assets.js.utils')) {
+            foreach([
+                'utils/utils', 
+                'utils/validator',
+                'utils/elem'] as $script) {
+                Assets::include_js("$frameworkPath/$script.js");
+            }
+        }
+
+        if (Config::get('assets.js.http')) {
+            foreach([
+                'http/http', 
+                'http/ajax'] as $script) {
+                Assets::include_js("$frameworkPath/$script.js");
+            }
+        }
+
+        if (Config::get('assets.js.time')) {
+            foreach([
+                'time/moment',
+                'time/moment-timezone',
+                'time/time'] as $script) {
+                Assets::include_js("$frameworkPath/$script.js");
+            }
+        }
+
+
+        // CSS
+        Assets::css_in(__DIR__ . '/css', false);
+    }
 }

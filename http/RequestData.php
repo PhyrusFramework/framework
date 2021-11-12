@@ -238,4 +238,13 @@ class RequestData{
         ));
     }
 
+    /**
+     * Get User-Agent header.
+     * 
+     * @return string
+     */
+    function userAgent() : string {
+        return $_SERVER['HTTP_USER_AGENT']??'';
+    }
+
 }

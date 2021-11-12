@@ -2,7 +2,8 @@
 
 class Phyrus {
 
-    public static function WelcomePage() {?>
+    public static function WelcomePage() {
+    Footer::add(function() { ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;700&display=swap" rel="stylesheet">
@@ -80,6 +81,7 @@ class Phyrus {
         }
     }
     </style>
+    <?php }); ?>
 
     <div class="welcome_container">
         <div class="welcome_background"></div>
@@ -93,23 +95,6 @@ class Phyrus {
     <?php }
 
     public static function NotFoundPage() {?>
-    <style>
-    .error404_container {
-        height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: Arial, sans-serif;
-    }
-    .error404_box {
-        text-align: center;
-    }
-    .error404_box h1 {
-        font-size: 100px;
-        line-height: 20px;
-    }
-    </style>
-
     <div class="error404_container">
         <div class="error404_box">
             <h1>404</h1>

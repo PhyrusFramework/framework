@@ -25,3 +25,4 @@ scss/compiled/
 /dist
 /vendor
 /node_modules
+/generated

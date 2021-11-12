@@ -27,3 +27,7 @@ spl_autoload_register(function($name) {
     }
 
 });
+
+if (Config::get('translate.javascript', false)) {
+    Translate::use('user')->addJavascript();
+}

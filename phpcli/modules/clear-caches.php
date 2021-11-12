@@ -10,6 +10,12 @@ class CLI_ClearCache extends CLI_Module {
             $fold->delete();
         }
 
+        // Generated folder
+        $fold = Folder::instance(Path::generated() . '/cache');
+        if ($fold->exists()) {
+            $fold->delete();
+        }
+
         // .cch files
         $this->clearCCH(Folder::instance(Path::src()));
 

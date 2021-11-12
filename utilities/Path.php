@@ -51,6 +51,18 @@ class Path {
     }
 
     /**
+     * Get path to /generated
+     * 
+     * @param bool $relative [Default false]
+     * 
+     * @return string
+     */
+    public static function generated(bool $relative = false) : string {
+        $w = Definition('generated');
+        return self::project($relative) . "/$w";
+    }
+
+    /**
      * Get path to /modules
      * 
      * @param bool $relative [Default false]

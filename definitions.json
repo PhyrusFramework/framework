@@ -1,5 +1,6 @@
 {
     "src": "src",
+    "cached": "generated",
     "homepage": "$homepage",
     "404": "$404",
     "foot": "footer",

@@ -31,19 +31,17 @@ class SCSS {
 				if ($file == "") continue;
 			
 				$name = file_name($file, false) . ".css";
-	
-				if (!is_dir($folder . "/compiled"))
-					create_folder($folder . "/compiled");
-	
-				$output = $folder . "/compiled/$name";
+				$output = $folder . "/compiled";
+				$cached = Cacher::getPath($output);
+				$newfile = "$cached/$name";
 
 				$renew = false;
 
-				if (!file_exists($output)) {
+				if (!file_exists($newfile)) {
 					$renew = true;
 				} else {
 
-					$tc = new Time(last_modification_date($output));
+					$tc = new Time(last_modification_date($newfile));
 					$ts = new Time(last_modification_date($file));
 
 					if ($tc->isBefore($ts)) {
@@ -53,14 +51,20 @@ class SCSS {
 				}
 	
 				if (!$renew) {
-					$route = Path::toRelative($output);
+					$route = Path::toRelative($newfile);
 					Assets::include_css($route);
 				}
 				else {
 					$css = $scss->compile(file_get_contents($file));
-					file_put_contents($output, $css);
+					Cacher::write("$output/$name", $css);
+
+					// Minify output
+					$min = new Minifier();
+					$min->addFile($newfile);
+					$min->minify($cached, $name);
+					//////////
 				
-					$route = Path::toRelative($output);
+					$route = Path::toRelative($newfile);
 					Assets::include_css($route);
 				}
 			

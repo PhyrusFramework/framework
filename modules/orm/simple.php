@@ -437,5 +437,31 @@ class ORM {
         return intval($res->first->count);
     }
 
+    /**
+     * Convert ORM object to array.
+     * 
+     * @return array
+     */
+    public function toArray(...$columns) {
+
+        $arr = [
+            'ID' => $this->ID,
+            'createdAt' => $this->createdAt
+        ];
+
+        if (empty($columns)) {
+            $def = $this->Definition();
+            foreach($def['columns'] as $col) {
+                $arr[$col['name']] = $this->{$col['name']};
+            }
+            return $arr;
+        }
+
+        foreach($columns as $col) {
+            $arr[$col] = $this->{$col};
+        }
+        return $arr;
+    }
+
 
 }

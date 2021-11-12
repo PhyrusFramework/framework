@@ -75,7 +75,7 @@ class Minifier {
      * @param string $path Directory of the new file
      * @param string $name Name of the minified file without extension.
      */
-    public function minify(string $path, string $name) {
+    public function minify(string $path, $name = null) {
 
         // CSS
         $cssused = false;
@@ -124,12 +124,19 @@ class Minifier {
         }
 
         // generate files
+        $p = $path;
+        $n = $name;
+
+        if ($n == null) {
+            $p = dirname($path);
+            $n = basename($path);
+        }
 
         if ($cssused)
-        $this->cssminifier->minify("$path/$name.css");
+        $this->cssminifier->minify("$p/$n" . ((strpos($n, '.css') === FALSE) ? '.css' : '') );
 
         if ($jsused)
-        $this->jsminifier->minify("$path/$name.js");
+        $this->jsminifier->minify("$p/$n" . ((strpos($n, '.js') === FALSE) ? '.js' : ''));
     }
 
 

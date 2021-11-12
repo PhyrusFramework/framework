@@ -35,12 +35,28 @@ class WebLoader {
         // Find and load controller
         Router::init($path);
         $controller = Controller::current();
-        $middleware = self::middleware();
+        $middleware = self::middleware($controller);
+
+        Assets::importFrameworkAssets();
+        Controller::current()->load();
+
         if ($controller->middleware != null) {
             $controller->middleware->setController($controller);
-            $controller->middleware->prepare();
+            // setController does prepare
         }
-        $controller->prepare();
+        $controller->doPrepare();
+
+        // $route
+        Footer::add(function() use($controller) {
+            Javascript::define([
+                '$route' => [
+                    'route' => URL::route(),
+                    'path' => URL::path(),
+                    'query' => URL::parameters(),
+                    'parameters' => $controller->parameters->toArray()
+                ]
+            ]);
+        });
     }
 
     /**
@@ -75,13 +91,14 @@ class WebLoader {
     self::headlines();
     ?>
 </head>
-<body>
+<body><div id="app-body">
 <?php }
 
 if (!$controller->found)
     response('not_found');
 
-$middleware->display();
+$middleware->displayHierarchy();
+?></div><?php
 
 if (!$controller->raw){
     self::footlines();
@@ -99,8 +116,7 @@ if (!$controller->raw){
     /**
      * [Managed by framework] Display middleware content.
      */
-    private static function middleware() {
-        $controller = Controller::current();
+    private static function middleware($controller) {
         $middleware = $controller->middleware;
 
         if ($middleware == null) {
@@ -179,20 +195,23 @@ if (!$controller->raw){
      * Display the footer content.
      */
     public static function footlines() {
-        echo "<div id='" . Definition("foot") . "' style='display:none'>";
+        echo "<div id='" . Definition('foot') . "' style='display:none'>";
 
         Footer::print();
-
-        if (!empty(Config::get('root'))) {
-            ?>
-            <script>
-            var JSROOT="<?php echo Config::get('root'); ?>";
-            </script>
-            <?php
-        }
     
         echo '</div>';
-        
+        ?>
+<script>
+let footer = document.getElementById('<?= Definition('foot') ?>');
+let scripts = footer.querySelectorAll('script');
+for(let script of scripts) {
+    script.remove();
+}
+if (footer.childNodes.length == 0) {
+    footer.remove();
+}
+</script>
+        <?php
         if (Config::get('development_mode'))
         DebugConsole::print();
 

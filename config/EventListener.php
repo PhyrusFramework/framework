@@ -23,6 +23,13 @@ class EventListener {
      */
     private $name = '';
 
+    /**
+     * Current priority
+     * 
+     * @var int $priority
+     */
+    private int $priority = 10;
+
     function __construct(string $name) {
         $this->name = $name;
         self::$events[$name] = $this;
@@ -32,15 +39,29 @@ class EventListener {
      * Add action for this event.
      *
      * @param mixed $func Action when this event is triggered.
+     * @param int $priority
      */
-    function add($func) {
+    function add($func, $priority = null) {
+
+        $p = $priority;
+        if ($p == null) {
+            $p = $this->priority;
+            $this->priority += 1;
+        }
+
         if (is_callable($func)) {
-            $this->funcs[] = $func;
+            $this->funcs[] = [
+                'func' => $func,
+                'priority' => $p
+            ];
         }
         else {
-            $this->funcs[] = function() use($func) {
-                echo $func;
-            };
+            $this->funcs[] = [
+                'func' => function() use($func) {
+                    echo $func;
+                },
+                'priority' => $p
+            ];
         }
     }
 
@@ -50,8 +71,19 @@ class EventListener {
      * @param $parameters Parameter/s for each event action.
      */
     function run(&$parameters = null) {
+
+        usort($this->funcs, function ($a, $b) {
+            $pa = $a['priority'] ?? 10;
+            $pb = $b['priority'] ?? 10;
+
+            if (!is_int($pa)) $pa = 10;
+            if (!is_int($pb)) $pb = 10;
+
+            return $pa - $pb;
+        });
+
         foreach($this->funcs as $func) {
-            $func($parameters);
+            $func['func']($parameters);
         }
     }
 
@@ -72,13 +104,13 @@ class EventListener {
      * @param string $event Name of the event.
      * @param callable $action Action when the event is triggered.
      */
-    public static function on(string $event, $action) {
+    public static function on(string $event, $action, $priority = null) {
 
         $ev = self::byName($event);
         if ($ev == null) {
             $ev = new EventListener($event);
         }
-        $ev->add($action);
+        $ev->add($action, $priority);
     }
 
     /**
@@ -107,17 +139,16 @@ class Head {
     /**
      * Add lines to the website head.
      *
-     * @param array ...$lines
+     * @param callable $func
+     * @param int $priority
      */
-    public static function add(...$lines) {
+    public static function add($func, $priority = null) {
 
         if (self::$event == null) {
             self::$event = new EventListener('head');
         }
 
-        foreach($lines as $line) {
-            self::$event->add($line);
-        }
+        self::$event->add($func, $priority);
 
     }
 
@@ -141,20 +172,19 @@ class Footer {
     protected static $event;
 
     /**
-     * Add lines to the website footer.
+     * Add content to the website footer.
      *
-     * @param array ...$lines
+     * @param callable $func
+     * @param int $priority
      *
      */
-    public static function add(...$lines) {
+    public static function add($func, $priority = null) {
 
         if (self::$event == null) {
             self::$event = new EventListener('footer');
         }
 
-        foreach($lines as $line) {
-            self::$event->add($line);
-        }
+        self::$event->add($func, $priority);
 
     }
 

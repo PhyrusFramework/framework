@@ -23,7 +23,7 @@ class DebugConsole {
         $str = '';
         foreach($args as $arg) {
 
-            if ($v === NULL) {
+            if ($arg === NULL) {
                 $str .= 'null';
             }
             else if (is_array($arg)) {
@@ -102,60 +102,29 @@ class DebugConsole {
      */
     public static function print() {
         ?>
-            <div id='debug-console' style='display: none'>
-            <style>
-            #debug-console {
-                position: fixed;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                z-index: 9999;
-                background: rgba(0,0,0, .7);
-                padding: 30px;
-                color: white;
-                overflow-y: scroll;
-            }
-            #debug-console .debug-console-line {
-                color: white;
-                margin-bottom: 10px;
-            }
-            #debug-console .debug-console-message:hover {
-                cursor: pointer;
-                font-weight: bold;
-            }
-            </style>
+            <div id='debug-console' style="display: none" v-show="show">
+                <div v-if="setLogCount(<?= sizeof(DebugConsole::$logs) ?>)"></div>
+
                 <div class='debug-console-line' style='margin-bottom: 20px; font-weight: bold'>Debug Console</div>
             <?php
             if (!empty(DebugConsole::$logs)) {
+                $i = 0;
                 foreach(DebugConsole::$logs as $log) {
                     echo '<div class="debug-console-line">';
-                        echo '<div class="debug-console-message">&gt; ' . $log['message'] . '</div>';
-                        echo '<div class="debug-console-backtrace" style="display:none"><ul>';
+                        echo '<div class="debug-console-message" @click="setLogVisible('.$i.')">&gt; ' . $log['message'] . '</div>';
+                        echo '<div class="debug-console-backtrace" v-show="displayLog('.$i.')"><ul>';
                         foreach($log['backtrace'] as $trace) {
                             echo '<li>' . Path::toRelative($trace['file']) . '(' . $trace['line'] . ')</li>';
                         }
                         echo '</ul></div>';
                     echo '</div>';
+                    $i += 1;
                 }
             }
             else {
                 echo '<div class="debug-console-line">&gt; Nothing logged.</div>';
             }
             ?>
-
-            <script>
-            $(document).ready(function() {
-                $('body').keyup(function(e) {
-                    if (e.keyCode == <?php echo (detectOS() == 'windows' ? '220' : '192') ?>) { // º is 220 in Windows, 192 in Mac
-                        $('#debug-console').fadeToggle(100);
-                    }
-                });
-                $(".debug-console-message").click(function() {
-                    $(this).parent().find('.debug-console-backtrace').slideToggle();
-                });
-            });
-            </script>
             </div>
         <?php
     }

@@ -242,4 +242,15 @@ class Translate {
         return $this;
     }
 
+    /**
+     * Add translations to front-end page using javascript.
+    */
+    public function addJavascript() {
+        Footer::add(function() {
+            Javascript::define([
+                'translations' => self::$translations[$this->language]
+            ]);
+        });
+    }
+
 }

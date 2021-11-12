@@ -139,12 +139,21 @@ class Controller {
         self::$currentController = $this;
 
         $this->init();
+        $this->declareAjax();
+    }
 
+    protected function declareAjax() {
         $ctrl = $this;
         foreach($this->ajax as $k => $v) {
             $name = is_string($k) ? $k : $v;
             Ajax::add($name, function($req) use($ctrl, $v) {
-                $ctrl->{$v}($req);
+                $ret = $ctrl->{$v}($req);
+                if ($ret !== null) {
+                    if (is_array($ret) && sizeof($ret) == 0) {
+                        echo '[]';
+                    } else 
+                    echo JSON::stringify($ret);
+                }
             });
         }
     }
@@ -221,6 +230,18 @@ class Controller {
         // Assets
         Assets::assets_in("$directory/assets");
 
+        // Vue controller
+        $res = Folder::instance($directory)->subfiles('vue');
+        if (sizeof($res) > 0) {
+            $result = VueParser::process($res[0]);
+            if (isset($result['js'])) {
+                Assets::include_js(Path::toRelative($result['js']), true);
+            }
+            if (isset($result['css'])) {
+                Assets::scss_in(dirname($result['css']), false);
+            }
+        }        
+
         // Code
         $code = $directory . '/' . Definition('code');
         if (is_dir($code)) {
@@ -232,6 +253,43 @@ class Controller {
      * Init function to be overrided in each Controller.
      */
     protected function init() {
+        // Override
+    }
+
+    /**
+     * Execute preparation methods
+     */
+    public function doPrepare() {
+        $this->prepare();
+
+        $js = $this->javascript();
+        if ($js != null) {
+            Head::add(function() use ($js) { 
+                Javascript::define($js); 
+            });
+        }
+
+        // Components
+        foreach($this->components as $cmp) {
+
+            if (is_string($cmp)) {
+
+                $comp = ComponentController::get($cmp);
+
+                if ($comp != null) {
+                    $comp->doPrepare();
+                }
+
+            } else {
+                $cmp->doPrepare();
+            }
+        }
+    }
+
+    /**
+     * Declare javascript values to use in this page.
+     */
+    public function javascript() {
         // Override
     }
 

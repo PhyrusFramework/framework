@@ -21,7 +21,7 @@ class Middleware extends Controller {
      * 
      * @return Middleware
      */
-    public static function instance() {
+    public static function instance() : ?Middleware {
         return self::$_instance;
     }
 
@@ -32,6 +32,12 @@ class Middleware extends Controller {
 
     public function setController(Controller $controller) {
         $this->controller = $controller;
+
+        if ($this->middleware != null) {
+            $this->middleware->setController($this);
+        }
+
+        $this->doPrepare();
     }
 
     /**
@@ -41,30 +47,33 @@ class Middleware extends Controller {
      * 
      * @return Middleware
      */
-    public static function get(string $name) : Middleware {
+    public static function get(string $name) : ?Middleware {
 
         if (isset(self::$_loadedMiddlewares[$name])) {
             return self::$_loadedMiddlewares[$name];
         }
 
+        $mid = null;
         $folder = Path::middlewares() . "/$name";
-        if (is_dir($folder)) Middleware::findController($folder);
-        else if ($name != 'default') {
+        if (is_dir($folder)) {
+            $mid = self::findController($folder);
+        } else if ($name != 'default') {
             $name = 'default';
             $folder = Path::middlewares() . "/$name";
-            Middleware::findController($folder);
+            self::findController($folder);
         }
 
-        $instance = Middleware::instance();
-        self::$_loadedMiddlewares[$name] = $instance;
-        return $instance;
+        if ($mid == null) return null;
+        self::$_loadedMiddlewares[$name] = $mid;
+        return $mid;
     }
 
     /**
      * Finds a Middleware controller in a directory.
      */
-    public static function findController($folder) {
-        if (!is_dir($folder)) return;
+    public static function findController($folder) : ?Middleware {
+        if (!is_dir($folder)) return null;
+
         $res = Folder::instance($folder)->subfiles('controller.php');
         if (sizeof($res) > 0) {
             require_once($res[0]);
@@ -74,6 +83,7 @@ class Middleware extends Controller {
             if (is_subclass_of($lastMiddleware, 'Middleware')) {
                 $obj = new $lastMiddleware();
                 $obj->initialize();
+                return $obj;
             }
             else {
                 throw new FrameworkException(
@@ -82,6 +92,8 @@ class Middleware extends Controller {
                 );
             }
         }
+
+        return null;
     }
 
     /**
@@ -95,6 +107,7 @@ class Middleware extends Controller {
         self::$_instance = $this;
         $this->init();
         $this->load();
+        $this->declareAjax();
     }
 
     /**
@@ -104,6 +117,18 @@ class Middleware extends Controller {
         $reflector = new \ReflectionClass(get_called_class());
         $this->file = $reflector->getFileName();
         $this->found = true;
+    }
+
+    /**
+     * Display middleware or parent middleware if exists.
+     */
+    public function displayHierarchy() {
+
+        if ($this->middleware != null) {
+            $this->middleware->displayHierarchy();
+        } else {
+            $this->display();
+        }
     }
 
     /**

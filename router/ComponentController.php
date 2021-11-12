@@ -84,14 +84,7 @@ class ComponentController extends Controller {
         self::$_components[$this->name] = $this;
         $this->init();
         $this->load();
-
-        $ctrl = $this;
-        foreach($this->ajax as $k => $v) {
-            $name = is_string($k) ? $k : $v;
-            Ajax::add($name, function($req) use($ctrl, $v) {
-                $ctrl->{$v}($req);
-            });
-        }
+        $this->declareAjax();
     }
 
     /**

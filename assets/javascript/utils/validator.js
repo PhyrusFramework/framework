@@ -467,7 +467,11 @@ class Validator {
         return this;
     }
 
-    validate() {
+    validate(value = undefined) {
+
+        if (value !== undefined) {
+            this.value = value;
+        }
 
         for(let check of this.checks) {
 

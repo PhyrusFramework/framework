@@ -22,11 +22,23 @@ var Ajax = {
                     result = data;
                 }
 
-                resolve(result);
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    resolve(result);
+                    return;
+                }
+
+                reject({
+                    status: xhr.status,
+                    message: xhr.statusText,
+                    data: result
+                });
             }
 
             xhr.onerror = function() {
-                reject(err);
+                reject({
+                    status: xhr.status,
+                    message: xhr.statusText
+                });
             }
 
             let url = location.href;
