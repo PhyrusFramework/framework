@@ -21,19 +21,3 @@
 #debug-console ul {
     list-style: none;
 }
-
-
-.error404_container {
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: Arial, sans-serif;
-}
-.error404_box {
-    text-align: center;
-}
-.error404_box h1 {
-    font-size: 100px;
-    line-height: 20px;
-}

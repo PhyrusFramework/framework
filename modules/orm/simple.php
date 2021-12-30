@@ -155,28 +155,58 @@ class ORM {
     }
 
     /**
-     * Create table if not exists.
-     * 
-     * @return bool existed
-     */
-    public function CheckTable() : bool {
-        return $this->__checkDB();
-    }
-
-    /**
      * Check if DB exists or create it.
      * 
      * @return bool existed
      */
-    private function __checkDB() : bool {
+    public function CheckTable() : bool {
         if ($this->__table_checked) return true;
-        if (!Config::get('development_mode')) return false;
+        if (!Config::get('development_mode')) return true;
 
+        $existed = true;
         if (!DB::table_exists($this->getTable())){
+            $existed = false;
             DB::create_table($this->__getDefinition());
+        } else {
+            // Check columns
+            $definitionColumns = $this->__columns();
+            $tableColumns = DB::query('SHOW COLUMNS FROM ' . $this->getTable())->result;
+
+            $tableObj = DBTable::instance($this->getTable());
+
+            $missing = [];
+            $position = 'FIRST';
+            foreach($definitionColumns as $col) {
+                $found = false;
+                foreach($tableColumns as $tcol) {
+                    if ($col['name'] == $tcol->Field) {
+                        $found = true;
+                        break;
+                    }
+                }
+                if (!$found) {
+                    $missing[] = [
+                        'column' => $col,
+                        'position' => $position
+                    ];
+                }
+                $position = 'AFTER ' . $col['name'];
+            }
+
+            foreach($missing as $col) {
+
+                $coldef = [];
+                foreach($col['column'] as $k => $v) {
+                    $coldef[$k] = $v;
+                }
+                $coldef['position'] = $col['position'];
+
+                $tableObj->addColumn($coldef);
+            }
+
         }
         $this->__table_checked = true;
-        return false;
+        return $existed;
     }
 
     /**
@@ -242,7 +272,7 @@ class ORM {
      * @param array ...$columns
      */
     public function save(...$columns) {
-        $this->__checkDB();
+        $this->CheckTable();
 
         if ($this->exists()) {
             return $this->__update($columns);
@@ -351,92 +381,6 @@ class ORM {
 
     }
 
-    ////////// Static methods
-
-    /**
-     * Get the table name.
-     * 
-     * @return string
-     */
-    public static function Table() : string {
-        $cl = get_called_class();
-        $sample = new $cl();
-        return $sample->getTable();
-    }
-
-    /**
-     * Find one object of this class.
-     * 
-     * @param string $where [Default none]
-     * @param array $parameters [Default empty] Query parameters.
-     * 
-     * @return ORM
-     */
-    public static function findOne(string $where = '1', array $parameters = []) {
-
-        $cl = get_called_class();
-        $tmp = new $cl();
-        $tmp->__checkDB();
-        $q = 'SELECT * FROM ' . $tmp->getTable() . " WHERE $where LIMIT 1";
-
-        $q = DB::query($q, $parameters);
-        if ($q->something) {
-            $o = new $cl($q->first);;
-            return $o;
-        }
-        return null;
-    }
-
-    /**
-     * Find objects of this class.
-     * 
-     * @param string $where [Default none]
-     * @param array $parameters [Default empty] Query parameters
-     * 
-     * @return ORM[]
-     */
-    public static function find(string $where = '1', array $parameters = []) {
-
-        $cl = get_called_class();
-        $tmp = new $cl();
-        $tmp->__checkDB();
-        $q = 'SELECT * FROM ' . $tmp->getTable() . " WHERE $where";
-
-        $q = DB::query($q, $parameters);
-        $list = [];
-        foreach($q->result as $row) {
-            $list[] = new $cl($row);
-        }
-        return $list;
-    }
-
-    /**
-     * Delete objects of this model.
-     * 
-     * @param string $where
-     * @param array $parameters [Default empty] Query parameters.
-     */
-    public static function deleteWhere(string $where, array $parameters = []) {
-        $cl = get_called_class();
-        $tmp = new $cl();
-        DB::query('DELETE FROM ' . $tmp->getTable() . " WHERE $where", $parameters);
-    }
-
-    /**
-     * Count objects of this model.
-     * 
-     * @param string $where [Default none]
-     * @param array $parameters [Default empty] Query parameters.
-     * 
-     * @return int
-     */
-    public static function count(string $where = '1', array $parameters = []) {
-        $cl = get_called_class();
-        $tmp = new $cl();
-        $res = DB::query('SELECT COUNT(*) AS count FROM ' . $tmp->getTable() . " WHERE $where", $parameters);
-        return intval($res->first->count);
-    }
-
     /**
      * Convert ORM object to array.
      * 
@@ -463,5 +407,101 @@ class ORM {
         return $arr;
     }
 
+    /**
+     * Drop database table
+     */
+    public static function dropTable() {
+        if (DB::table_exists(self::Table()))
+            DBTable::instance(self::Table())->drop();
+    }
+
+
+    ////////// Static methods
+
+    /**
+     * Get the table name.
+     * 
+     * @return string
+     */
+    public static function Table() : string {
+        $cl = get_called_class();
+        $sample = new $cl();
+        return $sample->getTable();
+    }
+
+    /**
+     * Find one object of this class.
+     * 
+     * @param string $where [Default none]
+     * @param array $parameters [Default empty] Query parameters.
+     * 
+     * @return ORM
+     */
+    public static function findOne(string $where = '1', array $parameters = []) {
+
+        $cl = get_called_class();
+        $tmp = new $cl();
+        $tmp->CheckTable();
+        $q = 'SELECT * FROM ' . $tmp->getTable() . " WHERE $where LIMIT 1";
+
+        $q = DB::query($q, $parameters);
+        if ($q->something) {
+            $o = new $cl($q->first);;
+            return $o;
+        }
+        return null;
+    }
+
+    /**
+     * Find objects of this class.
+     * 
+     * @param string $where [Default none]
+     * @param array $parameters [Default empty] Query parameters
+     * 
+     * @return ORM[]
+     */
+    public static function find(string $where = '1', array $parameters = []) {
+
+        $cl = get_called_class();
+        $tmp = new $cl();
+        $tmp->CheckTable();
+        $q = 'SELECT * FROM ' . $tmp->getTable() . " WHERE $where";
+
+        $q = DB::query($q, $parameters);
+        $list = [];
+        foreach($q->result as $row) {
+            $list[] = new $cl($row);
+        }
+        return $list;
+    }
+
+    /**
+     * Delete objects of this model.
+     * 
+     * @param string $where
+     * @param array $parameters [Default empty] Query parameters.
+     */
+    public static function deleteWhere(string $where, array $parameters = []) {
+        $cl = get_called_class();
+        $tmp = new $cl();
+        $tmp->CheckTable();
+        DB::query('DELETE FROM ' . $tmp->getTable() . " WHERE $where", $parameters);
+    }
+
+    /**
+     * Count objects of this model.
+     * 
+     * @param string $where [Default none]
+     * @param array $parameters [Default empty] Query parameters.
+     * 
+     * @return int
+     */
+    public static function count(string $where = '1', array $parameters = []) {
+        $cl = get_called_class();
+        $tmp = new $cl();
+        $tmp->CheckTable();
+        $res = DB::query('SELECT COUNT(*) AS count FROM ' . $tmp->getTable() . " WHERE $where", $parameters);
+        return intval($res->first->count);
+    }
 
 }

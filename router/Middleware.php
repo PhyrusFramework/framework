@@ -21,8 +21,20 @@ class Middleware extends Controller {
      * 
      * @return Middleware
      */
-    public static function instance() : ?Middleware {
+    public static function instance() {
         return self::$_instance;
+    }
+
+    /**
+     * Create and initialize a middleware from a previously imported class.
+     * 
+     * @return Middleware
+     */
+    public static function instantiate() {
+        $cl = get_called_class();
+        $mid = new $cl();
+        $mid->initialize();
+        return $mid;
     }
 
     /**

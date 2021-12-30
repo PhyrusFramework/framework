@@ -94,7 +94,27 @@ class Phyrus {
     </div>
     <?php }
 
-    public static function NotFoundPage() {?>
+    public static function NotFoundPage() {
+    Footer::add(function() { ?>
+    <style>
+    .error404_container {
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: Arial, sans-serif;
+    }
+    .error404_box {
+        text-align: center;
+    }
+    .error404_box h1 {
+        font-size: 100px;
+        line-height: 20px;
+    }
+    </style>
+    <?php });
+    ?>
+
     <div class="error404_container">
         <div class="error404_box">
             <h1>404</h1>

@@ -1,4 +1,5 @@
 <?php
+
 class Time {
 
     /**
@@ -376,22 +377,31 @@ class TimeInterval {
             return $this->__destin->timestamp - $this->__origin->timestamp;
         }
         else if ($name == 'minutes') {
-            return floor($this->seconds / 60);
+            return $this->seconds / 60;
         }
         else if ($name == 'hours') {
-            return floor($this->minutes / 60);
+            return $this->minutes / 60;
         }
         else if ($name == 'days') {
-            return $this->__diff->days;
+            return $this->hours / 24;
         }
         else if ($name == 'weeks') {
-            return floor($this->__diff->days / 7);
+            return $this->days / 7;
         }
         else if ($name == 'months') {
-            return $this->__diff->m + $this->__diff->y * 12;
+            // Years
+            $count = floor($this->days / 365) * 12;
+            $rest = $this->days - $count * 12;
+
+            // Half years
+            $count2 = floor($res / 183) * 6;
+            $rest = $this->days - $count*12 - $count2*6;
+
+            // Rest 1 month = 30 days
+            return $count + $count2 + ($rest/30);
         }
         else if ($name == 'years') {
-            return $this->__diff->y;
+            return $this->days / 365;
         }
         else if ($name == 'total') {
             return array(

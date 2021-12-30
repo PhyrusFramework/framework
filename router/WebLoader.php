@@ -7,17 +7,20 @@
  * @param array $parameters
  */
 function component(string $name, array $parameters = []) {
-    $cmp = ComponentController::get($name);
-    if ($cmp != null) {
-        $cmp->display($parameters);
-    } else if (Config::get('development_mode')) {
-        $suggestion = "You are trying to use a Component ($name) that is not imported for this page. Add the component to the init() function of the controller.";
-        try {
-        throw new FrameworkException('Component not imported', $suggestion);
-        } catch(Exception $e) {
-            echo $e->getMessage() . ": $suggestion";
+
+    if (!class_exists($name)) {
+        if (Config::get('development_mode')) {
+            $suggestion = "You are trying to use a Component ($name) that is not imported for this page. Add the component to the init() function of the controller.";
+            try {
+            throw new FrameworkException('Component not imported', $suggestion);
+            } catch(Exception $e) {
+                echo $e->getMessage() . ": $suggestion";
+            }
         }
+        return;
     }
+
+    $name::instance()->display($parameters);
 }
 
 class WebLoader {
@@ -29,6 +32,10 @@ class WebLoader {
      */
     public static function router($path = null) {
         // Load global assets
+
+        // Moved to index.php, after loading framework modules.
+        //Assets::importFrameworkAssets();
+
         Assets::assets_in(Path::assets());
         self::php_in(Path::code());
 
@@ -36,9 +43,7 @@ class WebLoader {
         Router::init($path);
         $controller = Controller::current();
         $middleware = self::middleware($controller);
-
-        Assets::importFrameworkAssets();
-        Controller::current()->load();
+        $controller->load();
 
         if ($controller->middleware != null) {
             $controller->middleware->setController($controller);
@@ -91,14 +96,15 @@ class WebLoader {
     self::headlines();
     ?>
 </head>
-<body><div id="app-body">
-<?php }
+<body><?php if (Config::get('assets.js.vue')) { ?>
+<div id="app-body"><?php }
+}
 
 if (!$controller->found)
     response('not_found');
 
 $middleware->displayHierarchy();
-?></div><?php
+if (Config::get('assets.js.vue')) { ?></div><?php }
 
 if (!$controller->raw){
     self::footlines();
@@ -195,11 +201,16 @@ if (!$controller->raw){
      * Display the footer content.
      */
     public static function footlines() {
+
+        if (Config::get('development_mode'))
+        DebugConsole::print();
+
         echo "<div id='" . Definition('foot') . "' style='display:none'>";
 
         Footer::print();
+
+        if (Config::get('assets.js.vue')) { ?><script>VueLoader.pageLoaded();</script><?php }
     
-        echo '</div>';
         ?>
 <script>
 let footer = document.getElementById('<?= Definition('foot') ?>');
@@ -212,8 +223,7 @@ if (footer.childNodes.length == 0) {
 }
 </script>
         <?php
-        if (Config::get('development_mode'))
-        DebugConsole::print();
+        echo '</div>';
 
     }
 

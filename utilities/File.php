@@ -454,6 +454,15 @@ class File {
     }
 
     /**
+     * Try to guess the mime type.
+     * 
+     * @return string
+     */
+    public function getMime() : string {
+        return mime_content_type($this->path);
+    }
+
+    /**
      * Convert this file to base64 string.
      * 
      * @param string $filetype [Default automatic] (png, jpeg, etc)
@@ -462,14 +471,10 @@ class File {
      */
     public function toBase64(string $filetype = null) : string {
 
-        if ($filetype == null) {
-
-            $ext = $this->extension();
-
-        }
+        $type = $filetype ?? mime_content_type($this->path);
 
         $binary = fread(fopen($this->path, 'r'), filesize($this->path));
-        return 'data:' . $filetype . ';base64,' . base64_encode($binary);
+        return 'data:' . $type . ';base64,' . base64_encode($binary);
 
     }
 

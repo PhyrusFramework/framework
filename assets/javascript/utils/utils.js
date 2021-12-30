@@ -137,9 +137,9 @@ function empty(value) {
     return false;
 }
 
-class Utils {
+var Utils = {
 
-    static force(values, def) {
+    force(values, def) {
         if (!values) return def;
         var obj = {};
         Object.keys(def).forEach(key => {
@@ -147,22 +147,22 @@ class Utils {
             else obj[key] = values[key];
         });
         return obj;
-    }
+    },
 
-    static hexToRGB(hex) {
+    hexToRGB(hex) {
         var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
         return result ? {
           r: parseInt(result[1], 16),
           g: parseInt(result[2], 16),
           b: parseInt(result[3], 16)
         } : null;
-    }
+    },
     
-    static RGBToHex(r, g, b) {
+    RGBToHex(r, g, b) {
         return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-    }    
+    },  
 
-    static replacer(text, delimiterLeft, delimiterRight, replacer) {
+    replacer(text, delimiterLeft, delimiterRight, replacer) {
 
         let str = '';
         current = '';
@@ -209,9 +209,9 @@ class Utils {
         }
         str += current;
         return str;
-    }
+    },
 
-    static sanitize(text) {
+    sanitize(text) {
         let t = text.toLowerCase();
 
         let changes = {
@@ -255,9 +255,9 @@ class Utils {
         });
 
         return t;
-    }
+    },
 
-    static dotNotation(arr, key, defaultValue = null) {
+    dotNotation(arr, key, defaultValue = null) {
         if(!arr || !key) {
             return defaultValue !== undefined ? defaultValue : null;
         }
@@ -275,9 +275,9 @@ class Utils {
         let n = parts.length - 1;
         if (!c[parts[n]]) return defaultValue !== undefined  ? defaultValue : key;
         return c[parts[n]];
-    }
+    },
 
-    static invertList(arr) {
+    invertList(arr) {
         let inv = [];
 
         for(let i = arr.length - 1; i >= 0; --i) {
@@ -285,9 +285,9 @@ class Utils {
         }
 
         return inv;
-    }
+    },
 
-    static copy(obj, recursive = false) {
+    copy(obj, recursive = false) {
         let s = {};
         if (!obj) return s;
         Object.keys(obj).forEach((key) => {
@@ -303,9 +303,9 @@ class Utils {
             }
         });
         return s;
-    }
+    },
 
-    static validateEmail(email) {
+    validateEmail(email) {
         if (!email) return false;
         if (email == "") return false;
         if (email.length < 4) return false;
@@ -317,9 +317,9 @@ class Utils {
         if (c2 < c1) return false;
 
         return true;
-    }
+    },
 
-    static addToList(list, items, mapFunc = null) {
+    addToList(list, items, mapFunc = null) {
         let l = list;
         if (!l) l = items;
         else {
@@ -332,17 +332,17 @@ class Utils {
             }
         }
         return l;
-    }
+    },
 
-    static randomString(length = 10) {
+    randomString(length = 10) {
         return Math.random().toString(36).substr(2, length);
-    }
+    },
 
-    static rand(max = 100) {
+    rand(max = 100) {
         return Math.random() * max;
-    }
+    },
 
-    static force(obj, defaultValues) {
+    force(obj, defaultValues) {
 
         let res = {};
 
@@ -352,9 +352,9 @@ class Utils {
 
         return res;
 
-    }
+    },
 
-    static merge(objA, objB, mergeArrays = false) {
+    merge(objA, objB, mergeArrays = false) {
 
         let aux = {};
 
@@ -409,9 +409,9 @@ class Utils {
 
         return aux;
 
-    }
+    },
 
-    static scrollBottomReached(e, threshold = 50) {
+    scrollBottomReached(e, threshold = 50) {
 
         let top = e.target.scrollTop;
         let height = e.target.clientHeight;
@@ -426,14 +426,14 @@ class Utils {
 
         return false;
 
-    }
+    },
 
     /**
      * Convert a file from an input in a src for an img tag.
      * 
      * @param file
      */
-    static fileToSrc(file) {
+    fileToSrc(file) {
 
         return new Promise((resolve, reject) => {
 
@@ -451,17 +451,17 @@ class Utils {
 
         });
     
-    }
+    },
 
-    static capitalize(text) {
+    capitalize(text) {
         return text[0].toUpperCase() + text.substr(1);
-    }
+    },
 
-     static randomImage(width = 250, height = 250, seed = null) {
+    randomImage(width = 250, height = 250, seed = null) {
         return 'https://picsum.photos/seed/' + (seed ? seed : this.randomString(4)) + '/' + width + '/' + height;
-    }
+    },
     
-    static hasExtension(filename, extensions) {
+    hasExtension(filename, extensions) {
 
         let list = Array.isArray(extensions) ? extensions : [extensions];
 
@@ -476,21 +476,21 @@ class Utils {
 
 }
 
-class Cookie {
+var Cookie = {
 
-    static set(name, value) {
+    set(name, value) {
         document.cookie = name +'='+ value +'; Path=/;';
-    }
+    },
 
-    static delete(name) {
+    delete(name) {
         document.cookie = name +'=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     }
 
 }
 
-class Storage {
+var Storage = {
 
-    static set (key, value) {
+    set (key, value) {
 
         if (typeof value === 'string')
             window.localStorage.setItem(key, value);
@@ -500,9 +500,9 @@ class Storage {
             window.localStorage.setItem(key, "" + value);
         }
 
-    }
+    },
 
-    static get (key) {
+    get (key) {
 
         let value = window.localStorage.getItem(key);
         if (value == null) return;
@@ -514,13 +514,13 @@ class Storage {
             return value;
         }
 
-    }
+    },
 
-    static remove (key) {
+    remove (key) {
         window.localStorage.removeItem(key);
-    }
+    },
 
-    static clear () {
+    clear () {
         window.localStorage.clear();
     }
 

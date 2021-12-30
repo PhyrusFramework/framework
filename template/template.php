@@ -270,7 +270,7 @@ class Template {
             'run' => "$content;",
             'img' => "echo Assets::image($content);",
             'size' => "echo sizeof($content);",
-            'cmp' => "component($content);",
+            'cmp' => "component('$content');",
             'if' => "if ($content) { ",
             'foreach' => "foreach($content) { ",
             'for' => "for($content) { ",
@@ -287,9 +287,7 @@ class Template {
             't' => "echo Translate::use('user')->get($content);",
             'view' => "view($content)",
             'empty' => "if (empty($content)) { ",
-            'notempty' => "if (!empty($content)) { ",
-            '?' => "echo (!empty($content) ? $content : '');",
-            'if?' => "if (!empty($content)) { "
+            'notempty' => "if (!empty($content)) { "
         ];
     
         foreach($filters as $k => $v) {

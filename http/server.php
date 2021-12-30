@@ -40,21 +40,6 @@ if (!defined('USING_CLI')) {
 
 require_once(__DIR__ . '/RequestData.php');
 
-/**
- * Obtain the Authorization header.
- * 
- * @return string
- */
-function AUTHORIZATION() : string
-{
-    $attempts = array('HTTP_AUTHORIZATION', 'Authorization', 'REDIRECT_HTTP_AUTHORIZATION');
-    foreach($attempts as $h) {
-        if (!empty($_SERVER[$h]))
-            return $_SERVER[$h];
-    }
-    return '';
-}
-
 function _get_http_responses() {
 
     return [
@@ -73,7 +58,7 @@ function _get_http_responses() {
             'HTTP/1.0 202 Accepted',
             'Request accepted but action not made yet.'
         ],
-        'non-authoritative' => [
+        'development' => [
             203,
             'HTTP/1.0 203 Non-Authoritative Information',
             'Request successfull but returned data is not the official yet, but a development or hardcoded version.'
@@ -83,7 +68,7 @@ function _get_http_responses() {
             'HTTP/1.0 204 No Content',
             'Successfull request without response body.'
         ],
-        'reset-content' => [
+        'reset-view' => [
             205,
             'HTTP/1.0 205 Reset Content',
             'Client has to reload the view after this request.'
@@ -191,7 +176,7 @@ function _get_http_responses() {
         'bad-gateway' => [
             502,
             'HTTP/1.0 502 Bad Gateway',
-            'The requested cannot be completed because the server obtained invalid data from another service.'
+            'The request cannot be completed because the server obtained invalid data from another service.'
         ],
         'unavailable' => [
             503,
@@ -258,36 +243,4 @@ function response($name, $message = null)
 function response_die(string $name, $message = null) {
     response($name, $message);
     die();
-}
-
-
-/**
- * Obtain a header.
- * 
- * @param string $name
- * @param mixed $default
- * 
- * @return mixed
- */
-function getHeader(string $name, string $default = '')
-{
-    if (!empty($_SERVER[$name])) return $_SERVER[$name];
-    $n = strtoupper($name);
-    $n = str_replace('-', '_', $n);
-    $n = "HTTP_$n";
-    if (!empty($_SERVER[$n])) return $_SERVER[$n];
-    return $default;
-}
-
-/**
- * Check if header exists
- * 
- * @param string $name
- * 
- * @return bool
- */
-function hasHeader(string $name) : bool
-{
-    $h = getHeader($name);
-    return !empty($h);
 }

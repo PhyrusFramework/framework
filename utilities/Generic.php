@@ -10,12 +10,61 @@ class Generic {
     private array $__definition = [];
 
     /**
+     * Create a Generic instance.
+     * 
      * @param array $array Initial values.
+     * @param bool $recursive Turn sub-arrays into Generic objects.
+     * 
+     * @return Generic
      */
-    public function __construct($array = []) {
+    public static function instance(array $array = [], $recursive = false) : Generic {
+        return new Generic($array, $recursive);
+    }
+
+    /**
+     * @param array $array Initial values.
+     * @param bool $recursive Turn sub-arrays into Generic objects.
+     */
+    public function __construct(array $array = [], $recursive = false) {
         $this->__definition = $array;
         foreach($array as $k => $v) {
-            $this->{$k} = $v;
+
+            if (!is_array($v) || !$recursive)
+                $this->{$k} = $v;
+            else {
+
+                if (!arr($v)->isAssoc()) {
+
+                    function arrToGeneric($arr) {
+
+                        $aux = [];
+
+                        foreach($arr as $v) {
+
+                            if (!is_array($v)) {
+                                $aux[] = $v;
+                            } else {
+                                if (!arr($v)->isAssoc()) {
+                                    $aux[] = arrToGeneric($v);
+                                } else {
+                                    $aux[] = new Generic($v, true);
+                                }
+                            }
+    
+                        }
+
+                        return $aux;
+
+                    }
+
+                    $this->{$k} = arrToGeneric($v);
+
+                } else {
+                    $this->{$k} = new Generic($v, $recursive);
+                }
+ 
+            }
+
         }
     }
 
@@ -107,5 +156,14 @@ class Generic {
      */
     public function toArray() : array {
         return $this->__definition;
+    }
+
+    /**
+     * Determine whether the generic object is empty.
+     * 
+     * @return bool
+     */
+    public function isEmpty() : bool {
+        return empty($this->__definition);
     }
 }

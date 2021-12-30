@@ -207,6 +207,8 @@ class Cron {
             $this->__interval['hour'] = '0';
 
         $this->__interval['dayOfWeek'] = strtoupper(substr($day, 0, 3));
+
+        return $this;
     }
 
     /**

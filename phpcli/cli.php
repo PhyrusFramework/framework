@@ -8,16 +8,14 @@ class CLI {
      */
     private static $_modules = [
         'generate' => 'CLI_Generate',
-        'framework' => 'CLI_Framework',
         'performance' => 'CLI_Performance',
         'config' => 'CLI_Config',
         'cron' => 'CLI_Cron',
         'clear-caches' => 'CLI_ClearCache',
-        'zip' => 'CLI_Zip',
-        'f' => 'CLI_Files',
-        'modules' => 'CLI_Modules',
         'serve' => 'CLI_Serve',
-        'test' => 'CLI_Test'
+        'test' => 'CLI_Test',
+        'migrate' => 'CLI_Migrate',
+        'script' => 'CLI_Script'
     ];
 
     /**
@@ -85,7 +83,7 @@ class CLI {
         $this->params = $params;
         $this->flags = $flags;
 
-        if (isset($this->flags['database']) || $this->command == 'test') {
+        if (isset($this->flags['database']) || in_array($this->command, ['test', 'migrate', 'script'])) {
             define('CLI_DATABASE', true);
         }
 
@@ -163,6 +161,8 @@ class CLI {
         - config: manage the config.json file.
         - framework: check the framework version or changelog.
         - test: run tests.
+        - migrate: run migrations.
+        - script: run scripts.
         - cron: manage cronjobs from cli.
         - clear-caches: clear all kind of project caches.
         - serve: starts a local server at localhost:8000.

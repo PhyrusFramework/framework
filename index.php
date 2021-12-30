@@ -39,6 +39,8 @@ foreach($components as $c) {
     require_once(__DIR__."/$c/index.php");
 }
 
+Assets::importFrameworkAssets();
+
 if (class_exists('CLI_Performance')) {
     CLI_Performance::record('Framework loaded');
 }

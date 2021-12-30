@@ -17,13 +17,6 @@ class RelationORM {
     private array $__definition = [];
 
     /**
-     * Primary keys.
-     * 
-     * @var array $__primaries
-     */
-    private array $__primaries = [];
-
-    /**
      * Return the table definition.
      * 
      * @return array
@@ -60,41 +53,56 @@ class RelationORM {
         if (sizeof($def) == 0) return [];
 
         $table = $def['name'] ?? null;
-        $auxname = '';
         $columns = [];
-        $primary = '';
-        foreach($def['columns'] as $v) {
+        $primaries = [];
+        foreach($def['columns'] as $k => $v) {
 
-            if (is_array($v)) {
-                $columns[] = $v;
-            }
-            else {
-                $obj = new $v();
-                $name = $obj->reference_column();
-                
-                if (!empty($auxname))
-                    $auxname .= '_';
-                $auxname .= strtolower($obj->getTable());
+            $col = [];
 
-                $columns[] = [
-                    'name' => $name,
-                    'type' => 'INT',
-                    'notnull' => true
+            if (is_string($k)) {
+
+                if (!class_exists($k)) {
+                    continue;
+                }
+                $obj = new $k();
+
+                $col = [
+                    'type' => 'BIGINT',
+                    'foreign' => $obj->getTable() . '(ID)',
+                    'class' => $k
                 ];
-                
-                if (!empty($primary))
-                    $primary .= ', ';
-                $primary .= $name;
 
-                $this->__primaries[] = $name;
+                $col['name'] = $v['name'] ?? $obj->reference_column();
+
+                $props = ['notnull', 'primary', 'unique', 'primary'];
+                foreach($props as $prop) {
+                    if (isset($v[$prop]))
+                        $col[$prop] = $v[$prop];
+                }
+
+            } else {
+                $col = $v;
+            }
+
+            $columns[] = $col;
+
+            if (isset($col['primary'])) {
+                $primaries[] = $col['name'];
             }
 
         }
 
+        if (empty($primaries)) {
+            foreach($columns as &$col) {
+                if (isset($col['class'])) {
+                    $col['primary'] = true;
+                }
+            }
+        }
+
         $this->__definition = [
             'name' => $table ?? $auxname,
-            'columns' => $columns,
-            'primary' => $primary
+            'columns' => $columns
         ];
         
         return $this->__definition;
@@ -119,44 +127,32 @@ class RelationORM {
     }
 
     /**
+     * Get class database table.
+     * 
+     * @return string
+     */
+    public static function Table() : string {
+        $cl = get_called_class();
+        $obj = new $cl();
+        return $obj->getTable();
+    }
+
+    /**
      * Check if database exists.
      * 
      * @return bool Table existed
      */
     private function __checkDB() : bool {
         if ($this->__table_checked) return true;
-        if (!Config::get('development_mode')) return false;
+        if (!Config::get('development_mode')) return true;
 
+        $existed = true;
         if (!DB::table_exists($this->__getDefinition()['name'])){
+            $existed = false;
             DB::create_table($this->__getDefinition());
         }
         $this->__table_checked = true;
-        return false;
-    }
-
-    /**
-     * Get the WHERE condition to select this relation.
-     * 
-     * @param array $parameters Query parameters
-     * 
-     * @return string
-     */
-    protected function whereThis(array &$parameters) : string {
-
-        $where = '';
-        foreach($this->__primaries as $pr) {
-            if (!empty($where))
-                $where .= ' AND ';
-            $where .= "$pr = :$pr";
-
-            if (isset($this->{$pr}))
-                $parameters[$pr] = $this->{$pr};
-            else
-                $parameters[$pr] = 'NULL';
-        }
-
-        return "WHERE $where";
-
+        return $existed;
     }
 
     /**
@@ -198,16 +194,16 @@ class RelationORM {
         foreach($cols as $col) {
 
             $name = $col['name'];
-            $type = '_' . $col['type'];
+            $type = isset($col['type']) ? $col['type'] : 'BIGINT';
 
             $this->{$name} = isset($col['default']) ? $col['default'] : null;
 
             if (isset($row->{$name})) {
 
                 $v = $row->{$name};
-                if (strpos($type, 'INT'))
+                if (strpos($type, 'INT') !== FALSE)
                     $v = intval($v);
-                if (strpos($type, 'DECIMAL') || strpos($type, 'FLOAT') || strpos($type, 'DOUBLE'))
+                if (strpos($type, 'DECIMAL') !== FALSE || strpos($type, 'FLOAT') !== FALSE || strpos($type, 'DOUBLE') !== FALSE)
                     $v = floatval($v);
 
                 $this->{$name} = $v;
@@ -219,20 +215,84 @@ class RelationORM {
     /**
      * Gets one of the model in the relation.
      * 
-     * @param string $class
+     * @param string $column
      * 
      * @return ORM
      */
-    public function getModel(string $class) {
+    public function getModel(string $column) {
+        $def = $this->__getDefinition();
+        $class = null;
+        foreach($def['columns'] as $col) {
+            if ($col['name'] != $column) {
+                continue;
+            }
+
+            if (isset($col['class'])) {
+                $class = $col['class'];
+            }
+        }
+
+        if ($class == null) {
+            return null;
+        }
+
         $obj = new $class();
         $table = $obj->getTable();
-        $ref = $obj->reference_column();
-        $res = DB::query("SELECT * FROM $table WHERE $ref = :id", [
-            'id' => $this->{$ref}
+        $res = DB::query("SELECT * FROM $table WHERE ID = :id", [
+            'id' => $this->{$column}
         ]);
 
         if (!$res->something) return null;
         return new $class($res->first);
+    }
+
+    private function getPrimaries() : array {
+        $def = $this->__getDefinition();
+        $primaries = [];
+
+        foreach($def['columns'] as $col) {
+            if (isset($col['primary'])) {
+                $primaries[] = $col['name'];
+            }
+        }
+
+        return $primaries;
+    }
+
+    /**
+     * Get the WHERE condition to select this relation.
+     * 
+     * @return array [where, parameters]
+     */
+    private function whereForMe() : array {
+
+        $primaries = $this->getPrimaries();
+        
+        if (empty($primaries)) {
+            return [
+                'where' => 'ID = :ID',
+                'parameters' => [
+                    'ID' => $this->ID
+                ]
+            ];
+        }
+
+        $where = '';
+        $parameters = [];
+        foreach($primaries as $p) {
+            if ($where != '') {
+                $where .= ' AND ';
+            }
+
+            $where .= "$p = :$p";
+            $parameters[$p] = $this->{$p};
+        }
+
+        return [
+            'where' => $where,
+            'parameters' => $parameters
+        ];
+        
     }
 
 
@@ -243,9 +303,11 @@ class RelationORM {
         $this->__checkDB();
         $t = $this->getTable();
 
-        $parameters = [];
-        $where = $this->whereThis($parameters);
-        $res = DB::query("SELECT * FROM $t $where", $parameters);
+        $cond = $this->whereForMe();
+        $where = $cond['where'];
+        $parameters = $cond['parameters'];
+
+        $res = DB::query("SELECT * FROM $t WHERE $where", $parameters);
 
         if ($res->something) {
             $this->__update();
@@ -265,11 +327,13 @@ class RelationORM {
         $q = 'UPDATE ' . $this->getTable() . ' SET ';
         $parameters = [];
 
+        $primaries = $this->getPrimaries();
+
         $i = 0;
         foreach($cols as $col) {
             $name = $col['name'];
 
-            if (in_array($name, $this->__primaries)) {
+            if (in_array($name, $primaries)) {
                 $i += 1;
                 continue;
             }
@@ -277,7 +341,7 @@ class RelationORM {
             $q .= "$name = :$name";
             $parameters[$name] = $this->{$name};
 
-            if ($i - sizeof($this->__primaries) < sizeof($cols) - sizeof($this->__primaries) - 1) {
+            if ($i - sizeof($primaries) < sizeof($cols) - sizeof($primaries) - 1) {
                 $q .= ', ';
             }
             ++ $i;
@@ -285,7 +349,13 @@ class RelationORM {
 
         if (sizeof($parameters) == 0) return;
 
-        $q .= ' ' . $this->whereThis($parameters);
+        $cond = $this->whereForMe();
+
+        $q .= ' ' . $cond['where'];
+
+        foreach($cond['parameters'] as $k => $v) {
+            $parameters[$k] = $v;
+        }
 
         DB::query($q, $parameters);
     }
@@ -335,9 +405,16 @@ class RelationORM {
      */
     public function delete() {
         $t = $this->getTable();
-        $parameters = [];
-        $where = $this->whereThis($parameters);
-        $res = DB::query("DELETE FROM $t $where", $parameters);
+        $cond = $this->whereForMe();
+        $res = DB::query("DELETE FROM $t " . $cond['where'], $cond['parameters']);
+    }
+
+    /**
+     * Drop database table
+     */
+    public static function dropTable() {
+        if (DB::table_exists(self::Table()))
+            DBTable::instance(self::Table())->drop();
     }
 
     /**
@@ -398,42 +475,43 @@ class RelationORM {
         DB::query('DELETE FROM ' . $tmp->getTable() . " WHERE $where", $parameters);
     }
 
-    /**
-     * Find relations by once of the models.
-     * 
-     * @param ORM $model Name of the model you want to get.
-     * @param string $where Where condition
-     * @param array $parameters [Default empty] Query parameters
-     * 
-     * @return RelationORM[]
-     */
-    public static function findRelationsFor($model, string $where = '', array $parameters = []) : array {
-        
-        return self::find($model->reference_column() . ' = :ID' . (empty($where) ? '' : " AND $where"), 
-        ['ID' => $model->ID]);
-
-    }
 
     /**
-     * Find an object of one of the Models by relation.
+     * Get a list of ORM objects by the relation.
      * 
-     * @param string $model Name of the model you want to get.
+     * @param string $column
      * @param string|ORM $where Where condition
      * @param array $parameters [Default empty] Query parameters
      * 
      * @return ORM[]
      */
-    public static function getByRelation(string $model, $where, array $parameters = []) : array {
+    public static function modelByRelation(string $column, string $where, array $parameters = []) : array {
 
         $cl = get_called_class();
         $tmp = new $cl();
         $tmp->__checkDB();
 
+        $col = null;
+        $def = $tmp->__getDefinition();
+        foreach($def['columns'] as $c) {
+            if ($c['name'] == $column) {
+                $col = $c;
+                break;
+            }
+        }
+
+        if ($col == null) {
+            return [];
+        }
+
+        if (!isset($col['class'])) {
+            return [];
+        }
+
+        $model = $col['class'];
         $m = new $model();
 
-        $w = is_string($where) ? $where : "ID = $where->ID";
-
-        $q = 'SELECT ' . $m->reference_column() . ' FROM ' . $tmp->getTable() . " WHERE $w";
+        $q = 'SELECT ' . $column . ' FROM ' . $tmp->getTable() . " WHERE $where";
 
         $res = DB::query('SELECT * FROM ' . $m->getTable() . " WHERE ID IN ($q)", $parameters);
         $list = [];

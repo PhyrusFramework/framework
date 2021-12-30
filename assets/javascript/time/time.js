@@ -20,8 +20,6 @@ class Time {
         6: 'sunday'
     }
 
-    moment;
-
     static instance(date = null, format = 'YYYY-MM-DD HH:mm:ss') {
         return new Time(date, format);
     }

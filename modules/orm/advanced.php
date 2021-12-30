@@ -28,6 +28,25 @@ class AdvancedORM extends ORM {
     }
 
     /**
+     * Check if DB exists or create it.
+     * 
+     * @param bool Check also other tables: meta, translations, resources.
+     * 
+     * @return bool existed
+     */
+    public function CheckTable($extraTables = false) : bool {
+        $existed = parent::CheckTable();
+
+        if ($extraTables) {
+            $this->__checkDB_meta();
+            $this->__checkDB_translations();
+            $this->__checkDB_resources();
+        }
+
+        return $existed;
+    }
+
+    /**
      * Tables that have already checked if they exist.
      * 
      * @var array $_tables_checked
@@ -45,6 +64,8 @@ class AdvancedORM extends ORM {
 
     /**
      * Check if the meta table exists and if it doesn't, create it.
+     * 
+     * @return bool existed
      */
     private function __checkDB_meta() {
 
@@ -54,10 +75,11 @@ class AdvancedORM extends ORM {
             return true;
         }
 
-        if (!Config::get('development_mode')) return false;
+        if (!Config::get('development_mode')) return true;
 
+        $existed = true;
         if (!DB::table_exists($table)){
-
+            $existed = false;
             self::$_tables_checked[$table] = true;
 
             DB::create_table([
@@ -65,8 +87,9 @@ class AdvancedORM extends ORM {
                 'columns' => [
                     [
                         'name' => $this->reference_column(),
-                        'type' => 'INT',
-                        'notnull' => true
+                        'type' => 'BIGINT',
+                        'notnull' => true,
+                        'foreign' => $this->getTable() . '(ID)'
                     ],
                     [
                         'name' => 'meta_key',
@@ -81,6 +104,8 @@ class AdvancedORM extends ORM {
                 'primary' => $this->reference_column() . ', meta_key'
             ]);
         }
+
+        return $existed;
     }
 
     /**
@@ -94,6 +119,8 @@ class AdvancedORM extends ORM {
 
     /**
      * Check if the translations table exists and if it doesn't, create it.
+     * 
+     * @return bool existed
      */
     private function __checkDB_translations() {
 
@@ -103,10 +130,11 @@ class AdvancedORM extends ORM {
             return true;
         }
 
-        if (!Config::get('development_mode')) return false;
+        if (!Config::get('development_mode')) return true;
 
+        $existed = true;
         if (!DB::table_exists($table)){
-
+            $existed = false;
             self::$_tables_checked[$table] = true;
 
             DB::create_table([
@@ -114,8 +142,9 @@ class AdvancedORM extends ORM {
                 'columns' => [
                     [
                         'name' => $this->reference_column(),
-                        'type' => 'INT',
-                        'notnull' => true
+                        'type' => 'BIGINT',
+                        'notnull' => true,
+                        'foreign' => $this->getTable() . '(ID)'
                     ],
                     [
                         'name' => 'name',
@@ -135,6 +164,8 @@ class AdvancedORM extends ORM {
                 'primary' => $this->reference_column() . ', name, locale'
             ]);
         }
+
+        return $existed;
     }
 
     /**
@@ -148,6 +179,8 @@ class AdvancedORM extends ORM {
 
     /**
      * Check if the resources table exists, and if it doesn't, create it.
+     * 
+     * @return bool existed
      */
     private function __checkDB_resources() {
 
@@ -157,10 +190,11 @@ class AdvancedORM extends ORM {
             return true;
         }
 
-        if (!Config::get('development_mode')) return false;
+        if (!Config::get('development_mode')) return true;
 
+        $existed = true;
         if (!DB::table_exists($table)){
-
+            $existed = false;
             self::$_tables_checked[$table] = true;
 
             DB::create_table([
@@ -168,8 +202,9 @@ class AdvancedORM extends ORM {
                 'columns' => [
                     [
                         'name' => $this->reference_column(),
-                        'type' => 'INT',
-                        'notnull' => true
+                        'type' => 'BIGINT',
+                        'notnull' => true,
+                        'foreign' => $this->getTable() . '(ID)'
                     ],
                     [
                         'name' => 'type',
@@ -188,6 +223,8 @@ class AdvancedORM extends ORM {
                 ]
             ]); 
         }
+
+        return $existed;
     }
 
     /**
@@ -198,19 +235,25 @@ class AdvancedORM extends ORM {
         $ref = $this->reference_column();
 
         $t = $this->meta_table();
-        DB::query("DELETE FROM $t WHERE $ref = :ID", [
-            'ID' => $this->ID
-        ]);
+        if (DB::table_exists($t)) {
+            DB::query("DELETE FROM $t WHERE $ref = :ID", [
+                'ID' => $this->ID
+            ]);
+        }
 
         $t = $this->translations_table();
-        DB::query("DELETE FROM $t WHERE $ref = :ID", [
-            'ID' => $this->ID
-        ]);
+        if (DB::table_exists($t)) {
+            DB::query("DELETE FROM $t WHERE $ref = :ID", [
+                'ID' => $this->ID
+            ]);
+        }
 
         $t = $this->resources_table();
-        DB::query("DELETE FROM $t WHERE $ref = :ID", [
-            'ID' => $this->ID
-        ]);
+        if (DB::table_exists($t)) {
+            DB::query("DELETE FROM $t WHERE $ref = :ID", [
+                'ID' => $this->ID
+            ]);
+        }
 
         parent::delete();
     }
@@ -297,38 +340,6 @@ class AdvancedORM extends ORM {
 
         $this->__metas[$name] = $value;
         return $value;
-    }
-
-    /**
-     * Get object by meta
-     * 
-     * @param string $name
-     * @param string $value
-     * 
-     * @return AdvancedORM[]
-     */
-    public static function getByMeta(string $metakey, string $metavalue = null) : array {
-
-        $cl = get_called_class();
-        $tmp = new $cl();
-
-        $q2 = 'SELECT ' . $tmp->reference_column() . ' FROM ' . $tmp->meta_table() . ' WHERE meta_key = :meta';
-        if ($metavalue != null) {
-            $q2 .= ' AND meta_value = :value';
-        }
-        $q = 'SELECT * FROM ' . $tmp->getTable() . " WHERE ID IN ($q2)";
-
-        $res = DB::query($q, [
-            'meta' => $metakey,
-            'value' => $metavalue
-        ]);
-
-        $list = [];
-        foreach($res->result as $r) {
-            $list[] = new $cl($r);
-        }
-        return $list;
-
     }
 
     /**
@@ -460,6 +471,60 @@ class AdvancedORM extends ORM {
     }
 
     /**
+     * Get a list of all translations for this object.
+     * 
+     * @param string Specific language (Optional)
+     * 
+     * @return array
+     */
+    public function getTranslations($language = null) {
+
+        $cl = get_called_class();
+        $sample = new $cl();
+        $sample->__checkDB_translations();
+
+        $t = $sample->getTable();
+        $tr = $sample->translations_table();
+        $ref = $sample->reference_column();
+
+        $query = "SELECT * FROM $tr WHERE $ref = :ID";
+        if ($language != null) {
+            $query .= ' AND locale = :locale';
+
+            $res = DB::query($query, [
+                'ID' => $this->ID,
+                'locale' => $language
+            ]);
+    
+            $translations = [];
+
+            foreach($res->result as $row) {    
+                $translations[$row->name] = $row->value;
+            }
+    
+            return $translations;
+
+        }
+
+        $res = DB::query($query, [
+            'ID' => $this->ID
+        ]);
+
+        $translations = [];
+
+        foreach($res->result as $row) {
+            if (!isset($translations[$row->locale])) {
+                $translations[$row->locale] = [];
+            }
+
+            $translations[$row->locale][$row->name] = $row->value;
+        }
+
+        return $translations;
+
+    }
+
+    /**
      * Get object resources.
      * 
      * @param string $type [Default all]
@@ -562,6 +627,8 @@ class AdvancedORM extends ORM {
      * 
      * @param string $type
      * @param string $file
+     * 
+     * @return ORMResource
      */
     public function addResource(string $type, string $file) {
 
@@ -592,8 +659,11 @@ class AdvancedORM extends ORM {
         ]);
 
         if ($res->something) {
-            $this->__resources[$type][] = new ORMResource($res->first);
+            $resource = new ORMResource($res->first);
+            $this->__resources[$type][] = $resource;
+            return $resource;
         }
+        return null;
     }
 
     /**
@@ -618,15 +688,104 @@ class AdvancedORM extends ORM {
         else $this->__resources[$type] = [];
     }
 
+    /**
+     * Override parent dropTable().
+     * Drops all tables.
+     */
+    public static function dropTable() {
+        $this->dropTables();
+    }
+    
+    /**
+     * Drop database tables
+     */
+    public static function dropTables() {
+        $cl = get_called_class();
+        $sample = new $cl();
+
+        if (DB::table_exists($sample->translations_table()))
+        DBTable::instance($sample->translations_table())->drop();
+
+        if (DB::table_exists($sample->resources_table()))
+        DBTable::instance($sample->resources_table())->drop();
+
+        if (DB::table_exists($sample->meta_table()))
+        DBTable::instance($sample->meta_table())->drop();
+
+        if (DB::table_exists($sample->getTable()))
+        DBTable::instance($sample->getTable())->drop();
+    }
+
     // STATIC
+
+    // SEARCH METHODS
+
+    /**
+     * Find elements by translation
+     * 
+     * @param string $name
+     * @param mixed $value
+     * @param mixed $locales
+     * 
+     * @return array
+     */
+    public static function byTranslation(string $name, $value = null, $locales = null) : array {
+
+        if (!isset($options['value'])) {
+            return [];
+        }
+
+        $cl = get_called_class();
+        $sample = new $cl();
+        $sample->__checkDB_translations();
+
+        $t = $sample->getTable();
+        $tr = $sample->translations_table();
+        $ref = $sample->reference_column();
+
+        $params = [
+            'name' => $name
+        ];
+
+        $subq = "SELECT $ref FROM $tr WHERE name = :name";
+        if ($value != null) {
+            $params['value'] = $value;
+
+            if (is_string($value)) {
+                if (strpos($value, '%') === FALSE) {
+                    $subq .= ' AND value = :value';
+                } else {
+                    $subq .= ' AND value LIKE :value';
+                }
+            } else if (is_array($value)) {
+                $subq .= ' AND value IN :value';
+            }
+
+        }
+
+        if ($locales != null) {
+            $params['locales'] = $locales;
+
+            if (is_string($locales)) {
+                $subq .= ' AND locale = :locales';
+            } else if (is_array($locales)) {
+                $subq .= ' AND locale IN :locales';
+            }
+
+        }
+
+        $query = "ID IN ($subq)";
+        return $cl::find($query, $params);
+    }
 
     /**
      * Find models by meta. Optionally specify the value.
      * 
-     * @param string $meta
-     * @param mixed $value = null
+     * @param array $metas
+     * 
+     * @return array
      */
-    public static function byMeta(string $meta, $value = null) {
+    public static function byMeta(...$meta_sets) : array {
 
         $cl = get_called_class();
         $sample = new $cl();
@@ -634,14 +793,146 @@ class AdvancedORM extends ORM {
         $metat = $sample->meta_table();
         $ref = $sample->reference_column();
 
-        $sub = "SELECT $ref FROM $metat WHERE meta_key = :key";
-        $params = ['key' => $meta];
-        if ($value == null) {
-            $sub .= ' AND meta_value = :value';
-            $params['value'] = $value;
+        $where = '';
+        $params = [];
+
+        foreach($meta_sets as $metas) {
+
+            if ($where != '') {
+                $where .= ' OR ';
+            }
+
+            $current = '';
+
+            foreach($metas as $k => $v) {
+
+                if (is_string($k)) {
+                    $meta = $k;
+                    $value = $v;
+                    if (is_int($v)) {
+                        $value = "$v";
+                    }
+                } else {
+                    $meta = $v;
+                    $value = null;
+                }
+    
+                $sub = "SELECT $ref FROM $metat WHERE meta_key = :$meta";
+                $params[$meta] = $meta;
+                if ($value != null) {
+        
+                    if (is_string($value)) {
+                        if (strpos($value, '%') === FALSE) {
+                            $operator .= '=';
+                        } else {
+                            $operator .= 'LIKE';
+                        }
+                    } else if (is_array($value)){
+                        $operator = 'IN';
+                    }
+        
+                    $sub .= " AND meta_value $operator :$meta".'_value';
+                    $params[$meta.'_value'] = $value;
+                }
+    
+                if ($current != '') {
+                    $current .= ' AND ';
+                }
+                $current .= "ID IN ($sub)";
+    
+            }
+
+            if (sizeof($metas) > 1) {
+                $where .= '(';
+            }
+            $where .= $current;
+            if (sizeof($metas) > 1) {
+                $where .= ')';
+            }
+
         }
 
-        $res = DB::query("SELECT * FROM $t WHERE ID IN ($sub)");
+        return $cl::find($where, $params);
+
+    }
+
+    /**
+     * Get list of objects sorted by a meta value.
+     * 
+     * @param string meta-key
+     * @param string ASC/DESC, OFFSET, LIMIT
+     * 
+     * @return array
+     */
+    public static function sortByMeta(string $name, array $options = []) : array {
+
+        $cl = get_called_class();
+        $sample = new $cl();
+        $t = $sample->getTable();
+        $metat = $sample->meta_table();
+        $ref = $sample->reference_column();
+
+        $direction = $options['sort'] ?? 'ASC';
+
+        $order = empty($options['asNumber']) ?
+            "$metat.meta_value" : "CAST($metat.meta_value AS INT)";
+
+        $q = "SELECT $t.* FROM $t INNER JOIN $metat ON $t.ID = $metat.$ref WHERE $metat.meta_key = :name ORDER BY $order $direction";
+
+        $params = [
+            'name' => $name
+        ];
+
+        if (isset($options['params'])) {
+            foreach($options['params'] as $k => $v) {
+                $params[$k] = $v;
+            }
+        }
+
+        $res = DB::query($q, $params);
+
+        $list = [];
+        foreach($res->result as $row) {
+            $list[] = new $cl($row);
+        }
+        return $list;
+
+    }
+
+    /**
+     * Get list of objects sorted by a meta value.
+     * 
+     * @param string meta-key
+     * @param string ASC/DESC, OFFSET, LIMIT
+     * 
+     * @return array
+     */
+    public static function sortByTranslation(string $name, array $options = []) : array {
+
+        $cl = get_called_class();
+        $sample = new $cl();
+        $t = $sample->getTable();
+        $tr = $sample->translations_table();
+        $ref = $sample->reference_column();
+
+        $direction = $options['sort'] ?? 'ASC';
+
+        $params = [
+            'name' => $name
+        ];
+
+        $lq = '';
+        if (isset($options['locale'])) {
+            $params['locales'] = $options['locale'];
+            $lq = 'AND locale = :locales';
+        } else if (isset($options['locales'])) {
+            $params['locales'] = $options['locales'];
+            $lq = 'AND locale IN :locales';
+        }
+
+        $q = "SELECT $t.* FROM $t INNER JOIN $tr ON $t.ID = $tr.$ref WHERE $tr.name = :name $lq ORDER BY $tr.value $direction";
+
+        $res = DB::query($q, $params);
 
         $list = [];
         foreach($res->result as $row) {

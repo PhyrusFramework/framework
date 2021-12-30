@@ -11,16 +11,16 @@ class CLI_ClearCache extends CLI_Module {
         }
 
         // Generated folder
-        $fold = Folder::instance(Path::generated() . '/cache');
+        $fold = Folder::instance(Path::generated());
         if ($fold->exists()) {
             $fold->delete();
         }
 
         // .cch files
-        $this->clearCCH(Folder::instance(Path::src()));
+        $this->clearCCH(Folder::instance(Path::root()));
 
         // SCSS Modules
-        $this->clearSCSS(Folder::instance(Path::src()));
+        $this->clearSCSS(Folder::instance(Path::root()));
 
         echo "\nAll caches cleared!\n";
     }
@@ -64,13 +64,7 @@ class CLI_ClearCache extends CLI_Module {
     public function help() { ?>
 
         The clear-caches command will clear
-        all kind of cache in your website,
-        which includes:
-
-        - Folder /src/cache
-        - .cch files
-        - If the scss module is installed,
-        the compilation folders.
+        all kind of cache in your project.
 
     <?php }
 

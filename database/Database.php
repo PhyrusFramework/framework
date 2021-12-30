@@ -462,10 +462,13 @@ class DATABASE
         $name = $table['name'];
         $q = "CREATE TABLE $name (";
 
-        $primary = null;
+        $primary = '';
         foreach($table['columns'] as $col) {
             if (!empty($col['primary'])) {
-                $primary = $col['name'];
+                if (!$primary == '') {
+                    $primary .= ', ';
+                }
+                $primary .= $col['name'];
             }
         }
 
@@ -477,7 +480,7 @@ class DATABASE
         foreach($table['columns'] as $field)
         {
             $fname = $field['name'];
-            $type = $field['type'];
+            $type = isset($field['type']) ? $field['type'] : 'BIGINT';
             
             $q .= "$fname $type";
     

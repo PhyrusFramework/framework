@@ -161,7 +161,7 @@ class Translate {
      * @return string
      */
     public static function translationsDir() : string {
-        return Config::get('translate.folder');
+        return Config::get('translate.directory');
     }
 
     public function __construct($language = null) {

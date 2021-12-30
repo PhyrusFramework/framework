@@ -13,11 +13,12 @@ function PageLoaded(callback) {
     _PageLoadCallbacks.push(callback);
 }
 
-const _vue = {
+const VueLoader = {
     objects: [],
     components: {},
     listeners: [],
     loaded: false,
+    pageLoaded: false,
     baseComponent: null,
     initBaseComponent() {
         let translations = window.translations ? window.translations : {}
@@ -47,6 +48,11 @@ const _vue = {
 
                     return val ? val : '';
                 }
+            },
+            computed: {
+                $route: function() {
+                    return window.$route ? window.$route : {}
+                }
             }
         });
     },
@@ -54,64 +60,76 @@ const _vue = {
         let mixins = data['mixins'];
         if (mixins) data.mixins.push(this.baseComponent);
         else data['mixins'] = [this.baseComponent];
+    },
+    didLoad() {
+        this.loaded = true;
+        if (this.pageLoaded) {
+            this.create();
+        }
+    },
+    pageLoaded() {
+        this.pageLoaded = true;
+        if (this.loaded) {
+            this.create();
+        }
+    },
+    create() {
+        this.initBaseComponent();
+    
+        for(let listener of this.listeners) {
+            listener();
+        }
+    
+        Object.keys(this.components)
+        .forEach(key => {
+            Vue.component(key, this.baseComponent.extend(this.components[key]) );
+        });
+    
+        let mixins = [this.baseComponent];
+        for(let data of this.objects) {
+            mixins.push(Vue.extend(data));
+        }
+
+        window['View'] = new Vue({
+            el: '#app-body',
+
+            mixins: mixins
+        });
+
+        let loader = document.getElementById('vue-loader');
+        if (loader) {
+            setTimeout(() => {
+                loader.classList.add('fading');
+                setTimeout(() => {
+                    loader.remove();
+                }, 100);
+            }, 10);
+        }
+    
     }
 }
 
 function VueLoaded(callback) {
-    if (_vue.loaded) {
+    if (VueLoader.loaded) {
         callback();
         return;
     }
-    _vue.listeners.push(callback);
-}
-
-function _vueLoaded() {
-
-    _vue.loaded = true;
-    _vue.initBaseComponent();
-
-    for(let listener of _vue.listeners) {
-        listener();
-    }
-
-    Object.keys(_vue.components)
-    .forEach(key => {
-        Vue.component(key, _vue.baseComponent.extend(_vue.components[key]) );
-    });
-
-    let mixins = [_vue.baseComponent];
-    for(let data of _vue.objects) {
-        mixins.push(Vue.extend(data));
-    }
-
-    window['View'] = new Vue({
-        el: '#app-body',
-
-        mixins: mixins
-    });
-
-    let loader = document.getElementById('vue-loader');
-    if (loader) {
-        loader.classList.add('fading');
-        setTimeout(() => {
-            loader.remove();
-        }, 200);
-    }
+    VueLoader.listeners.push(callback);
 }
 
 class VueController {
     constructor(data) {
-        _vue.objects.push(data);
+        VueLoader.objects.push(data);
     }
 }
 
 class VueComponent {
     constructor(name, data) {
-        if (_vue.loaded) {
-            Vue.component(name, _vue.createData(data));
+        if (VueLoader.loaded) {
+            Vue.component(name, VueLoader.createData(data));
         }
         else {
-            _vue.components[name] = data;
+            VueLoader.components[name] = data;
         }
     }
 }

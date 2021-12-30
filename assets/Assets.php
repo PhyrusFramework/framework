@@ -95,18 +95,53 @@ class Assets {
     }
 
     /**
+     * Check if asset requires browser cache disabling.
+     * 
+     * @param string src
+     * 
+     * @return string
+     */
+    private static function checkCache(string $src) : string {
+
+        $cache = Config::get('assets.disable-cache-after-modification-for-x-hours');
+        if ($cache == 0) {
+            return '';
+        }
+
+        if (strlen($src) > 4 && substr($src, 0, 4) == 'http') {
+            return '';
+        }
+
+        $file = Path::root() . $src;
+
+        if (!file_exists($file)) {
+            return '';
+        }
+
+        $ts = new Time(last_modification_date($file));
+        $now = new Time();
+        $now->add(- $cache, 'hour');
+
+        if ($ts->isBefore($now)) {
+            return '';
+        }
+
+        return '?cache=' . Text::random(5);
+    }
+
+    /**
      * Add css to the head
      *
      * @param string $src path to css
      */
     public static function include_css(string $src) {
 
-        $cache = Config::get('assets.disable-browser-cache') ? '?cache=' . Text::random(5) : '';
+        $url = $src . self::checkCache($src);
 
         if (self::$minify) {
-            self::$css_imports[] = $src . $cache;
+            self::$css_imports[] = $url;
         } else {
-            Head::add('<link rel="stylesheet" href="' . $src . $cache . '">');
+            Head::add('<link rel="stylesheet" href="' . $url . '">');
         }
     }
 
@@ -118,12 +153,12 @@ class Assets {
      */
     public static function include_js(string $src, bool $footer = false) {
 
-        $cache = Config::get('assets.disable-browser-cache') ? '?cache=' . Text::random(5) : '';
-        $line = '<script type="text/javascript" src="' . $src . $cache .'"></script>';
+        $url = $src . self::checkCache($src);
+        $line = '<script type="text/javascript" src="' . $url .'"></script>';
 
         if (!$footer) {
             if (self::$minify)
-                self::$js_imports[] = $src . $cache;
+                self::$js_imports[] = $url;
             else
                 Head::add($line);
         } else {
@@ -280,13 +315,13 @@ class Assets {
         if (Config::get('assets.js.vue')) {
             Footer::add(function() use ($frameworkPath) {?>
     <script src="<?= $frameworkPath ?>/vue/phyrus.js"></script>
-    <script src="<?= $frameworkPath ?><?= Config::get('development_mode') ? '/vue/vue.dev.js' : '/vue/vue.min.js'?>" async defer onload="_vueLoaded()"></script>
+    <script src="<?= $frameworkPath ?><?= Config::get('development_mode') ? '/vue/vue.dev.js' : '/vue/vue.min.js'?>" async onload="VueLoader.didLoad()"></script>
     <?php 
 
     if (Config::get('development_mode')) {?>
         <script src="<?= $frameworkPath ?>/debug-console.js"></script>
     <?php }
-            });
+            }, 1);
 
         }
 

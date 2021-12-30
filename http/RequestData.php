@@ -1,6 +1,13 @@
 <?php
 
-class RequestData{
+class RequestData {
+
+    /**
+     * HTTP Headers
+     * 
+     * @var HTTPHeaders
+     */
+    public HTTPHeaders $headers;
 
     /**
      * Get an instance object of RequestData.
@@ -15,6 +22,10 @@ class RequestData{
      * @param bool $urlParams Accept also parameters in the URL?
      */
     function __construct(bool $urlParams = false) {
+
+        // Headers
+        $this->headers = new HTTPHeaders();
+
         // type
         $this->{'_type'} = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
@@ -115,7 +126,7 @@ class RequestData{
                 return;
             }
         }
-        response('forbidden');
+        response('method-not-allowed');
         die();
     }
 
@@ -245,6 +256,58 @@ class RequestData{
      */
     function userAgent() : string {
         return $_SERVER['HTTP_USER_AGENT']??'';
+    }
+}
+
+class HTTPHeaders {
+
+    public function __get($name) {
+        if (!empty($_SERVER[$name])) return $_SERVER[$name];
+        $n = strtoupper($name);
+        $n = str_replace('-', '_', $n);
+        $n = "HTTP_$n";
+        if (!empty($_SERVER[$n])) return $_SERVER[$n];
+        return '';
+    }
+
+    /**
+     * Check if Request has header
+     * 
+     * @param string $name
+     * 
+     * @return bool
+     */
+    public function has(string $name) : bool {
+        $h = $this->{$name};
+        return !empty($h);
+    }
+
+    /**
+     * Get Authorization header
+     * 
+     * @return string
+     */
+    public function Auth() : string {
+        $attempts = array('HTTP_AUTHORIZATION', 'Authorization', 'REDIRECT_HTTP_AUTHORIZATION');
+        foreach($attempts as $h) {
+            if (!empty($_SERVER[$h]))
+                return $_SERVER[$h];
+        }
+        return '';
+    }
+
+    /**
+     * Require headers for request
+     * 
+     * @param array
+     */
+    public function require(...$args) {
+        foreach($args as $v) {
+            if (!$this->has($v)) {
+                response('bad');
+                die();
+            }
+        }
     }
 
 }

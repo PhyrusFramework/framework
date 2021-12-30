@@ -62,7 +62,7 @@ class Router {
         foreach(self::$finders as $finder) {
             $result = $finder($route);
             if (!empty($result) && is_string($result)) {
-                $folder = realpath(Path::pages() . $result);
+                $folder = $result;
                 if (is_dir($folder)) {
                     return self::loadPage($folder, []);
                 }
@@ -100,10 +100,10 @@ class Router {
             }
 
             if ($match) {
-                $fullpath = Path::pages() . "/$folder";
+                $fullpath = $folder;
                 if (is_dir($fullpath)) {
                     self::findPageController($fullpath);
-                    return self::loadPage($fullpath, $parameters);
+                    return self::loadPage($fullpath, $parameters, false);
                 }
             }
         }
@@ -205,6 +205,7 @@ class Router {
         if (!is_dir($path)) return null;
         
         $controller = self::findPageController($path);
+        $controller->parameters = new Generic();
     }
 
     /**

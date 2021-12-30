@@ -4,8 +4,8 @@ Config::save('translate', [
     'default_language' => 'en',
     'supported_languages' => ['en'],
     'inherit' => [],
-    'folder' => '/translations',
-    'javascript' => true
+    'directory' => '/translations',
+    'javascript' => false
 ]);
 
 $path = Path::project() . '/translations';

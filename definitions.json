@@ -10,5 +10,7 @@
     "middlewares": "middlewares",
     "modules": "modules",
     "frameworkFont": "Ubuntu",
-    "tests": "tests"
+    "tests": "tests",
+    "migrations": "migrations",
+    "scripts": "scripts"
 }

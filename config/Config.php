@@ -18,10 +18,14 @@ class Config {
      * 
      * @return mixed
      */
-    public static function get(string $key, $def = null) {
+    public static function get($key = null, $def = null) {
 
         if (self::$config == null) {
             self::decode();
+        }
+
+        if (empty($key)) {
+            return self::$config;
         }
 
         $value = self::$config->get($key);

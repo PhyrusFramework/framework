@@ -135,7 +135,8 @@ class Arr extends ArrayObject {
      */
     public function first() {
         if (sizeof($this) < 1) return null;
-        return $this[0];
+        $keys = array_keys($this);
+        return $this[$keys[0]];
     }
 
     /**
@@ -145,9 +146,10 @@ class Arr extends ArrayObject {
      * 
      * @return mixed
      */
-    public function last(int $n = 1) {
-        if (sizeof($this) < $n) return null;
-        return $this[sizeof($this) - $n];
+    public function last(int $n = 0) {
+        $keys = array_keys($this);
+        if (sizeof($keys) <= $n) return null;
+        return $this[$keys[sizeof($keys) - 1 - $n]];
     }
 
     /**

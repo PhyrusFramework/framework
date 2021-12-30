@@ -9,8 +9,17 @@ class DBTable {
      */
     private string $_name;
 
-    function __construct(string $name) {
+    /**
+     * @var Database
+     * 
+     * Database to operate
+     */
+    private Database $db;
+
+    function __construct(string $name, Database $db = null) {
         $this->_name = $name;
+        global $DATABASE;
+        $this->db = $db ? $db : $DATABASE;
     }
 
     /**
@@ -18,14 +27,26 @@ class DBTable {
      * 
      * @return DBTable
      */
-    static function instance(string $name) : DBTable {
-        return new DBTable($name);
+    static function instance(string $name, Database $db = null) : DBTable {
+        return new DBTable($name, $db);
     }
 
-    public static function create(array $definition) : ?DBTable {
+    /**
+     * Create a new table in the database
+     * 
+     * @param array $definition
+     * @param Database
+     * 
+     * @return DBTable
+     */
+    public static function create(array $definition, Database $db = null) : ?DBTable {
         if (!isset($definition['name'])) return null;
-        DB::create_table($definition);
-        return DBTable::instance($definition['name']);
+
+        global $DATABASE;
+        $D = $db ? $db : $DATABASE;
+
+        $D->create_table($definition);
+        return DBTable::instance($definition['name'], $db);
     }
 
     /**
@@ -34,21 +55,47 @@ class DBTable {
      * @return DBQueryResult
      */
     public function drop() : DBQueryResult {
-        return DB::query('DROP TABLE ' . $this->_name);
+        return $this->db->query('DROP TABLE ' . $this->_name);
     }
 
     /**
      * Add a new column to the table.
      * 
-     * @param string Column name
-     * @param string Column type
+     * @param array Column definition
      * @param string After other column
      * 
      * @return DBQueryResult
      */
-    public function addColumn(string $name, string $type, $after = null) : DBQueryResult {
-        return DB::query("ALTER TABLE $this->_name ADD $name $type " . 
-            ($after == null ? '' : ($after == 'FIRST' ? 'FIRST' : "AFTER $after") ));
+    public function addColumn(array $definition) : ?DBQueryResult {
+
+        $req = ['name', 'type'];
+        foreach($req as $r) {
+            if (!isset($definition[$r])) {
+                return null;
+            }
+        }
+
+        $name = $definition['name'];
+
+        $q = "ALTER TABLE $this->_name ADD $name" . ' ' . $definition['type'];
+        $q .= isset($definition['notnull']) ? ' NOT NULL' : '';
+        $q .= isset($definition['auto_increment']) ? ' AUTO_INCREMENT' : '';
+
+        if (isset($definition['position'])) {
+            $q .= ' ' . $definition['position'];
+        }
+
+        $res = $this->db->query($q);
+
+        if (!empty($definition['unique'])) {
+            $this->db->query("ALTER TABLE $this->_name ADD CONSTRAINT $this->_name"."_$name"."_unique UNIQUE ($name)");
+        }
+
+        if (!empty($definition['foreign'])) {
+            $this->db->query("ALTER TABLE $this->_name ADD FOREIGN KEY ($name) REFERENCES " . $definition['foreign']);
+        }
+
+        return $res;
     }
 
     /**
@@ -59,7 +106,7 @@ class DBTable {
      * @return DBQueryResult
      */
     public function dropColumn(string $name) : DBQueryResult {
-        return DB::query("ALTER TABLE $this->_name DROP $name");
+        return $this->db->query("ALTER TABLE $this->_name DROP $name");
     }
 
     /**
@@ -123,7 +170,7 @@ class DBTable {
             }
         }
 
-        $res = DB::query($query, $params);
+        $res = $this->db->query($query, $params);
         return $res->result;
     }
 
@@ -154,7 +201,7 @@ class DBTable {
         }
         $query .= ')';
 
-        return DB::query($query, $values);
+        return $this->db->query($query, $values);
     }
 
     /**
@@ -165,7 +212,7 @@ class DBTable {
      * 
      * @return DBQueryResult
      */
-    public function update (array $values, array $where) : DBQueryResult {
+    public function update (array $values, array $where = []) : DBQueryResult {
         $query = 'UPDATE ' . $this->_name . ' SET ';
 
         $keys = array_keys($values);
@@ -176,22 +223,28 @@ class DBTable {
             }
         }
 
-        $query .= ' WHERE ';
+        $params = [];
+        foreach($values as $k => $v) {
+            $params[$k] = $v;
+        }
 
-        $keys = array_keys($where);
-        for($i = 0; $i < sizeof($keys); ++$i) {
-            $query .= $keys[$i] . ' ' . $where[$keys[$i]][0] . ' :' . $keys[$i];
-            if ($i < sizeof($keys) - 1) {
-                $query .= ' AND ';
+        if (sizeof($where) > 0) {
+            $query .= ' WHERE ';
+
+            $keys = array_keys($where);
+            for($i = 0; $i < sizeof($keys); ++$i) {
+                $query .= $keys[$i] . ' ' . $where[$keys[$i]][0] . ' :' . $keys[$i];
+                if ($i < sizeof($keys) - 1) {
+                    $query .= ' AND ';
+                }
+            }
+
+            foreach($where as $k => $arr) {
+                $params[$k] = $arr[1];
             }
         }
 
-        $params = [];
-        foreach($where as $k => $arr) {
-            $params[$k] = $arr[1];
-        }
-
-        return DB::query($query, $params);
+        return $this->db->query($query, $params);
     }
 
     /**
@@ -217,7 +270,16 @@ class DBTable {
             $params[$k] = $arr[1];
         }
 
-        return DB::query($query, $params);
+        return $this->db->query($query, $params);
+    }
+
+    /**
+     * Delete all rows from table.
+     * 
+     * @return DBQueryResult
+     */
+    public function empty() : DBQueryResult {
+        return $this->db->query("DELETE FROM $this->_name");
     }
 
 }

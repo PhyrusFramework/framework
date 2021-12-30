@@ -32,10 +32,23 @@ class CLI_Generate extends CLI_Module{
         $this->create_page($route, $last);
     }
 
+    private function generateName($name) {
+        
+        $parts = explode('-', $name);
+        $str = '';
+        foreach($parts as $p) {
+            $c = mb_strtolower($p);
+            $str .= ucfirst($c);
+        }
+
+        return $str;
+
+    }
+
     private function create_page($route, $name) {
 
         $lower = mb_strtolower($name);
-        $ucfirst = ucfirst($name);
+        $ucfirst = $this->generateName($name);
 
         $file = $route . "/$lower.controller.php";
         if (!file_exists($file)) {
@@ -64,14 +77,23 @@ class <?= $classname ?> extends Controller {
             file_put_contents($file, "<div>\n\tThis is the view\n</div>");
         }
 
+        $file = $route . "/$lower.vue";
+        if (!file_exists($file)) {
+            file_put_contents($file, "<script>\nnew VueController({\n\t\n})\n</script>");
+        }
+
         echo "\nPage created at $route\n";
-
-        if (!isset($this->flags['full'])) return;
-
-        $this->create_assets($route, $lower);
     }
 
     public function command_component() {
+        $this->sub_createComponent(false);
+    }
+
+    public function command_vueComponent() {
+        $this->sub_createComponent(true);
+    }
+
+    private function sub_createComponent($vue = false) {
         if (sizeof($this->params) < 1) {
             echo "\nComponent name not specified\n";
             return;
@@ -93,13 +115,13 @@ class <?= $classname ?> extends Controller {
 
         if ($last == '') return;
 
-        $this->create_component($route, $last);
+        $this->create_component($route, $last, $vue);
     }
 
-    private function create_component($route, $name) {
+    private function create_component($route, $name, $vue = false) {
 
         $lower = mb_strtolower($name);
-        $ucfirst = ucfirst($name);
+        $ucfirst = $this->generateName($name);
 
         $file = $route . "/$lower.controller.php";
         if (!file_exists($file)) {
@@ -113,10 +135,10 @@ class <?= $classname ?> extends ComponentController {
     function init() {
 
     }
-
+    <?php if (!$vue) { ?>
     function display($parameters = []) {
         $this->view($parameters);
-    }
+    }<?php } ?>
 
 }<?php
             $html = ob_get_clean();
@@ -124,15 +146,21 @@ class <?= $classname ?> extends ComponentController {
         }
 
         $file = $route . "/$lower.view.php";
-        if (!file_exists($file)) {
+        if (!$vue && !file_exists($file)) {
             file_put_contents($file, "<div>\n\tThis is the view\n</div>");
         }
 
+        $file = $route . "/$lower.vue";
+        if (!file_exists($file)) {
+            if (!$vue) {
+                file_put_contents($file, "<script>\nnew VueController({\n\t\n})\n</script>");
+            }
+            else {
+                file_put_contents($file, "<script>\nnew VueComponent('$lower', {\n\t\n})\n</script>");
+            }
+        }
+
         echo "\nComponent created at $route\n";
-
-        if (!isset($this->flags['full'])) return;
-
-        $this->create_assets($route, $lower);
     }
 
     public function command_middleware() {
@@ -159,7 +187,7 @@ class <?= $classname ?> extends ComponentController {
         if ($last == '') return;
 
         $lower = mb_strtolower($last);
-        $ucfirst = ucfirst($last);
+        $ucfirst = $this->generateName($name);
 
         create_folder($route);
         $route .= "/$lower.controller.php";
@@ -179,7 +207,7 @@ class <?= $ucfirst ?>Middleware extends Middleware {
     }
 
     function display($controller = null) {
-        $controller->display();
+        $this->controller->display();
     }
 
 }<?php
@@ -237,31 +265,6 @@ class <?= $cl ?> {
         echo "\nClass created at $route\n";
     }
 
-    private function create_assets($route, $name) {
-        $assets = $route . '/assets';
-        if (!is_dir($assets)) {
-            create_folder($assets);
-        }
-
-        $css = $assets . '/scss';
-        if (!is_dir($css))
-            create_folder($css);
-
-        $css .= "/$name.scss";
-        if (!file_exists($css))
-            file_put_contents($css, '');
-
-        $js = $assets . '/js';
-        if (!is_dir($js)) {
-            create_folder($js);
-        }
-
-        $js .= "/$name.js";
-        if (!file_exists($js)) {
-            file_put_contents($js, '');
-        }
-    }
-
     public function command_test() {
         if (sizeof($this->params) < 1) {
             echo "\Test name not specified\n";
@@ -287,7 +290,7 @@ class <?= $cl ?> {
         if ($last == '') return;
 
         $lower = mb_strtolower($last);
-        $ucfirst = ucfirst($last);
+        $ucfirst = $this->generateName($last);
 
         $route .= '.php';
 
@@ -296,7 +299,9 @@ class <?= $cl ?> {
 class <?= $ucfirst ?> extends Test {
 
     function run() {
-
+        if (!true) {
+            $this->addError('Something went wrong!');
+        }
     }
 
 }<?php
@@ -316,9 +321,6 @@ class <?= $ucfirst ?> extends Test {
 
         - component <route>
         Create a component controller.
-
-        If you want to add all assets for the page or component
-        automatically use the flag --full
 
         - middleware
         Create a middleware in /src/middlewares

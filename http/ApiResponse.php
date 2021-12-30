@@ -31,7 +31,7 @@ class ApiResponse {
      * @param mixed $data
      * @param array $extra fields for response
      */
-    private static function failRequest(string $type, $message, $data = null, array $extra = []) {
+    private static function failRequest(string $type, $message = null, $data = null, array $extra = []) {
 
         $responses = _get_http_responses();
 
@@ -118,8 +118,8 @@ class ApiResponse {
      * @param mixed $data
      * @param array $extra
      */
-    public static function fail($responseName, $message = null, $data = null, array $extra = []) {
-        self::failRequest($responseName, $message, $data, $extra);
+    public static function fail(string $responseType, $message = null, $data = null, array $extra = []) {
+        self::failRequest($responseType, $message, $data, $extra);
     }
 
     /**

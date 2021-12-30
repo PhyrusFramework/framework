@@ -1,11 +1,9 @@
 
 class Validator {
 
-    value;
-    checks = [];
-
     constructor(value = null) {
         this.value = value;
+        this.checks = [];
     }
 
     static for(value) {

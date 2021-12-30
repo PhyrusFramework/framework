@@ -1,7 +1,7 @@
 
-class http {
+var http = {
 
-    static request(req) {
+    request(req) {
 
         return new Promise((resolve, reject) => {
 
@@ -55,9 +55,9 @@ class http {
             xhr.send(req.data);
 
         });
-    }
+    },
 
-    static get(url, req = {}) {
+    get(url, req = {}) {
 
         req['method'] = 'GET';
         req['url'] = url;
@@ -66,9 +66,9 @@ class http {
         }
 
         return http.request(req);
-    }
+    },
 
-    static post(url, req = {}) {
+    post(url, req = {}) {
 
         req['method'] = 'POST';
         req['url'] = url;
@@ -77,9 +77,9 @@ class http {
         }
 
         return http.request(req);
-    }
+    },
 
-    static delete(url, req = {}) {
+    delete(url, req = {}) {
 
         req['method'] = 'DELETE';
         req['url'] = url;
@@ -88,9 +88,9 @@ class http {
         }
 
         return http.request(req);
-    }
+    },
 
-    static put(url, req = {}) {
+    put(url, req = {}) {
 
         req['method'] = 'PUT';
         req['url'] = url;
@@ -99,9 +99,9 @@ class http {
         }
 
         return http.request(req);
-    }
+    },
 
-    static patch(url, req = {}) {
+    patch(url, req = {}) {
 
         req['method'] = 'PATCH';
         req['url'] = url;
