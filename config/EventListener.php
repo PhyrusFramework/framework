@@ -41,7 +41,7 @@ class EventListener {
      * @param mixed $func Action when this event is triggered.
      * @param int $priority
      */
-    function add($func, $priority = null) {
+    function add($func, $priority = null, $name = '') {
 
         $p = $priority;
         if ($p == null) {
@@ -50,18 +50,24 @@ class EventListener {
         }
 
         if (is_callable($func)) {
-            $this->funcs[] = [
+            $ev = [
                 'func' => $func,
                 'priority' => $p
             ];
         }
         else {
-            $this->funcs[] = [
+            $ev = [
                 'func' => function() use($func) {
                     echo $func;
                 },
                 'priority' => $p
             ];
+        }
+
+        if ($name != '') {
+            $this->funcs[$name] = $ev;
+        } else {
+            $this->funcs[] = $ev;
         }
     }
 
@@ -142,13 +148,13 @@ class Head {
      * @param callable $func
      * @param int $priority
      */
-    public static function add($func, $priority = null) {
+    public static function add($func, $priority = null, $name = '') {
 
         if (self::$event == null) {
             self::$event = new EventListener('head');
         }
 
-        self::$event->add($func, $priority);
+        self::$event->add($func, $priority, $name);
 
     }
 
@@ -178,13 +184,13 @@ class Footer {
      * @param int $priority
      *
      */
-    public static function add($func, $priority = null) {
+    public static function add($func, $priority = null, $name = '') {
 
         if (self::$event == null) {
             self::$event = new EventListener('footer');
         }
 
-        self::$event->add($func, $priority);
+        self::$event->add($func, $priority, $name = '');
 
     }
 

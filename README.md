@@ -11,12 +11,11 @@ Find more about Phyrus in the website: https://phyrus.org
 To create a new Phyrus project you will need PHP and Composer, then run this command in your terminal:
 
     composer create-project phyrus/project
-
-To use Phyrus without composer read the website: https://phyrus.org/download
+    
 
 ## Documentation
 
-You can find all the official documentation in the website: https://phyrus.org/documentation.
+You can find all the official documentation in the website: https://phyrus.gitbook.io/phyrus-documentation/.
 
 
 ## Contribute

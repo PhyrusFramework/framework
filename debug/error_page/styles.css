@@ -85,6 +85,10 @@
     border-bottom-right-radius: 10px;
     padding: 20px;
 }
+.error-handler-page .error-handler-box .code-box > * {
+    word-break: break-all;
+    line-break: anywhere;
+}
 .error-handler-page .error-handler-box .code-box .guilty {
     color: rgb(255, 163, 163);
 }

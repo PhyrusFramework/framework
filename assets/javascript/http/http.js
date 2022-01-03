@@ -14,7 +14,11 @@ var http = {
                 let data = xhr.response;
 
                 if (format == 'json') {
-                    data = JSON.parse(data);
+                    try {
+                        data = JSON.parse(data);
+                    } catch(e) {
+                        data = xhr.response;
+                    }
                 }       
 
                 resolve(data);

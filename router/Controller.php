@@ -104,10 +104,20 @@ class Controller {
         if (!is_dir($folder)) return;
         $res = Folder::instance($folder)->subfiles('controller.php');
         if (sizeof($res) > 0) {
+            $classcount = sizeof(get_declared_classes());
             require_once($res[0]);
 
             $classes = get_declared_classes();
-            $last = $classes[sizeof($classes) - 1];
+
+            if (sizeof($classes) == $classcount) {
+                throw new FrameworkException(
+                    "Can't find Controller for directory $folder.",
+                    "Make sure that your controller (<b>$last</b>?) extends the Controller class.<br><br>Are you maybe overriding the Controller constructor? If so, please, don't override the constructor, use the method init() instead."
+                );
+                return;
+            }
+
+            $last = $classes[$classcount];
             
             if (is_subclass_of($last, "Controller")) {
                 $obj = new $last();

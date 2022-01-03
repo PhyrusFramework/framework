@@ -104,9 +104,9 @@ if (!$controller->found)
     response('not_found');
 
 $middleware->displayHierarchy();
-if (Config::get('assets.js.vue')) { ?></div><?php }
 
 if (!$controller->raw){
+    if (Config::get('assets.js.vue')) { ?></div><?php }
     self::footlines();
 ?>
 </body>
