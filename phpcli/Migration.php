@@ -4,11 +4,11 @@ class Migration {
 
     function __construct(callable $migrate, callable $undo) {
 
-        global $_SQL_MIGRATION_MODE;
+        global $_MIGRATION_MODE;
 
-        if ($_SQL_MIGRATION_MODE == 'migrate') {
+        if ($_MIGRATION_MODE == 'migrate') {
             $migrate();
-        } else if ($_SQL_MIGRATION_MODE == 'undo') {
+        } else if ($_MIGRATION_MODE == 'undo') {
             $undo();
         }
 
@@ -18,98 +18,323 @@ class Migration {
         include($__file__);
     }
 
-    static function reset() {
-        $path = Path::root() . '/' . Definitions::get('migrations');
-        if (!is_dir($path) && !file_exists($path)) return;
+    private static function getStore() {
 
-        $historyFile = "$path/history.json";
-        if (file_exists($historyFile)) {
-            file_put_contents($historyFile, '{}');
+        if (DBConnected()) {
+            return new MigrationDBStore();
+        } else {
+            return new MigrationJSONStore();
         }
+    }
+
+    static function reset() {
+        self::getStore()->reset();
     }
     
     static function migrate($file = null, $force = false) {
 
-        global $_SQL_MIGRATION_MODE;
-        $_SQL_MIGRATION_MODE = 'migrate';
+        global $_MIGRATION_MODE;
+        $_MIGRATION_MODE = 'migrate';
     
         $path = Path::root() . '/' . Definitions::get('migrations');
         if (!is_dir($path) && !file_exists($path)) return;
+
+        $store = self::getStore();
     
-        if ($file == null)
-            $files = Folder::instance($path)->subfiles('php');
-        else
-            $files = ["$path/$file.php"];
-        
+        $files = $file == null ? Folder::instance($path)->subfiles('php') : ["$path/$file.php"]; 
+        $notExecuted = $force ? $files : $store->filterNotExecuted($files, $file != null);
+
+        $names = [];
+
+        foreach($notExecuted as $file) {
+            $name = File::instance($file)->name(false);
+            if (!file_exists($file)) {
+                if ($file != null && defined('USING_CLI')) {
+                    echo "The migration '$name' does not exist.\n";
+                }
+                continue;
+            }
+            self::run($file);
+            $names[] = $name;
+        }
+
+        $store->add($names);
+
+    }
+
+    static function undo($file = null, $force = false) {
+
+        global $_MIGRATION_MODE;
+        $_MIGRATION_MODE = 'undo';
+    
+        $path = Path::root() . '/' . Definitions::get('migrations');
+        if (!is_dir($path) && !file_exists($path)) return;
+
+        $store = self::getStore();
+
+        $files = $file == null ? Folder::instance($path)->subfiles('php') : ["$path/$file.php"]; 
+        $executed = $force ? $files : $store->filterExecuted($files, $file != null);
+
+        $names = [];
+
+        foreach($executed as $file) {
+            $name = File::instance($file)->name(false);
+            if (!file_exists($file)) {
+                if ($file != null && defined('USING_CLI')) {
+                    echo "The migration '$name' does not exist.\n";
+                }
+                continue;
+            }
+
+            self::run($file);
+            $names[] = $name;
+        }
+
+        $store->remove($names);
+    }
+
+}
+
+class MigrationDBStore {
+
+    private function checkTable() {
+        if (!DB::tableExists('migrations')) {
+            DB::createTable([
+                'name' => 'migrations',
+                'columns' => [
+                    [
+                        'name' => 'name',
+                        'type' => 'VARCHAR(100)'
+                    ],
+                    [
+                        'name' => 'migratedAt',
+                        'type' => 'DATETIME'
+                    ]
+                ]
+            ]);
+            return false;
+        }
+        return true;
+    }
+
+    public function reset() {
+        if ($this->checkTable()) {
+            DB::query('DELETE FROM migrations');
+        }
+    }
+
+    public function filterNotExecuted($files, $specific = false) {
+
+        $notExecuted = [];
+        $this->checkTable();
+        $res = DB::query('SELECT * FROM migrations')->result;
+
+        foreach($files as $file) {
+            $name = File::instance($file)->name(false);
+
+            $found = false;
+            foreach($res as $row) {
+                if ($row->name == $name) {
+                    $found = true;
+                    break;
+                }
+            }
+
+            if (!$found) {
+                $notExecuted[] = $file;
+            } else if ($specific) {
+                if (defined('USING_CLI')) {
+                    echo "The migration '$name' wants to be executed but it was already migrated. Run with --force to execute anyway.\n";
+                }
+            }
+        }
+
+        return $notExecuted;
+    }
+    
+    public function add($names) {
+        $this->checkTable();
+        foreach($names as $name) {
+            
+            $count = DB::query('SELECT COUNT(*) as count FROM migrations WHERE name = :name', [
+                'name' => $name
+            ])->first->count;
+
+            if (intval($count) > 0) {
+                DB::query('UPDATE migrations SET migratedAt = :now WHERE name = :name', [
+                    'name' => $name,
+                    'now' => datenow()
+                ]);
+            } else {
+                DB::query('INSERT INTO migrations (name, migratedAt) VALUES (:name, :now)', [
+                    'name' => $name,
+                    'now' => datenow()
+                ]);
+            }
+
+        }
+    }
+
+    public function filterExecuted($files, $specific = false) {
+
+        $executed = [];
+        $this->checkTable();
+        $rows = DB::query("SELECT * FROM migrations ORDER BY migratedAt DESC")->result;
+
+        foreach($files as $f) {
+            $n = File::instance($f)->name(false);
+            if (!file_exists($f)) {
+                if ($specific && defined('USING_CLI')) {
+                    echo "The migration '$n' does not exist.\n";
+                }
+                continue;
+            }
+
+            $found = false;
+            foreach($rows as $m) {
+                if ($m->name == $n) {
+                    $executed[$f] = $m->migratedAt . "_$m->ID";
+                    $found = true;
+                    break;
+                }
+            }
+            if ($specific && !$found && defined('USING_CLI')) {
+                echo "The migration '$n' wants to be undone but it's not migrated. Run with --force to undo anyway.\n";
+            }
+        }
+
+        arsort($executed);
+
+        $aux = [];
+        foreach($executed as $name => $date) {
+            $aux[] = $name;
+        }
+
+        return $aux;
+
+    }
+
+    public function remove($names) {
+        if (sizeof($names) == 0) return;
+        $this->checkTable();
+        DB::query("DELETE FROM migrations WHERE name IN :names", [
+            'names' => $names
+        ]);
+    }
+
+}
+
+class MigrationJSONStore {
+
+    private function filepath() {
+        $path = Path::root() . '/' . Definitions::get('migrations');
+
+        if (!is_dir($path) || !file_exists($path)) {
+            mkdir($path);
+        }
+
         $historyFile = "$path/history.json";
+
+        if (!file_exists($historyFile)) {
+            file_put_contents($historyFile, '{}');
+        }
+
+        return $historyFile;
+    }
+
+    public function reset() {
+        file_put_contents($this->filepath(), '{}');
+    }
+
+    public function filterNotExecuted($files, $specific = false) {
+
+        $historyFile = $this->filepath();
         $history = [];
         if (file_exists($historyFile)) {
             $history = JSON::fromFile($historyFile)->toArray();
         }
     
+        $notExecuted = [];
+
         foreach($files as $file) {
             if (!file_exists($file)) continue;
             $name = File::instance($file)->name(false);
     
-            if (!$force && isset($history[$name])) {
+            if (isset($history[$name])) {
 
-                if (defined('USING_CLI')) {
+                if ($specific && defined('USING_CLI')) {
                     echo "The migration '$name' wants to be executed but it was already migrated. Run with --force to execute anyway.\n";
                 }
 
                 continue;
             } else {
-                $history[$name] = datenow();
-                self::run($file);
+                $notExecuted[] = $file;
             }
     
         }
+
+        return $notExecuted;
+
+    }
     
+    public function add($names) {
+        $historyFile = $this->filepath();
+        $history = [];
+        if (file_exists($historyFile)) {
+            $history = JSON::fromFile($historyFile)->toArray();
+        }
+
+        foreach($names as $name) {
+            $history[$name] = datenow();
+        }
+
         JSON::instance($history)->saveTo($historyFile);
     }
 
-    static function undo($file = null, $force = false) {
+    public function filterExecuted($files, $specific = false) {
 
-        global $_SQL_MIGRATION_MODE;
-        $_SQL_MIGRATION_MODE = 'undo';
-    
-        $path = Path::root() . '/' . Definitions::get('migrations');
-        if (!is_dir($path) && !file_exists($path)) return;
-
-        $historyFile = "$path/history.json";
-        if (!file_exists($historyFile)) return;
-        
-        $history = JSON::fromFile($historyFile)->toArray();
-    
-        if ($file == null) {
-            $aux = array_keys($history);
-            $files = [];
-            for($i = sizeof($aux) - 1; $i >= 0; --$i) {
-                $files[] = "$path/" . $aux[$i] . ".php";
-            }
-        } else
-            $files = ["$path/$file.php"];
-    
-        foreach($files as $file) {
-            if (!file_exists($file)) continue;
-            $name = File::instance($file)->name(false);
-    
-            if (!$force && !isset($history[$name])) {
-
-                if (defined('USING_CLI')) {
-                    echo "The migration '$name' wants to be undone but was never migrated. Run with --force to undo anyway.\n";
-                }
-
-                continue;
-            } else {
-                self::run($file);
-
-                if (isset($history[$name]))
-                    unset($history[$name]);
-            }
-    
+        $historyFile = $this->filepath();
+        $history = [];
+        if (file_exists($historyFile)) {
+            $history = JSON::fromFile($historyFile)->toArray();
         }
     
+        $executed = [];
+        arsort($history);
+
+        $found = false;
+        foreach($history as $name => $date) {
+
+            foreach($files as $f) {
+                $n = File::instance($f)->name(false);
+                if ($name == $n) {
+                    $executed[] = $f;
+                    $found = true;
+                    break;
+                }
+            }
+
+        }
+        if ($specific && !$found && defined('USING_CLI')) {
+            $n = File::instance($files[0])->name(false);
+            echo "The migration '$n' wants to be undone but it's not migrated. Run with --force to undo anyway.\n";
+        }
+
+        return $executed;
+
+    }
+
+    public function remove($names) {
+        $historyFile = $this->filepath();
+        $history = [];
+        if (file_exists($historyFile)) {
+            $history = JSON::fromFile($historyFile)->toArray();
+        }
+
+        foreach($names as $name) {
+            unset($history[$name]);
+        }
+
         JSON::instance($history)->saveTo($historyFile);
     }
 

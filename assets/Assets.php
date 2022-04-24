@@ -315,10 +315,10 @@ class Assets {
         if (Config::get('assets.js.vue')) {
             Footer::add(function() use ($frameworkPath) {?>
     <script src="<?= $frameworkPath ?>/vue/phyrus.js"></script>
-    <script src="<?= $frameworkPath ?><?= Config::get('development_mode') ? '/vue/vue.dev.js' : '/vue/vue.min.js'?>" async onload="VueLoader.didLoad()"></script>
+    <script src="<?= $frameworkPath ?><?= Config::get('project.development_mode') ? '/vue/vue.dev.js' : '/vue/vue.min.js'?>" async onload="VueLoader.didLoad()"></script>
     <?php 
 
-    if (Config::get('development_mode')) {?>
+    if (Config::get('project.development_mode')) {?>
         <script src="<?= $frameworkPath ?>/debug-console.js"></script>
     <?php }
             }, 1);

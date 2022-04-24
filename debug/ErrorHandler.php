@@ -131,8 +131,10 @@ class ErrorHandler {
             ob_clean();
         }
         
-        header('HTTP/1.0 500 Internal Server Error');
-        http_response_code(500);
+        if (!defined('USING_CLI')) {
+            header('HTTP/1.0 500 Internal Server Error');
+            http_response_code(500);
+        }
 
         if (!class_exists('RequestData')) {
 
@@ -163,9 +165,6 @@ class ErrorHandler {
             ${$k} = $v;
         }
         include(__DIR__ . '/error_page/view.php');
-        ?>
-        <script src="/framework/assets/javascript/jquery.js"></script>
-        <?php
         DebugConsole::print();
     }
 

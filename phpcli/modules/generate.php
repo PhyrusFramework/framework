@@ -166,7 +166,7 @@ class <?= $classname ?> extends ComponentController {
     public function command_middleware() {
 
         if (sizeof($this->params) < 1) {
-            echo "\Middleware name not specified\n";
+            echo "\nMiddleware name not specified\n";
             return;
         }
 
@@ -267,7 +267,7 @@ class <?= $cl ?> {
 
     public function command_test() {
         if (sizeof($this->params) < 1) {
-            echo "\Test name not specified\n";
+            echo "\nTest name not specified\n";
             return;
         }
 
@@ -311,6 +311,36 @@ class <?= $ucfirst ?> extends Test {
         echo "\nTest created\n";
     }
 
+    public function command_migration() {
+        if (sizeof($this->params) < 1) {
+            echo "\nMigration name not specified.\n";
+            return;
+        }
+
+        $path = Path::root() . '/' . Definitions::get('migrations');
+        if (!file_exists($path)) {
+            mkdir($path);
+        }
+        $t = new Time();
+        $name = $this->params[0];
+
+        $filename = $t->format('YmdHis') . "_$name.php";
+
+        ob_start();?>
+<<?= '?' ?>php  
+
+new Migration(
+    function() {
+        // DO
+    },
+    function() {
+        // UNDO
+    }
+);<?php
+        $content = ob_get_clean();
+        file_put_contents("$path/$filename", $content);
+    }
+
     public function help() {?>
 
         The Generate command allows you to create project
@@ -330,6 +360,9 @@ class <?= $ucfirst ?> extends Test {
 
         - test <name>
         Create a new test in /tests
+
+        - migration <name>
+        Create a new migration in /migrations
 
     <?php }
 

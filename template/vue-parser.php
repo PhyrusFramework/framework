@@ -166,7 +166,7 @@ class VueParser {
             $path = Cacher::write($file . '.js', $sc);
 
              /// Minify output
-             if (!Config::get('development_mode')) {
+             if (!Config::get('project.development_mode')) {
                 $min = new Minifier();
                 $min->addFile($path);
                 $min->minify($path);
@@ -179,7 +179,7 @@ class VueParser {
             $path = Cacher::write($file . '.scss', $style);
 
              /// Minify output
-             if (!Config::get('development_mode')) {
+             if (!Config::get('project.development_mode')) {
                 $min = new Minifier();
                 $min->addFile($path);
                 $min->minify($path);

@@ -241,7 +241,7 @@ class DATABASE
      * 
      * @return bool
      */
-    public function table_exists(string $table) : bool {
+    public function tableExists(string $table) : bool {
         $db = $this->dbname;
         
         $q = $this->query("SELECT COUNT(*) AS x FROM information_schema.TABLES WHERE (TABLE_SCHEMA = '$db') AND (TABLE_NAME='$table')");
@@ -441,11 +441,11 @@ class DATABASE
      * 
      * @param array $tables
      */
-    public function create_tables(array $tables) {
+    public function createTables(array $tables) {
 
         foreach($tables as $table)
         {
-            $this->create_table($table);
+            $this->createTable($table);
         }
     
     }
@@ -457,7 +457,7 @@ class DATABASE
      * 
      * @return DBQueryResult.
      */
-    public function create_table(array $table) : DBQueryResult {
+    public function createTable(array $table) : DBQueryResult {
 
         $name = $table['name'];
         $q = "CREATE TABLE $name (";
@@ -548,6 +548,17 @@ class DATABASE
     
         $backupDatabase = new Backup_Database($arr);
         $backupDatabase->backupTables($options['tables'] ?? '*');
+    }
+
+    /**
+     * Generate a DBTable object for a table.
+     * 
+     * @param string $name
+     * 
+     * @return DBTable
+     */
+    public static function table(string $name) : DBTable {
+        return new DBTable($name);
     }
 
 

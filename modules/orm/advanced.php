@@ -28,6 +28,65 @@ class AdvancedORM extends ORM {
     }
 
     /**
+     * What to add on conversion to JSON
+     * 
+     * @var array
+     */
+    private $__onJson = [
+        'translations' => null,
+        'metas' => null,
+        'resources' => null
+    ];
+
+    /**
+     * Get actions to do on JSON serialization.
+     * 
+     * @return Generic
+     */
+    public function onJSON() : Generic {
+
+        $gen = new Generic();
+
+        $gen
+        ->set('addTranslations', function($language = null) use ($gen) {
+            $this->__onJson['translations'] = $language;
+            return $gen;
+        })
+        ->set('addMetas', function(...$names) use ($gen) {
+            $this->__onJson['metas'] = sizeof($names) > 0 ? $names : [];
+            return $gen;
+        })
+        ->set('addResources', function(...$types) use ($gen) {
+            $this->__onJson['resources'] = sizeof($types) > 0 ? $types : [];
+            return $gen;
+        });
+
+        return $gen;
+
+    }
+
+    public function jsonSerialize() {
+        $value = parent::jsonSerialize();
+
+        if ($this->__onJson['translations'] !== null) {
+            $trans = $this->getTranslations($this->__onJson['translations']);
+            $value['translations'] = $trans;
+        }
+
+        if ($this->__onJson['metas'] !== null) {
+            $metas = $this->getMetas(...$this->__onJson['metas']);
+            $value['meta'] = $metas;
+        }
+
+        if ($this->__onJson['resources'] !== null) {
+            $res = $this->getResourcesByTypes(...$this->__onJson['resources']);
+            $value['resources'] = $res;
+        }
+
+        return $value;
+    }
+
+    /**
      * Check if DB exists or create it.
      * 
      * @param bool Check also other tables: meta, translations, resources.
@@ -75,14 +134,14 @@ class AdvancedORM extends ORM {
             return true;
         }
 
-        if (!Config::get('development_mode')) return true;
+        if (!Config::get('project.development_mode')) return true;
 
         $existed = true;
-        if (!DB::table_exists($table)){
+        if (!DB::tableExists($table)){
             $existed = false;
             self::$_tables_checked[$table] = true;
 
-            DB::create_table([
+            DB::createTable([
                 'name' => $this->meta_table(),
                 'columns' => [
                     [
@@ -130,14 +189,14 @@ class AdvancedORM extends ORM {
             return true;
         }
 
-        if (!Config::get('development_mode')) return true;
+        if (!Config::get('project.development_mode')) return true;
 
         $existed = true;
-        if (!DB::table_exists($table)){
+        if (!DB::tableExists($table)){
             $existed = false;
             self::$_tables_checked[$table] = true;
 
-            DB::create_table([
+            DB::createTable([
                 'name' => $this->translations_table(),
                 'columns' => [
                     [
@@ -190,14 +249,14 @@ class AdvancedORM extends ORM {
             return true;
         }
 
-        if (!Config::get('development_mode')) return true;
+        if (!Config::get('project.development_mode')) return true;
 
         $existed = true;
-        if (!DB::table_exists($table)){
+        if (!DB::tableExists($table)){
             $existed = false;
             self::$_tables_checked[$table] = true;
 
-            DB::create_table([
+            DB::createTable([
                 'name' => $this->resources_table(),
                 'columns' => [
                     [
@@ -229,33 +288,36 @@ class AdvancedORM extends ORM {
 
     /**
      * Delete this object.
+     * 
+     * @return AdvancedORM
      */
-    public function delete() {
+    public function delete() : AdvancedORM {
 
         $ref = $this->reference_column();
 
         $t = $this->meta_table();
-        if (DB::table_exists($t)) {
+        if (DB::tableExists($t)) {
             DB::query("DELETE FROM $t WHERE $ref = :ID", [
                 'ID' => $this->ID
             ]);
         }
 
         $t = $this->translations_table();
-        if (DB::table_exists($t)) {
+        if (DB::tableExists($t)) {
             DB::query("DELETE FROM $t WHERE $ref = :ID", [
                 'ID' => $this->ID
             ]);
         }
 
         $t = $this->resources_table();
-        if (DB::table_exists($t)) {
+        if (DB::tableExists($t)) {
             DB::query("DELETE FROM $t WHERE $ref = :ID", [
                 'ID' => $this->ID
             ]);
         }
 
         parent::delete();
+        return $this;
     }
 
     /**
@@ -263,8 +325,10 @@ class AdvancedORM extends ORM {
      * 
      * @param string $name
      * @param mixed $value
+     * 
+     * @return AdvancedORM
      */
-    public function setMeta(string $name, $value) {
+    public function setMeta(string $name, $value) : AdvancedORM {
         $this->__metas[$name] = $value;
 
         $this->__checkDB_meta();
@@ -277,7 +341,7 @@ class AdvancedORM extends ORM {
                 'ID' => $this->ID,
                 'name' => $name
             ]);
-            return;
+            return $this;
         }
 
         $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND meta_key = :name LIMIT 1", [
@@ -308,6 +372,8 @@ class AdvancedORM extends ORM {
                 'value' => $v
             ]);
         }
+
+        return $this;
     }
 
     /**
@@ -343,13 +409,51 @@ class AdvancedORM extends ORM {
     }
 
     /**
+     * Get all or specified metas for this object.
+     * 
+     * @param array names
+     * 
+     * @return array
+     */
+    public function getMetas(...$names) {
+
+        $t = $this->meta_table();
+        $ref = $this->reference_column();
+
+        if (empty($names)) {
+
+            $res = DB::query("SELECT * FROM $t WHERE $ref = :ID", [
+                'ID' => $this->ID
+            ])->result;
+
+        } else {
+
+            $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND meta_key IN :metas", [
+                'ID' => $this->ID,
+                'metas' => $names
+            ])->result;
+
+        }
+
+        $arr = [];
+        foreach($res as $row) {
+            $arr[$row->meta_key] = $row->meta_value;
+        }
+
+        return $arr;
+
+    }
+
+    /**
      * Set object translation.
      * 
      * @param string $name
      * @param string $locale
      * @param string $value
+     * 
+     * @return AdvancedORM
      */
-    public function setTranslation(string $name, string $locale, $value) {
+    public function setTranslation(string $name, string $locale, $value) : AdvancedORM {
         if (!isset($this->__translations[$locale]))
             $this->__translations[$locale] = [];
         $this->__translations[$locale][$name] = $value;
@@ -365,7 +469,7 @@ class AdvancedORM extends ORM {
                 'name' => $name,
                 'locale' => $locale
             ]);
-            return;
+            return $this;
         }
 
         $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND name = :name AND locale = :locale LIMIT 1", [
@@ -390,6 +494,8 @@ class AdvancedORM extends ORM {
                 'value' => $value
             ]);
         }
+
+        return $this;
     }
 
     /**
@@ -554,7 +660,6 @@ class AdvancedORM extends ORM {
             ]);
 
         }
-        
 
         $list = [];
         foreach($res->result as $r) {
@@ -564,6 +669,53 @@ class AdvancedORM extends ORM {
         if ($type != null)
             $this->__resources[$type] = $list;
             
+        return $list;
+
+    }
+
+    /**
+     * Get all files for this object or filter by type.
+     * 
+     * @return array
+     */
+    public function getResourcesByTypes(...$types) : array {
+
+        $this->__checkDB_resources();
+
+        $t = $this->resources_table();
+        $ref = $this->reference_column();
+
+        if (sizeof($types) == 0) {
+            $res = DB::query("SELECT * FROM $t WHERE $ref = :ID ORDER BY position ASC", [
+                'ID' => $this->ID
+            ]);
+
+            
+            $list = [];
+
+            foreach($res->result as $row) {
+                if (!isset($list[$row->type])) {
+                    $list[$row->type] = [];
+                }
+
+                $list[$row->type][] = $row->file;
+            }
+
+            return $list;
+
+        }
+
+        $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND type IN :types ORDER BY position ASC", [
+            'ID' => $this->ID,
+            'types' => $types
+        ]);
+
+        $list = [];
+
+        foreach($res->result as $row) {
+            $list[] = $row->file;
+        }
+
         return $list;
 
     }
@@ -652,14 +804,14 @@ class AdvancedORM extends ORM {
             'position' => $position
         ]);
 
-        $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND type = :type AND file = :file DESC LIMIT 1", [
+        $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND type = :type AND file = :file ORDER BY position DESC LIMIT 1", [
             'ID' => $this->ID,
             'type' => $type,
             'file' => $file
         ]);
 
         if ($res->something) {
-            $resource = new ORMResource($res->first);
+            $resource = new ORMResource($res->first, $this);
             $this->__resources[$type][] = $resource;
             return $resource;
         }
@@ -703,16 +855,16 @@ class AdvancedORM extends ORM {
         $cl = get_called_class();
         $sample = new $cl();
 
-        if (DB::table_exists($sample->translations_table()))
+        if (DB::tableExists($sample->translations_table()))
         DBTable::instance($sample->translations_table())->drop();
 
-        if (DB::table_exists($sample->resources_table()))
+        if (DB::tableExists($sample->resources_table()))
         DBTable::instance($sample->resources_table())->drop();
 
-        if (DB::table_exists($sample->meta_table()))
+        if (DB::tableExists($sample->meta_table()))
         DBTable::instance($sample->meta_table())->drop();
 
-        if (DB::table_exists($sample->getTable()))
+        if (DB::tableExists($sample->getTable()))
         DBTable::instance($sample->getTable())->drop();
     }
 

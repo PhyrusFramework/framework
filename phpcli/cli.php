@@ -120,6 +120,11 @@ class CLI {
      * Run CLI command.
      */
     public function run() {
+
+        if (defined('CLI_DATABASE')) {
+            DB::connect();
+        }
+
         if (empty($this->command) || $this->command == 'help') {
             $this->help();
             return;

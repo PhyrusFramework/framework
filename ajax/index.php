@@ -40,7 +40,10 @@ class Ajax {
     public static function run(string $name) : bool {
         if (!self::has($name)) return false;
 
-        Ajax::$functions[$name]( new RequestData(true) );
+        $ret = Ajax::$functions[$name]( new RequestData(true) );
+        if (is_array($ret)) {
+            echo JSON::stringify($ret);
+        }
         return true;
 
     }

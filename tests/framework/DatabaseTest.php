@@ -34,10 +34,10 @@ class DatabaseTest extends Test {
             ]
         ];
 
-        $error = DB::create_table($definition);
+        $error = DB::createTable($definition);
         $this->is($error, null, 'Table created with definition');
 
-        $this->is(DB::table_exists($table), true, 'Check if table exists');
+        $this->is(DB::tableExists($table), true, 'Check if table exists');
 
         $res = DB::insert($table, [
             'email' => 'test@gmail.com',
@@ -83,6 +83,6 @@ class DatabaseTest extends Test {
 
 }
 
-if (Config::get('tests.alternativeDatabase') != null) {
+if (Config::get('database.forTests') != null) {
     new DatabaseTest();
 }

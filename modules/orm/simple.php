@@ -1,6 +1,6 @@
 <?php
 
-class ORM {
+class ORM implements JsonSerializable {
 
     /**
      * Check if table is checked.
@@ -26,13 +26,9 @@ class ORM {
     /**
      * Get the table definition.
      * 
-     * @return array
      */
-    protected function Definition() {
-        return [
-            'name' => get_called_class(),
-            'columns' => []
-        ];
+    protected function Definition(DBBuilder $builder) {
+        $builder->name(get_called_class());
     }
 
     public function __construct($ID = null) {
@@ -49,6 +45,19 @@ class ORM {
             $this->__absorbObject($res->first);
         }
 
+    }
+
+    public function __toString() {
+        return JSON::stringify($this->jsonSerialize());
+    }
+
+    public function jsonSerialize() {
+        $value = [];
+        $def = $this->__getDefinition();
+        foreach($def['columns'] as $col) {
+            $value[$col['name']] = $this->{$col['name']};
+        }
+        return $value;
     }
 
     /**
@@ -119,7 +128,10 @@ class ORM {
     private function __getDefinition() : array {
         if ($this->__definition != null) return $this->__definition;
 
-        $def = $this->Definition();
+        $def = new DBBuilder();
+        $this->Definition($def);
+        $def = $def->toArray();
+
         if (!isset($def['columns'])) return [];
         if (isset($def['primary'])) unset($def['primary']);
         if (!isset($def['name'])) $def['name'] = get_called_class();
@@ -161,12 +173,12 @@ class ORM {
      */
     public function CheckTable() : bool {
         if ($this->__table_checked) return true;
-        if (!Config::get('development_mode')) return true;
+        if (!Config::get('project.development_mode')) return true;
 
         $existed = true;
-        if (!DB::table_exists($this->getTable())){
+        if (!DB::tableExists($this->getTable())){
             $existed = false;
-            DB::create_table($this->__getDefinition());
+            DB::createTable($this->__getDefinition());
         } else {
             // Check columns
             $definitionColumns = $this->__columns();
@@ -275,11 +287,13 @@ class ORM {
         $this->CheckTable();
 
         if ($this->exists()) {
-            return $this->__update($columns);
+            $this->__update($columns);
         }
         else {
-            return $this->__create();
+            $this->__create();
         }
+
+        return $this;
     }
 
     /**
@@ -333,7 +347,6 @@ class ORM {
         $parameters['ID'] = $this->ID;
 
         DB::query($q, $parameters);
-        return $this->ID;
     }
 
     /**
@@ -377,7 +390,7 @@ class ORM {
 
         $res = DB::query($q, $parameters);
 
-        return $this->__findID($now);
+        $this->__findID($now);
 
     }
 
@@ -394,7 +407,11 @@ class ORM {
         ];
 
         if (empty($columns)) {
-            $def = $this->Definition();
+
+            $def = new DBBuilder();
+            $this->Definition($def);
+            $def = $def->toArray();
+
             foreach($def['columns'] as $col) {
                 $arr[$col['name']] = $this->{$col['name']};
             }
@@ -411,7 +428,7 @@ class ORM {
      * Drop database table
      */
     public static function dropTable() {
-        if (DB::table_exists(self::Table()))
+        if (DB::tableExists(self::Table()))
             DBTable::instance(self::Table())->drop();
     }
 
@@ -427,6 +444,17 @@ class ORM {
         $cl = get_called_class();
         $sample = new $cl();
         return $sample->getTable();
+    }
+
+    /**
+     * Find the object with this ID.
+     * 
+     * @param int ID
+     * 
+     * @return ORM|null
+     */
+    public static function findID(int $ID) {
+        return self::findOne('ID = :ID', ['ID' => intval($ID)]);
     }
 
     /**
@@ -502,6 +530,127 @@ class ORM {
         $tmp->CheckTable();
         $res = DB::query('SELECT COUNT(*) AS count FROM ' . $tmp->getTable() . " WHERE $where", $parameters);
         return intval($res->first->count);
+    }
+
+    /**
+     * Create a CRUD object for this model.
+     * 
+     * @param string $route (optional)
+     * 
+     * @return Generic
+     */
+    public static function CRUD($route = null) : Generic {
+        $cl = get_called_class();
+        $crud = new CRUD($route ? $route : (new $cl())->getTable());
+
+        $gen = new Generic();
+
+        $gen->set('generate', function() use ($gen, $crud) {
+            $crud->generate();
+            return $gen;
+        });
+
+        $gen->set('list', function($param = true) use ($gen, $crud, $cl) {
+
+            $crud->list(function() use ($param, $cl) {
+
+                if (is_callable($param)) {
+                    return $param();
+                }
+                $list = $cl::find();
+                return $list;
+
+            });
+
+            return $gen;
+
+        });
+
+        $gen->set('get', function($param = true) use ($gen, $crud, $cl) {
+
+            $crud->get(function($id) use ($param, $cl) {
+                
+                $obj = $cl::findID($id);
+
+                if ($obj == null) {
+                    response_die('not-found');
+                }
+
+                if (is_callable($param)) {
+                    return $param($obj);
+                }
+                return $obj;
+
+            });
+
+            return $gen;
+
+        });
+
+        $gen->set('create', function($param = true) use ($gen, $crud, $cl) {
+
+            $crud->create(function() use ($param, $cl) {
+
+                if (is_callable($param)) {
+                    return $param();
+                }
+                $req = new RequestData();
+                $obj = new $cl($req);
+                $obj->save();
+                return $obj;
+
+            });
+
+            return $gen;
+
+        });
+
+        $gen->set('edit', function($param = true) use ($gen, $crud, $cl) {
+                
+            $crud->get(function($id) use ($param, $cl) {
+                
+                $obj = $cl::findID($id);
+                if ($obj == null) {
+                    response_die('not-found');
+                }
+
+                if (is_callable($param)) {
+                    return $param($obj);
+                }
+                $req = new RequestData();
+                $obj = new $cl($req);
+                $obj->ID = $id;
+                $obj->save();
+                return $obj;
+
+            });
+
+            return $gen;
+
+        });
+
+        $gen->set('delete', function($param = true) use ($gen, $crud, $cl) {
+                
+            $crud->get(function($id) use ($param, $cl) {
+                
+                $obj = $cl::findID($id);
+                if ($obj == null) {
+                    response_die('not-found');
+                }
+
+                if (is_callable($param)) {
+                    return $param($obj);
+                }
+                $obj->delete();
+                return $obj;
+
+            });
+
+            return $gen;
+
+        });
+
+        return $gen;
     }
 
 }

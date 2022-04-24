@@ -45,7 +45,7 @@ class DBTable {
         global $DATABASE;
         $D = $db ? $db : $DATABASE;
 
-        $D->create_table($definition);
+        $D->createTable($definition);
         return DBTable::instance($definition['name'], $db);
     }
 

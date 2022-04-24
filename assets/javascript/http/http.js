@@ -43,11 +43,17 @@ var http = {
             }
 
             xhr.open(req.method, url);
+            let data = req.data;
 
             if (format == 'json') {
                 xhr.setRequestHeader('Content-Type', 'application/json');
             } else if (format == 'media') {
-                xhr.setRequestHeader('Content-Type', 'multipart/form-data');
+                let d = new FormData();
+                Object.keys(data)
+                .forEach(k => {
+                    d.append(k, data[k]);
+                });
+                data = d;
             }
 
             if (req.headers) {
@@ -56,7 +62,7 @@ var http = {
                 });
             }
 
-            xhr.send(req.data);
+            xhr.send(data);
 
         });
     },
@@ -116,4 +122,61 @@ var http = {
         return http.request(req);
     }
 
+}
+
+function uploadFile(options)
+{
+    return new Promise((resolve, reject) => {
+
+        let file = null;
+        if (options.file) {
+            file = options.file;
+        } else {
+            let inp = $(options.selector);
+            if (inp.length == 0) return;
+            file = inp.target.files[0];
+        }
+    
+        if (!file) {
+            reject("fileEmpty");
+            return;
+        }
+    
+        if (options.maxSize && (file.size / 1000000) > options.maxSize) {
+            reject("sizeExceeded");
+            return;
+        }
+    
+        let data = {}
+    
+        let fname = "uploadedfile";
+        if (options.filename) fname = options.filename;
+
+        data[fname] = file;
+
+        let url = options.url;
+        if (options.action) {
+            data['ajaxActionName'] = options.action;
+            url = location.href;
+        }
+
+        if (!url) {
+            reject("urlEmpty");
+            return;
+        }
+    
+        if (options.data) {
+            Object.keys(options.data).forEach(k =>{
+                data[k] = options.data[k];
+            });
+        }
+
+        return http.request({
+            method: options.method ? options.method.toUpperCase() : 'POST',
+            url: url,
+            data: data,
+            format: 'media'
+        });
+
+    });
 }

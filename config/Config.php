@@ -1,6 +1,5 @@
 <?php
 
-
 class Config {
 
     /**
@@ -34,24 +33,65 @@ class Config {
     }
 
     /**
+     * Read YAML files in directory and add their values to the configuration.
+     * 
+     * @param string $path
+     */
+    private static function decode_folder(string $folder) {
+
+        if (file_exists($folder) && is_dir($folder)) {
+            $files = glob($folder . "/*.yaml");
+            foreach($files as $file) {
+                $content = YAML::fromFile($file);
+
+                $path_parts = pathinfo($file);
+                $name = $path_parts['filename'];
+
+                if (!isset(self::$config[$name])) {
+                    self::$config[$name] = [];
+                }
+
+                foreach($content as $k => $v) {
+                    self::$config[$name][$k] = $v;
+                }
+            }
+        }
+
+    }
+
+    /**
      * Gets configuration from JSON file and converts it into an Arr object.
      */
     private static function decode() {
+
         global $PROJECT_PATH;
-        $json = file_get_contents($PROJECT_PATH . '/config.json');
-        self::$config = arr(json_decode($json, true));
 
-        if (isset(self::$config['environment'])) {
-            $env = self::$config['environment'];
+        /// CHECK IF CACHED VERSION EXISTS
+        $json = "$PROJECT_PATH/" . Definitions::get('cached') . '/config.json';
+        
+        if (file_exists($json)) {
+            self::$config = arr(json_decode(file_get_contents($json), true));
 
-            $file = $PROJECT_PATH . "/config.$env.json";
-            if (file_exists($file)) {
-
-                $envjson = file_get_contents($file);
-                self::$config->merge( json_decode($envjson, true) );
-
+            // IF PRODUCTION, USE CACHED MODE
+            if (!self::get('project.development_mode')) {
+                return;
             }
         }
+
+        // IF NOT CACHED OR IN DEVELOPMENT MODE --> READ YAMLs
+        $folder = "$PROJECT_PATH/config";
+
+        self::$config = [];
+        self::decode_folder($folder);
+
+        if (isset(self::$config['project']) && isset(self::$config['project']['environment'])) {
+            $env = self::$config['project']['environment'];
+            self::decode_folder("$PROJECT_PATH/$env");
+        }
+
+        file_put_contents($json, json_encode(self::$config, JSON_UNESCAPED_UNICODE));
+
+        self::$config = arr(self::$config);
     }
 
     /**
@@ -70,7 +110,7 @@ class Config {
     }
 
     /**
-     * Change a configuration setting and save the json file.
+     * Change a configuration setting and saves the YAML file.
      * 
      * @param string $key Configuration name using dot notation.
      * @param mixed $value
@@ -79,8 +119,42 @@ class Config {
         self::set($key, $value);
 
         global $PROJECT_PATH;
-        $json = json_encode(self::$config->getArray(), JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);
-        file_put_contents($PROJECT_PATH . '/config.json', $json);
+        $path = "$PROJECT_PATH/config";
+
+        $parts = explode('.', $key);
+        if (sizeof($parts) < 2) {
+            throw new FrameworkException('Wrong configuration key', 'The configuration key must have at least two parts divided by a dot (.) x.y');
+        }
+
+        $yaml = $parts[0];
+        $route = substr($key, strlen($yaml) + 1);
+
+        $file = "$path/$yaml.yaml";
+
+        $arr = [];
+        if (file_exists($file)) {
+            $arr = YAML::fromFile($file);
+        }
+
+        $current = &$arr;
+        for($i = 1; $i < sizeof($parts); ++$i) {
+            $k = $parts[$i];
+            if ($i < sizeof($parts) - 1) {
+                $current[$k] = [];
+                $current = &$current[$k];
+            } else {
+                $current[$k] = $value;
+            }
+        }
+
+        $content = new YAML();
+        $content = $content->dump($arr);
+        file_put_contents($file, $content);
+
+        $cached = "$PROJECT_PATH/" . Definitions::get('cached') . '/config.json';
+        if (file_exists($cached)) {
+            unlink($cached);
+        }
     }
 
 }

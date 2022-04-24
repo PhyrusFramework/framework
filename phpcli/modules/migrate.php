@@ -19,17 +19,14 @@ class CLI_Migrate extends CLI_Module {
         }
     }
 
-
-    public function do_migrate() {
-        $file = !empty($this->params) ? $this->params[0] : null;
+    public function do_migrate($file = null) {
         if (isset($this->flags['fresh'])) {
             Migration::reset();
         }
         Migration::migrate($file, isset($this->flags['force']));
     }
 
-    public function do_undo() {
-        $file = !empty($this->params) ? $this->params[0] : null;
+    public function do_undo($file = null) {
         Migration::undo($file, isset($this->flags['force']));
     }
 

@@ -3,11 +3,27 @@
 class Generic {
 
     /**
-     * [Managed by Framework] Array containing the actual values.
+     * Array containing the actual values.
      * 
-     * @var array $__definition
+     * @var array
      */
     private array $__definition = [];
+
+    /**
+     * Array containing dynamic class methods
+     * 
+     * @var array
+     */
+    private array $__methods = [];
+
+    function __call($func, $params) {
+        foreach($this->__methods as $k => $v) {
+            if ($func == $k) {
+                return $v(...$params);
+            }
+        }
+        return null;
+    }
 
     /**
      * Create a Generic instance.
@@ -28,6 +44,11 @@ class Generic {
     public function __construct(array $array = [], $recursive = false) {
         $this->__definition = $array;
         foreach($array as $k => $v) {
+
+            if (is_callable($v)) {
+                $this->__methods[$k] = $v;
+                continue;
+            }
 
             if (!is_array($v) || !$recursive)
                 $this->{$k} = $v;
@@ -76,28 +97,24 @@ class Generic {
     }
 
     /**
-     * Set a value.
-     * 
-     * @param mixed $key
-     * @param mixed $value
-     */
-    public function set($key, $value) {
-        $this->__definition[$key] = $value;
-        $this->{$key} = $value;
-    }
+    * Set a value.
+    * 
+    * @param mixed $key
+    * @param mixed $value
+    * 
+    * @return Generic
+    */
+   public function set($key, $value) : Generic {
+       if (is_callable($value)) {
+           $this->__methods[$key] = $value;
+           return $this;
+       }
 
-    /**
-     * Get a value or get a default value if not exists.
-     * 
-     * @param mixed $key
-     * @param mixed $default [Default null
-     * 
-     * @return mixed
-     */
-    public function get($key, $default = null) { 
-        return property_exists($this, $key) ? $this->$key : $default;
-    }
-
+       $this->__definition[$key] = $value;
+       $this->{$key} = $value;
+       return $this;
+   }
+   
     /**
      * Remove a value from the object.
      * 

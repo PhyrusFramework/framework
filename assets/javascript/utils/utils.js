@@ -105,6 +105,12 @@ function uploadFile(options)
             });
         }
 
+        let url = options.url;
+        if (options.action) {
+            formData.append('ajaxActionName', options.action);
+            url = location.href;
+        }
+
         $.ajax({
             type: options.method ? options.method.toUpperCase() : 'POST',
             url: options.url,
@@ -429,7 +435,7 @@ var Utils = {
     },
 
     /**
-     * Convert a file from an input in a src for an img tag.
+     * Convert a file from an input to a src for an img tag.
      * 
      * @param file
      */
@@ -472,6 +478,41 @@ var Utils = {
         }
 
         return false;
+    },
+
+    srcToFile(src, name = 'file') {
+        // convert base64/URLEncoded data component to raw binary data held in a string
+        var byteString;
+        if (src.split(',')[0].indexOf('base64') >= 0)
+            byteString = window.atob(src.split(',')[1]);
+        else
+            byteString = unescape(src.split(',')[1]);
+        // separate out the mime component
+        var mimeString = src.split(',')[0].split(':')[1].split(';')[0];
+        // write the bytes of the string to a typed array
+        var ia = new Uint8Array(byteString.length);
+        for (var i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        let blob = new Blob([ia], {type:mimeString});
+
+        let n = name + '';
+        if (n == 'file') {
+            if (['image/png'].includes(mimeString)) {
+                n += '.png';
+            }
+            else if (['image/jpg', 'image/jpeg'].includes(mimeString)) {
+                n += '.jpg';
+            }
+            else if (['image/gif'].includes(mimeString)) {
+                n += '.gif';
+            }
+            else if (['video/mp4'].includes(mimeString)) {
+                n += '.mp4';
+            }
+        }
+
+        return new File([blob], n, {type:mimeString});
     }
 
 }

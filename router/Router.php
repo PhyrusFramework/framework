@@ -16,9 +16,9 @@ class Router {
      * Add a route manually.
      * 
      * @param string $route
-     * @param string $path relative to /web
+     * @param mixed Path to controller relative to /src or Callable function
      */
-    public static function add(string $route, string $path) {
+    public static function add(string $route, mixed $path) {
 
         self::$routes[$route] = $path;
 
@@ -101,6 +101,15 @@ class Router {
 
             if ($match) {
                 $fullpath = $folder;
+
+                if (is_callable($folder)) {
+                    $resp = $folder($parameters);
+                    if ($resp) {
+                        response_die('ok', $resp);
+                    }
+                    die();
+                }
+
                 if (is_dir($fullpath)) {
                     self::findPageController($fullpath);
                     return self::loadPage($fullpath, $parameters, false);
@@ -172,7 +181,7 @@ class Router {
 
         if ($controller == null || str_replace('\\', '/', $folder) != $controller->directory()) {
 
-            if (Config::get('development_mode')) {
+            if (Config::get('project.development_mode')) {
                 $subpages = "$folder/pages";
                 if (!is_dir($subpages)) {
                     throw new FrameworkException('404 Not found, Controller missing',

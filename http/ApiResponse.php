@@ -20,7 +20,7 @@ class ApiResponse {
             $response[$k] = $v;
         }
 
-        response_die('ok', JSON::stringify($response));
+        response_die('ok', $response);
     }
 
     /**
@@ -53,7 +53,7 @@ class ApiResponse {
             $response['data'] = $data;
         }
 
-        response_die($name, JSON::stringify($response));
+        response_die($name, $response);
     }
 
     /**

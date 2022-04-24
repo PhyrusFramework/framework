@@ -3,6 +3,14 @@
 class DB {
 
     /**
+     * Trigger autoload to use Database classes.
+     * Nothing else.
+     */
+    public static function connect() {
+        // Nothing, just triggers autoload
+    }
+
+    /**
      * Make a query to the current connected database
      * 
      * @param string $query
@@ -56,10 +64,10 @@ class DB {
      * 
      * @return bool
      */
-    public static function table_exists(string $table) : bool {
+    public static function tableExists(string $table) : bool {
         global $DATABASE;
         if ($DATABASE == null) return false;
-        return $DATABASE->table_exists($table);
+        return $DATABASE->tableExists($table);
     }
 
     /**
@@ -156,10 +164,10 @@ class DB {
      * 
      * @param array $tables
      */
-    public static function create_tables(array $tables) {
+    public static function createTables(array $tables) {
         global $DATABASE;
         if ($DATABASE == null) return;
-        $DATABASE->create_tables($tables);
+        $DATABASE->createTables($tables);
     }
     
     /**
@@ -167,10 +175,10 @@ class DB {
      * 
      * @param array $table
      */
-    public static function create_table(array $table) {
+    public static function createTable(array $table) {
         global $DATABASE;
         if ($DATABASE == null) return;
-        $DATABASE->create_table($table);
+        $DATABASE->createTable($table);
     }
 
     /**
@@ -183,6 +191,19 @@ class DB {
         global $DATABASE;
         if ($DATABASE == null) return;
         $DATABASE->backup($output, $options);
+    }
+
+    /**
+     * Generate a DBTable object for a table.
+     * 
+     * @param string $name
+     * 
+     * @return DBTable
+     */
+    public static function table(string $name) {
+        global $DATABASE;
+        if ($DATABASE == null) return null;
+        return $DATABASE->table($name);
     }
 
 }

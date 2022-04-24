@@ -112,7 +112,7 @@ class Controller {
             if (sizeof($classes) == $classcount) {
                 throw new FrameworkException(
                     "Can't find Controller for directory $folder.",
-                    "Make sure that your controller (<b>$last</b>?) extends the Controller class.<br><br>Are you maybe overriding the Controller constructor? If so, please, don't override the constructor, use the method init() instead."
+                    "Make sure that your controller extends the Controller class.<br><br>Are you maybe overriding the Controller constructor? If so, please, don't override the constructor, use the method init() instead."
                 );
                 return;
             }

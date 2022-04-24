@@ -2,14 +2,14 @@
 
 global $PROJECT_PATH;
 
-$_noComposer = realpath(__DIR__ . '/../') . '/config.json';
+$_noComposer = realpath(__DIR__ . '/../') . '/vendor';
 if (file_exists($_noComposer)) {
     $PROJECT_PATH = str_replace('\\', '/', realpath(__DIR__ . '/../'));
 } else {
     $PROJECT_PATH = str_replace('\\', '/', realpath(__DIR__ . '/../../../'));
 }
 
-if (!file_exists($PROJECT_PATH . '/config.json')) {
+if (!file_exists($PROJECT_PATH . '/config')) {
     echo 'Error: Phyrus project not found at ' . $PROJECT_PATH;
     die();
 }
@@ -23,6 +23,12 @@ require_once(__DIR__ . '/config/index.php');
 
 autoload(['Ajax'], [__DIR__ . '/ajax/index.php']);
 autoload(['DB', 'DB*', 'DATABASE', 'Backup_Database', 'InsecureString'], [__DIR__ . '/database/index.php']);
+
+global $DATABASE_CONNECTED;
+function DBConnected() {
+    global $DATABASE_CONNECTED;
+    return $DATABASE_CONNECTED;
+}
 
 $components = [
     'utilities',

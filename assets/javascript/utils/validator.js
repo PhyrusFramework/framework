@@ -145,7 +145,7 @@ class Validator {
     isLowercase() {
         this.checks.push({
             function: function(value) {
-                if (typeof value == 'string') return false;
+                if (typeof value != 'string') return false;
                 return value == value.toLowerCase();
             }
         });
@@ -183,7 +183,7 @@ class Validator {
     hasNotUppercase() {
         this.checks.push({
             function: function(value) {
-                if (typeof value == 'string') return true;
+                if (typeof value != 'string') return true;
 
                 for(let i = 0; i < value.length; ++i) {
                     if (value[i] == value[i].toUpperCase()) {
@@ -226,7 +226,7 @@ class Validator {
     hasNotLowercase() {
         this.checks.push({
             function: function(value) {
-                if (typeof value == 'string') return true;
+                if (typeof value != 'string') return true;
 
                 for(let i = 0; i < value.length; ++i) {
                     if (value[i] == value[i].toLowerCase()) {
@@ -244,7 +244,19 @@ class Validator {
     isNumber() {
         this.checks.push({
             function: function(value) {
-                return typeof value == 'number';
+                if(typeof value == 'number') {
+                    return true;
+                }
+
+                const chars = '+-,.0123456789';
+
+                for(let i = 0; i < value.length; ++i) {
+                    if (!chars.includes(value[i])) {
+                        return false;
+                    }
+                }
+
+                return true;
             }
         });
 
@@ -350,12 +362,7 @@ class Validator {
     }
 
     isSpecialChars() {
-        this.checks.push({
-            function: function(value) {
-                if (typeof value != 'string') return false;
-                return ctype_punct(value);
-            }
-        });
+        this.hasSpecialChars(this.value.length);
 
         return this;
     }

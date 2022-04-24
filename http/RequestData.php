@@ -214,14 +214,36 @@ class RequestData {
      * Require file.
      * 
      * @param string $name
+     * @param string Accepted mime
      * 
      * @return Generic
      */
-    function requireFile(string $name) : Generic {
+    function requireFile(string $name, $mime = null) : Generic {
         if (!$this->hasFile($name))
             response_die('bad');
-        else
-            return $this->getFile($name);
+        
+        if ($mime != null && strpos($mime, '/') !== FALSE) {
+
+            $file = $this->getFile($name);
+            $fileMime = $file->type ? $file->type : mime_content_type($file->name);
+
+            $parts = explode('/', $mime);
+            if ($parts[0] != '*') {
+
+                if ($parts[1] != '*') {
+                    if ($mime != $fileMime) {
+                        response_die('unsupported-media-type');
+                    }
+                } else {
+                    $fileParts = explode('/', $fileMime);
+                    if ($parts[0] != $fileParts[0]) {
+                        response_die('unsupported-media-type');
+                    }
+                }
+            }
+        }
+
+        return $this->getFile($name);
     }
 
     /**

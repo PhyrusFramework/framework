@@ -9,7 +9,7 @@
 function component(string $name, array $parameters = []) {
 
     if (!class_exists($name)) {
-        if (Config::get('development_mode')) {
+        if (Config::get('project.development_mode')) {
             $suggestion = "You are trying to use a Component ($name) that is not imported for this page. Add the component to the init() function of the controller.";
             try {
             throw new FrameworkException('Component not imported', $suggestion);
@@ -202,7 +202,7 @@ if (!$controller->raw){
      */
     public static function footlines() {
 
-        if (Config::get('development_mode'))
+        if (Config::get('project.development_mode'))
         DebugConsole::print();
 
         echo "<div id='" . Definition('foot') . "' style='display:none'>";

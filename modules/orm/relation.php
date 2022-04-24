@@ -144,12 +144,12 @@ class RelationORM {
      */
     private function __checkDB() : bool {
         if ($this->__table_checked) return true;
-        if (!Config::get('development_mode')) return true;
+        if (!Config::get('project.development_mode')) return true;
 
         $existed = true;
-        if (!DB::table_exists($this->__getDefinition()['name'])){
+        if (!DB::tableExists($this->__getDefinition()['name'])){
             $existed = false;
-            DB::create_table($this->__getDefinition());
+            DB::createTable($this->__getDefinition());
         }
         $this->__table_checked = true;
         return $existed;
@@ -413,7 +413,7 @@ class RelationORM {
      * Drop database table
      */
     public static function dropTable() {
-        if (DB::table_exists(self::Table()))
+        if (DB::tableExists(self::Table()))
             DBTable::instance(self::Table())->drop();
     }
 

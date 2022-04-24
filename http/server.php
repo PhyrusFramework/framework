@@ -8,7 +8,14 @@ if (function_exists('apache_request_headers'))
 // Solve CORS problem
 if (!defined('USING_CLI')) {
 
-    $origin = Config::get('CORS.origin', '*');
+    // Headers
+    $headers = Config::get('web.headers', []);
+    foreach($headers as $header => $value) {
+        header("$header: $value");
+    }
+
+    // CORS
+    $origin = Config::get('web.CORS.origin', '*');
 
     header("Access-Control-Allow-Origin: $origin");
 
@@ -17,20 +24,20 @@ if (!defined('USING_CLI')) {
             header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
         }
         header('Access-Control-Allow-Credentials: true');
-        header('Access-Control-Max-Age: ' . Config::get('CORS.age', 86400));    // cache for 1 day
+        header('Access-Control-Max-Age: ' . Config::get('web.CORS.age', 86400));    // cache for 1 day
     }
 
     // Access-Control headers are received during OPTIONS requests
     if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
         if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
-            header('Access-Control-Allow-Methods: ' . Config::get('CORS.methods', 'GET, POST, OPTIONS, PUT, DELETE, PATCH'));         
+            header('Access-Control-Allow-Methods: ' . Config::get('web.CORS.methods', 'GET, POST, OPTIONS, PUT, DELETE, PATCH'));         
 
         if (isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])) {
-            if (Config::get('CORS.headers') == '*') {
+            if (Config::get('web.CORS.headers') == '*') {
                 header("Access-Control-Allow-Headers: {$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']}");
             } else {
-                header('Access-Control-Allow-Headers: ' . Config::get('CORS.headers'));
+                header('Access-Control-Allow-Headers: ' . Config::get('web.CORS.headers'));
             }
         }
 
@@ -162,6 +169,11 @@ function _get_http_responses() {
             415,
             'HTTP/1.0 415 Unsupported Media Type',
             'The file format is not accepted by the server.'
+        ],
+        'unprocessable' => [
+            422,
+            'HTTP/1.0 422 Unprocessable entity',
+            'Request can be processed. This usually happens when Content-Type headers is not correct.'
         ],
         'error' => [
             500,

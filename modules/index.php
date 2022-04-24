@@ -1,7 +1,7 @@
 <?php
 
 Template::addFilter('t', function($content) {
-    echo "Translate::use('user')->get($content);";
+    echo "Translate::use('user')->get('$content');";
 });
 
 spl_autoload_register(function($name) {

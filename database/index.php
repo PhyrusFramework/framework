@@ -10,9 +10,13 @@ require_once(__DIR__.'/DB.php');
 require_once(__DIR__.'/DBTable.php');
 require_once(__DIR__.'/BackupDatabase.php');
 
+autoload('DBBuilder', __DIR__.'/DBBuilder.php');
+
 global $DATABASE;
 try{
     $DATABASE = new DATABASE(Config::get('database'));
+    global $DATABASE_CONNECTED;
+    $DATABASE_CONNECTED = true;
 } catch(Exception $e) {}
 
 class InsecureString {
