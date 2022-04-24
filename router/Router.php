@@ -2,248 +2,262 @@
 
 class Router {
 
-    /**
-     * Classic routing defined routes.
-     */
-    static $routes = [];
+    private static $routes = [];
+    private static $finders = [];
+
+    private static $middlewareCount = [];
 
     /**
-     * Route finders
-     */
-    static $finders = [];
-
-    /**
-     * Add a route manually.
+     * Add a route manually
      * 
      * @param string $route
-     * @param mixed Path to controller relative to /src or Callable function
+     * @param string|array $options Array or path to php file.
      */
-    public static function add(string $route, mixed $path) {
-
-        self::$routes[$route] = $path;
-
+    public static function add(string $route, mixed $options) {
+        self::$routers[$route] = $options;
     }
 
     /**
-     * Add a route finder.
+     * Add a finder
      * 
-     * @param callable $finder
+     * @param callable $callback
      */
-    public static function addFinder(callable $finder) {
-        self::$finders[] = $finder;
+    public static function finder(callable $callback) {
+        self::$finders[] = $callback;
     }
 
     /**
-     * Run the router to find and load the current page.
+     * Compare two paths
      * 
-     * @param string $path URL [Default current]
+     * @param string $a
+     * @param string $b
      */
-    public static function init($path = null) {
+    private static function comparePaths(string $a, string $b) {
 
-        self::findController($path);
-        EventListener::trigger('afterRouter');
-        Assets::stopMinify();
+        if ($a == $b) return [
+            'options' => null,
+            'params' => []
+        ];
 
-        if (defined('PERFORMANCE_ANALYZER')) {
-            CLI_Performance::record('Router loaded the page');
+        $params = [];
+
+        $a = str_replace('\\', '/', $a);
+        $b = str_replace('\\', '/', $b);
+
+        $partsA = Text::instance($a)->split('/', false);
+        $partsB = Text::instance($b)->split('/', false);
+
+        if (sizeof($partsA) != sizeof($partsB)) {
+            return null;
         }
-    }
 
-    /**
-     * Find a page controller in a directory.
-     * 
-     * @param string $path [Default current URI]
-     */
-    public static function findController(string $path = null) {
+        for($i = 0; $i < sizeof($partsA); ++$i) {
 
-        $route = $path == null ? URL::route() : $path;
+            $pa = $partsA[$i];
+            $pb = $partsB[$i];
 
-        // Finders
-        foreach(self::$finders as $finder) {
-            $result = $finder($route);
-            if (!empty($result) && is_string($result)) {
-                $folder = $result;
-                if (is_dir($folder)) {
-                    return self::loadPage($folder, []);
+            if ($pa[0] == ':') {
+                $params[substr($pa, 1)] = $pb;
+            } else {
+                if ($pa != $pb) {
+                    return null;
                 }
             }
+
         }
 
-        // If route is "" or "/", -> home
-        $parts = URL::path($route);
-        if (empty($parts)) return self::loadHomepage();
+        return [
+            'options' => null,
+            'params' => $params
+        ];
 
-        // Classic routing
-        $routes = self::$routes;
-        foreach($routes as $route => $folder) {
-            $urlParts = URL::path($route);
 
-            if (sizeof($urlParts) != sizeof($parts))
+    }
+
+    /**
+     * Find the routing automatically.
+     */
+    private static function automaticRouting($path) {
+
+        $dir = Path::routes();
+        $params = [];
+        $index = null;
+
+        foreach($path as $p) {
+            $d = "$dir/$p";
+
+            if (file_exists($d)) {
+                $dir = $d;
                 continue;
+            }
 
-            $match = true;
-            $parameters = [];
+            $dirs = subfolders($dir);
+            $found = false;
 
-            for($i = 0; $i < sizeof($urlParts); ++$i) {
-
-                // Parameter detected
-                if ($urlParts[$i][0] == ':') {
-                    $param = substr($urlParts[$i], 1);
-                    $parameters[$param] = $parts[$i];
-                    continue;
-                }
-
-                if ($urlParts[$i] != $parts[$i]) {
-                    $match = false;
+            foreach($dirs as $subdir) {
+                $name = basename($subdir);
+                if ($name[0] == '_') {
+                    $dir = $subdir;
+                    $params[substr($name, 1)] = $p;
+                    $found = true;
                     break;
                 }
             }
 
-            if ($match) {
-                $fullpath = $folder;
-
-                if (is_callable($folder)) {
-                    $resp = $folder($parameters);
-                    if ($resp) {
-                        response_die('ok', $resp);
-                    }
-                    die();
-                }
-
-                if (is_dir($fullpath)) {
-                    self::findPageController($fullpath);
-                    return self::loadPage($fullpath, $parameters, false);
-                }
-            }
-        }
-
-        // Auto-routing
-        $parameters = [];
-        $root = Path::src();
-
-        for($i = 0; $i < sizeof($parts); ++$i) {
-
-            $part = $parts[$i];
-
-            $next = "$root/pages/$part";
-            $controller = Controller::current();
-
-            if (!is_dir($next)) {
-
-                $parameter = null;
-                $dirs = array_filter(glob("$root/pages/*"), 'is_dir');
-                foreach($dirs as $dir) {
-                    $basename = basename($dir);
-                    if ($basename[0] == '_') {
-                        $parameter = substr($basename, 1);
+            if (!$found) {
+                $files = subfiles($dir, 'php');
+                foreach($files as $f) {
+                    $name = basename($f);
+                    if ($name[0] == '_') {
+                        $n = str_replace('.php', '', substr($name, 1));
+                        $params[$n] = $p;
+                        $index = $f;
                         break;
                     }
                 }
 
-                if ($parameter == null) {
-                    return self::load404();
-                } else {
-                    $parameters[$parameter] = $part;
-                    $root = "$root/pages/_$parameter";
-                    self::findPageController($root);
+                if ($index == null)
+                    return null;
+            }
+        }
+
+        if ($index == null) {
+            $index = "$dir/index.php";
+        }
+
+        if (!file_exists($index)) {
+            return null;
+        }
+
+        return [
+            'options' => $index,
+            'params' => $params
+        ];
+    }
+
+    static function launch($url = null) {
+
+        $u = $url ?? URL::route();
+        $path = URL::path($u);
+
+        /*
+        1 - Hay finders?
+        2 - Hay manual routes?
+        3 - Automatic routing
+        */
+
+        $res = null;
+
+        // Finders
+        foreach(self::$finders as $finder) {
+            $options = $finder($u);
+            if ($options != null) {
+                $res = [
+                    'options' => $options,
+                    'params' => []
+                ];
+            }
+        }
+
+        if (!$res) {
+
+            // Manual routing
+            foreach(self::$routes as $route => $ops) {
+                $res = self::comparePaths($route, $u);
+
+                if ($res != null) {
+                    $res['options'] = $ops;
+                    break;
                 }
+            }
 
+            if (!$res) {
 
-            } else {
-
-                // Continue routing
-                $root = $next;
-
-                // If there is a controller here that specifies automatic disabled, stop.
-                self::findPageController($next);
-                if ($controller != null && $controller->automatic === false) {
-                    return self::load404();
-                }
+                // Automatic routing
+                $res = self::automaticRouting($path);
 
             }
 
         }
 
-        self::loadPage($root, $parameters, false);
+        if (!$res) {
+            // Load Front-End
+            $html = Path::public() . '/index.html';
 
-    }
-
-    /**
-     * Load the controller in a folder.
-     * 
-     * @param string $folder
-     * @param array $parameters
-     * @param bool $loadController or use the current one.
-     */
-    public static function loadPage(string $folder, array $parameters, bool $loadController = true) {
-
-        $controller = $loadController ? self::findPageController($folder) : Controller::current();
-
-        if ($controller == null || str_replace('\\', '/', $folder) != $controller->directory()) {
-
-            if (Config::get('project.development_mode')) {
-                $subpages = "$folder/pages";
-                if (!is_dir($subpages)) {
-                    throw new FrameworkException('404 Not found, Controller missing',
-                'You are trying to access the route "'.$folder.'" that exists in your project but has no controller or subpages, so it\'s useless.'
-                .'<br><br>Perhaps you forgot to create the controller?<br><br>'
-                .'<b>This message is only displayed in debug mode, in production the 404 screen will be displayed.</b>'
-                . '<h4>Possible solutions</h4>'
-                . '<ul><li>If you want a page here, create the controller. Remember to extend the Controller class.</li>'
-                . '<li>If this is not a page, delete the folder \''.Path::toRelative($folder).'\'.</li></ul>');
-                    return;
-                }
-
+            if (file_exists($html)) {
+                echo file_get_contents($html);
             }
-            self::load404();
             return;
 
         }
 
-        $controller->parameters = new Generic($parameters);
-
-    }
-
-    /**
-     * Load the 404 Controller.
-     */
-    public static function load404() {
-
-        response('not_found');
-        $path = Path::pages() . '/' . Definition('404');
-        if (!is_dir($path)) return null;
-        
-        $controller = self::findPageController($path);
-        $controller->parameters = new Generic();
-    }
-
-    /**
-     * Load the home page controller.
-     */
-    public static function loadHomepage($parameters = []) {
-
-        // path to homepage folder (/web/pages/_homepage)
-        $path = Path::pages() . '/' . Definition('homepage');
-        // If doesn't exist -> 404
-        if (!is_dir($path)) {
-            return self::load404();
+        // Load Back-End
+        $ops = $res['options'];
+        if (is_string($ops)) {
+            $ops = include($ops);
         }
-        
-        // Load homepage with parameters
-        return self::loadPage($path, $parameters);
+
+        if (!is_array($ops)) {
+            return new Exception('Route PHP file does not return options array.');
+        }
+
+        self::run($ops, $res['params']);
 
     }
 
+    private static function run($options, $params = []) {
+
+        $req = new RequestData();
+        $method = $req->method();
+
+        if (!isset($options[$method])) {
+            response_die('method-not-allowed');
+            return;
+        }
+
+        $func = self::getMiddleware($options['middleware'] ?? 'default');
+        $ret = null;
+
+        if (!$func) {
+            $ret = $options[$method]($req, $params);
+
+        } else {
+            $next = $func($req, $params);
+            
+            if ($next !== false) {
+                $ret = $options[$method]($req, $params);
+            } else return;
+        }
+
+        if (is_array($ret)) {
+            response_die('ok', JSON::stringify($ret));
+        } else if (is_string($ret) || is_numeric($ret)) {
+            response_die('ok', $ret);
+        }
+    }
+
+    private static function getMiddleware(string $name) {
+        $file = Path::middlewares() . "/$name.php";
+
+        if (!file_exists($file)) return null;
+        self::secureInfiniteLoop($name);
+
+        return include($file);
+    }
+
     /**
-     * Get and load the controller from the folder.
+     * Make sure not to enter an infinite loop.
      * 
-     * @param string $folder
-     * 
-     * @return Controller
+     * @param string $middleware
      */
-    private static function findPageController(string $folder) {
-        Controller::findController($folder);
-        return Controller::current();
+    private static function secureInfiniteLoop(string $middleware) {
+        $count = self::$middlewareCount[$middleware] ?? 0;
+        $count += 1;
+        self::$middlewareCount[$middleware] = $count;
+
+        if ($count >= 5) {
+            throw new Exception('Infinite loop using middlewares.');
+        }
     }
 
     /**
@@ -256,6 +270,11 @@ class Router {
         header("HTTP/1.1 301 Moved Permanently");
         header("Location: $path");
         exit();
+    }
+
+    public static function reboot($newpath) {
+        self::launch($newpath);
+        return false;
     }
 
 }

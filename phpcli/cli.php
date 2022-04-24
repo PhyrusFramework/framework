@@ -83,7 +83,8 @@ class CLI {
         $this->params = $params;
         $this->flags = $flags;
 
-        if (isset($this->flags['database']) || in_array($this->command, ['test', 'migrate', 'script'])) {
+        if (isset($this->flags['database']) || 
+        in_array($this->command, ['test', 'migrate', 'script'])) {
             define('CLI_DATABASE', true);
         }
 

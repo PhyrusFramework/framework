@@ -14,6 +14,6 @@ spl_autoload_register(function($name) {
 
     if ($name == 'CRUD') {
         require_once(__DIR__ . '/CRUD.php');
-        return;
     }
+
 });

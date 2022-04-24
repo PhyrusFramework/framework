@@ -166,7 +166,7 @@ class <?= $classname ?> extends ComponentController {
     public function command_middleware() {
 
         if (sizeof($this->params) < 1) {
-            echo "\nMiddleware name not specified\n";
+            echo "\Middleware name not specified\n";
             return;
         }
 
@@ -251,6 +251,7 @@ class <?= $ucfirst ?>Middleware extends Middleware {
         
         ob_start();?>
 <<?= '?' ?>php
+
 <?= $namespace != '' ? "namespace $namespace;\n" : ''; ?>            
 class <?= $cl ?> {
 
@@ -296,6 +297,7 @@ class <?= $cl ?> {
 
         ob_start();?>
 <<?= '?' ?>php      
+
 class <?= $ucfirst ?> extends Test {
 
     function run() {
@@ -360,9 +362,6 @@ new Migration(
 
         - test <name>
         Create a new test in /tests
-
-        - migration <name>
-        Create a new migration in /migrations
 
     <?php }
 

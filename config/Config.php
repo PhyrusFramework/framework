@@ -67,7 +67,7 @@ class Config {
         global $PROJECT_PATH;
 
         /// CHECK IF CACHED VERSION EXISTS
-        $json = "$PROJECT_PATH/" . Definitions::get('cached') . '/config.json';
+        $json = "$PROJECT_PATH/config/generated.json";
         
         if (file_exists($json)) {
             self::$config = arr(json_decode(file_get_contents($json), true));
@@ -89,8 +89,7 @@ class Config {
             self::decode_folder("$PROJECT_PATH/$env");
         }
 
-        file_put_contents($json, json_encode(self::$config, JSON_UNESCAPED_UNICODE));
-
+        file_put_contents("$PROJECT_PATH/config/generated.json", json_encode(self::$config, JSON_UNESCAPED_UNICODE));
         self::$config = arr(self::$config);
     }
 
@@ -151,7 +150,7 @@ class Config {
         $content = $content->dump($arr);
         file_put_contents($file, $content);
 
-        $cached = "$PROJECT_PATH/" . Definitions::get('cached') . '/config.json';
+        $cached = "$PROJECT_PATH/config/generated.json";
         if (file_exists($cached)) {
             unlink($cached);
         }

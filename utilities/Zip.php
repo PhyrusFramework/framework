@@ -27,7 +27,7 @@ class Zip {
      */
     private array $_data = [];
 
-    public function __construct($path = '') {
+    public function __construct($path = null) {
         $this->path = $path;
     }
 
@@ -38,7 +38,7 @@ class Zip {
      * 
      * @return Zip
      */
-    public static function instance(string $path = '') : Zip {
+    public static function instance(string $path = null) : Zip {
         return new Zip($path);
     }
 

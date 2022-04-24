@@ -110,10 +110,8 @@ class Test {
             $args = $_GET;
         }
 
-        $config = arr([
-            'log' => false,
-            'alternativeDatabase' => Config::get('database.forTests')
-        ])->force([
+        $config = Config::get('tests');
+        $config = arr($config)->force([
             'log' => false,
             'alternativeDatabase' => null
         ]);

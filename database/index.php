@@ -1,6 +1,6 @@
 <?php
 
-if ((defined('USING_CLI') && !defined('CLI_DATABASE')) )
+if (defined('USING_CLI') && !defined('CLI_DATABASE') )
     return;
 
 require_once(__DIR__.'/Medoo.php');

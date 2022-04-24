@@ -131,7 +131,7 @@ class ORM implements JsonSerializable {
         $def = new DBBuilder();
         $this->Definition($def);
         $def = $def->toArray();
-
+        
         if (!isset($def['columns'])) return [];
         if (isset($def['primary'])) unset($def['primary']);
         if (!isset($def['name'])) $def['name'] = get_called_class();
@@ -532,14 +532,7 @@ class ORM implements JsonSerializable {
         return intval($res->first->count);
     }
 
-    /**
-     * Create a CRUD object for this model.
-     * 
-     * @param string $route (optional)
-     * 
-     * @return Generic
-     */
-    public static function CRUD($route = null) : Generic {
+    public static function CRUD($route = null) {
         $cl = get_called_class();
         $crud = new CRUD($route ? $route : (new $cl())->getTable());
 

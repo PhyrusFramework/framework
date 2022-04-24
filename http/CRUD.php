@@ -10,13 +10,6 @@ class CRUD {
     private $_edit = null;
     private $_delete = null;
 
-    /**
-     * Create a CRUD object instance
-     * 
-     * @param string $route
-     * 
-     * @return CRUD
-     */
     public static function instance(string $route) : CRUD {
         return new CRUD($route);
     }
@@ -25,71 +18,31 @@ class CRUD {
         $this->route = $route;
     }
 
-    /**
-     * Add the list endpoint GET /xxx
-     * 
-     * @param callable
-     * 
-     * @return CRUD
-     */
     public function list(callable $action) : CRUD {
         $this->_list = [$action];
         return $this;
     }
 
-    /**
-     * Add the get item endpoint GET /xxx/:id
-     * 
-     * @param callable
-     * 
-     * @return CRUD
-     */
     public function get(callable $action) : CRUD {
         $this->_get = [$action];
         return $this;
     }
 
-    /**
-     * Add the edit item endpoint PUT /xxx/:id
-     * 
-     * @param callable
-     * 
-     * @return CRUD
-     */
     public function edit(callable $action) : CRUD {
         $this->_edit = [$action];
         return $this;
     }
 
-    /**
-     * Add the create endpoint POST /xxx
-     * 
-     * @param callable
-     * 
-     * @return CRUD
-     */
     public function create(callable $action) : CRUD {
         $this->_create = [$action];
         return $this;
     }
 
-    /**
-     * Add the delete endpoint DELETE /xxx/:id
-     * 
-     * @param callable
-     * 
-     * @return CRUD
-     */
     public function delete(callable $action) : CRUD {
         $this->_delete = [$action];
         return $this;
     }
 
-    /**
-     * Add the specified routes to the Router
-     * 
-     * @return CRUD
-     */
     public function generate() : CRUD {
 
         if ($this->_list || $this->_create) {

@@ -83,6 +83,6 @@ class DatabaseTest extends Test {
 
 }
 
-if (Config::get('database.forTests') != null) {
+if (Config::get('tests.alternativeDatabase') != null) {
     new DatabaseTest();
 }

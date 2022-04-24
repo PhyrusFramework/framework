@@ -1,15 +1,9 @@
 {
-    "src": "src",
-    "cached": "generated",
-    "homepage": "$homepage",
-    "404": "$404",
-    "foot": "footer",
-    "components": "components",
+    "src": "back-end",
+    "public": "public",
     "code": "code",
-    "pages": "pages",
+    "routes": "routes",
     "middlewares": "middlewares",
-    "modules": "modules",
-    "frameworkFont": "Ubuntu",
     "tests": "tests",
     "migrations": "migrations",
     "scripts": "scripts"

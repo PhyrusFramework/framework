@@ -3,20 +3,16 @@
 class Generic {
 
     /**
-     * Array containing the actual values.
+     * [Managed by Framework] Array containing the actual values.
      * 
-     * @var array
+     * @var array $__definition
      */
     private array $__definition = [];
 
-    /**
-     * Array containing dynamic class methods
-     * 
-     * @var array
-     */
     private array $__methods = [];
 
     function __call($func, $params) {
+
         foreach($this->__methods as $k => $v) {
             if ($func == $k) {
                 return $v(...$params);
@@ -97,24 +93,24 @@ class Generic {
     }
 
     /**
-    * Set a value.
-    * 
-    * @param mixed $key
-    * @param mixed $value
-    * 
-    * @return Generic
-    */
-   public function set($key, $value) : Generic {
-       if (is_callable($value)) {
-           $this->__methods[$key] = $value;
-           return $this;
-       }
+     * Set a value.
+     * 
+     * @param mixed $key
+     * @param mixed $value
+     * 
+     * @return Generic
+     */
+    public function set($key, $value) : Generic {
+        if (is_callable($value)) {
+            $this->__methods[$key] = $value;
+            return $this;
+        }
 
-       $this->__definition[$key] = $value;
-       $this->{$key} = $value;
-       return $this;
-   }
-   
+        $this->__definition[$key] = $value;
+        $this->{$key} = $value;
+        return $this;
+    }
+
     /**
      * Remove a value from the object.
      * 
