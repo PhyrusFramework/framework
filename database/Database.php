@@ -70,18 +70,34 @@ class DATABASE
      * 
      * @return DBQueryResult
      */
-    public function query(string $query, array $parameters = []) : DBQueryResult {
+    public function run(string $query, array $parameters = []) : DBQueryResult {
         
         if (!isset($this->{'db'})) {
             throw new FrameworkException('Database not connected', 'Database connection not stablished. Please check your credentials in config.json');
         }
 
         $q = $this->prepareQuery($query, $parameters);
-        $result = $this->db->query( $q );
+        
+        try {
+            $result = $this->db->query( $q );
+        } catch(Exception $e) {
+            throw new FrameworkException('SQL Query error: ' . $q, $q);
+        }
 
         $result = $result == null ? [] : $result->fetchAll();
 
         return new DBQueryResult($q, $this->db->error, $result);
+    }
+
+    /**
+     * Create a Query object for a table
+     * 
+     * @param string $table
+     * 
+     * @return DBQuery
+     */
+    public function query(string $table) : DBQuery {
+        return new DBQuery($table);
     }
 
     /**
@@ -216,7 +232,7 @@ class DATABASE
      */
     public function result(string $query, array $parameters = []) : array {
         
-        $res = $this->query($query, $parameters);
+        $res = $this->run($query, $parameters);
         return $res->result;
     }
 
@@ -230,7 +246,7 @@ class DATABASE
      */
     public function row(string $query, array $parameters = []) {
         
-        $res = $this->query($query, $parameters);
+        $res = $this->run($query, $parameters);
         return $res->something ? $res->first : null;
     }
 
@@ -244,7 +260,7 @@ class DATABASE
     public function tableExists(string $table) : bool {
         $db = $this->dbname;
         
-        $q = $this->query("SELECT COUNT(*) AS x FROM information_schema.TABLES WHERE (TABLE_SCHEMA = '$db') AND (TABLE_NAME='$table')");
+        $q = $this->run("SELECT COUNT(*) AS x FROM information_schema.TABLES WHERE (TABLE_SCHEMA = '$db') AND (TABLE_NAME='$table')");
 
         if (sizeof($q->result) == 0) return false;
 
@@ -259,181 +275,6 @@ class DATABASE
             return false;
         }
         return false;
-    }
-
-    /**
-     * Make a select query.
-     * 
-     * @param string $table
-     * @param array $options [columns, table, where, limit, offset]
-     * @param array $parameters [Optional]
-     * 
-     * @return DBQueryResult
-     */
-    public function select(string $table, array $options = [], array $parameters = []) : DBQueryResult {
-        $options = arr($options)->force([
-            'columns' => '*',
-            'where' => null,
-            'limit' => null,
-            'offset' => null
-        ]);
-
-        $q = 'SELECT ' . $options['columns'] . ' FROM ' . $table;
-        
-        if ($options['where'] != null) {
-            $q .= ' WHERE ' . $options['where'];
-        }
-
-        if ($options['limit'] != null) {
-            $q .= ' LIMIT ' . $options['limit'];
-        }
-
-        if ($options['offset'] != null) {
-            $q .= ' OFFSET ' . $options['offset'];
-        }
-
-        return $this->query($q, $parameters);
-
-    }
-
-    /**
-     * Get a single value.
-     * 
-     * @param string $value Columns name
-     * @param string $table Table name
-     * @param string $where Where condition (without WHERE)
-     * @param array $parameters
-     * 
-     * @return mixed
-     */
-    public function value(string $value, string $table, string $where, array $parameters = []) {
-        $q = "SELECT $value FROM $table WHERE $where";
-        $res = $this->query($q, $parameters);
-
-        return $res->something ? $res->first->{$value} : null;
-    }
-
-    /**
-     * Count rows in a table.
-     * 
-     * @param string $table Table name
-     * @param string $where [Optional]
-     * @param array $parameters [Optional]
-     * 
-     * @return int
-     */
-    public function count(string $table, string $where = null, array $parameters = []) : int {
-
-        $q = "SELECT COUNT(*) AS count FROM $table";
-        if (!empty($where))
-            $q .= " WHERE $where";
-
-        $res = $this->query($q, $parameters);
-        if (!$res->something) return 0;
-        return intval($res->first->count);
-
-    }
-
-    /**
-     * Delete rows from a table
-     * 
-     * @param string $table
-     * @param string $where [Optional]
-     * @param array $parameters [Optional]
-     * 
-     * @return DBQueryResult
-     */
-    public function delete(string $table, string $where = null, array $parameters = []) {
-
-        $q = "DELETE FROM $table";
-        if (!empty($where)) {
-            $q .= " WHERE $where";
-        }
-
-        return $this->query($q, $parameters);
-    }
-
-    /**
-     * Insert a new row in the database
-     * 
-     * @param string $table
-     * @param array $columns
-     * 
-     * @return DBQueryResult
-     */
-    public function insert(string $table, array $columns = []) {
-
-        $q = "INSERT INTO $table (";
-        $i = 0;
-        foreach($columns as $k => $v) {
-            $i += 1;
-            $q .= $k;
-
-            if ($i < sizeof($columns)) {
-                $q .= ', ';
-            } else {
-                $q .= ') VALUES (';
-            }
-        }
-
-        $i = 0;
-        foreach($columns as $k => $v) {
-            $i += 1;
-            $q .= ":$k";
-
-            if ($i < sizeof($columns)) {
-                $q .= ', ';
-            } else {
-                $q .= ')';
-            }
-        }
-
-        return $this->query($q, $columns);
-    }
-    
-    /**
-     * Update rows in the database.
-     * 
-     * @param string $table
-     * @param array $where Columns and values
-     * @param array $values Columns and values
-     * 
-     * @return DBQueryResult
-     */
-    public function update(string $table, array $where, array $values) {
-
-        $q = "UPDATE $table SET ";
-
-        $parameters = [];
-        
-        $i = 0;
-        foreach($values as $k => $v) {
-            $parameters["value_$k"] = $v;
-            $i += 1;
-
-            $q .= "$k = :value_$k";
-
-            if ($i < sizeof($values)) {
-                $q .= ', ';
-            } else {
-                $q .= ' WHERE ';
-            }
-        }
-
-        $i = 0;
-        foreach($where as $k => $v) {
-            $parameters["where_$k"] = $v;
-            $i += 1;
-
-            $q .= "$k = :where_$k";
-
-            if ($i < sizeof($where)) {
-                $q .= ' AND ';
-            }
-        }
-
-        return $this->query($q, $parameters);
-
     }
 
     /**
@@ -519,7 +360,7 @@ class DATABASE
         }
     
         $q .= ');';
-        $res = $this->query($q);
+        $res = $this->run($q);
 
         return $res;
     }

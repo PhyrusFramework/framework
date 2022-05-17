@@ -130,6 +130,15 @@ class DBBuilder {
     }
 
     /**
+     * Specify that this column must not be used when serializing
+     */
+    public function notSerializable() {
+        if (!$this->lastColumn) return $this;
+        $this->definition['columns'][$this->lastColumn]['serialize'] = false;
+        return $this;
+    }
+
+    /**
      * Make the last column a foreign key to another table's column.
      * 
      * @param string table(column)

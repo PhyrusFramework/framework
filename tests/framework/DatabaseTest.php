@@ -7,10 +7,10 @@ class DatabaseTest extends Test {
         $table = 'tests_table';
         $def = 'ID INT NOT NULL AUTO_INCREMENT, email VARCHAR(200), createdAt DATETIME, PRIMARY KEY(ID)';
 
-        $res = DB::query("CREATE TABLE $table ($def)");
+        $res = DB::run("CREATE TABLE $table ($def)");
         $this->is($res->error, null, 'Create table with raw query');
 
-        $res = DB::query("DROP TABLE $table");
+        $res = DB::run("DROP TABLE $table");
         $this->is($res->error, null, 'Delete table with raw query');
 
         $definition = [
@@ -77,7 +77,7 @@ class DatabaseTest extends Test {
 
         $this->is(DB::count($table), 0, 'Count rows after deletion');
 
-        DB::query("DROP TABLE $table");
+        DB::run("DROP TABLE $table");
 
     }
 

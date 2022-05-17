@@ -18,12 +18,23 @@ class DB {
      * 
      * @return DBQueryResult
      */
-    public static function query(string $query, array $parameters = []) : DBQueryResult {
+    public static function run(string $query, array $parameters = []) : DBQueryResult {
 
         global $DATABASE;
         if ($DATABASE == null) return DBQueryResult::empty();
-        return $DATABASE->query($query, $parameters);
+        return $DATABASE->run($query, $parameters);
 
+    }
+
+    /**
+     * Create a Query object for a table
+     * 
+     * @param string $table
+     * 
+     * @return DBQuery
+     */
+    public function query(string $table) : DBQuery {
+        return new DBQuery($table);
     }
 
     /**
@@ -93,10 +104,10 @@ class DB {
      * 
      * @return DBQueryResult
      */
-    public static function select(string $table, array $options = [], array $parameters = []) : DBQueryResult {
+    public static function select(string $table, $columns = '*', array $where = [], $options = []) : array {
         global $DATABASE;
         if ($DATABASE == null) return DBQueryResult::empty();
-        return $DATABASE->select($table, $options, $parameters);
+        return $DATABASE->select($table, $columns, $where, $options);
     }
 
     /**
@@ -124,7 +135,7 @@ class DB {
      * 
      * @return DBQueryResult
      */
-    public static function delete(string $table, string $where = null, array $parameters = []) : DBQueryResult  {
+    public static function delete(string $table, array $where = [], array $parameters = []) : DBQueryResult  {
         global $DATABASE;
         if ($DATABASE == null) return DBQueryResult::empty();
         return $DATABASE->delete($table, $where, $parameters);

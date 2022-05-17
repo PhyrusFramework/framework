@@ -14,7 +14,7 @@ class Router {
      * @param string|array $options Array or path to php file.
      */
     public static function add(string $route, mixed $options) {
-        self::$routers[$route] = $options;
+        self::$routes[$route] = $options;
     }
 
     /**
@@ -136,6 +136,9 @@ class Router {
     }
 
     static function launch($url = null) {
+
+        // Load php in /code
+        php_in(Path::code());
 
         $u = $url ?? URL::route();
         $path = URL::path($u);

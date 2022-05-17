@@ -39,7 +39,7 @@ class ORM implements JsonSerializable {
             $this->__absorbObject($ID);
         }
         else {
-            $res = DB::query('SELECT * FROM '.$this->getTable().' WHERE ID = :id', ['id' => $ID]);
+            $res = DB::run('SELECT * FROM '.$this->getTable().' WHERE ID = :id', ['id' => $ID]);
             if (!$res->something) return;
 
             $this->__absorbObject($res->first);
@@ -53,8 +53,11 @@ class ORM implements JsonSerializable {
 
     public function jsonSerialize() {
         $value = [];
-        $def = $this->__getDefinition();
-        foreach($def['columns'] as $col) {
+        $cols = $this->__columns();
+        foreach($cols as $col) {
+            if (isset($col['serialize']) && $col['serialize'] === false) {
+                continue;
+            }
             $value[$col['name']] = $this->{$col['name']};
         }
         return $value;
@@ -182,7 +185,7 @@ class ORM implements JsonSerializable {
         } else {
             // Check columns
             $definitionColumns = $this->__columns();
-            $tableColumns = DB::query('SHOW COLUMNS FROM ' . $this->getTable())->result;
+            $tableColumns = DB::run('SHOW COLUMNS FROM ' . $this->getTable())->result;
 
             $tableObj = DBTable::instance($this->getTable());
 
@@ -230,7 +233,7 @@ class ORM implements JsonSerializable {
      */
     private function __findID(string $creationTime) : int {
 
-        $res = DB::query('SELECT * FROM '.$this->getTable().' WHERE createdAt = :date ORDER BY ID DESC LIMIT 1', [
+        $res = DB::run('SELECT * FROM '.$this->getTable().' WHERE createdAt = :date ORDER BY ID DESC LIMIT 1', [
             'date' => $creationTime
         ]);
 
@@ -266,7 +269,7 @@ class ORM implements JsonSerializable {
      */
     public function exists() : bool {
         if (!$this->isCreated()) return false;
-        $res = DB::query('SELECT * FROM '.$this->getTable()." WHERE ID = $this->ID LIMIT 1");
+        $res = DB::run('SELECT * FROM '.$this->getTable()." WHERE ID = $this->ID LIMIT 1");
         return $res->something;
     }
 
@@ -275,7 +278,7 @@ class ORM implements JsonSerializable {
      */
     public function delete() {
         if (!$this->isCreated()) return;
-        DB::query('DELETE FROM '.$this->getTable()." WHERE ID = $this->ID");
+        DB::run('DELETE FROM '.$this->getTable()." WHERE ID = $this->ID");
     }
 
     /**
@@ -346,7 +349,7 @@ class ORM implements JsonSerializable {
         $q .= ' WHERE ID = :ID';
         $parameters['ID'] = $this->ID;
 
-        DB::query($q, $parameters);
+        DB::run($q, $parameters);
     }
 
     /**
@@ -388,7 +391,7 @@ class ORM implements JsonSerializable {
         $now = datenow();
         $parameters['createdAt'] = $now;
 
-        $res = DB::query($q, $parameters);
+        $res = DB::run($q, $parameters);
 
         $this->__findID($now);
 
@@ -472,7 +475,7 @@ class ORM implements JsonSerializable {
         $tmp->CheckTable();
         $q = 'SELECT * FROM ' . $tmp->getTable() . " WHERE $where LIMIT 1";
 
-        $q = DB::query($q, $parameters);
+        $q = DB::run($q, $parameters);
         if ($q->something) {
             $o = new $cl($q->first);;
             return $o;
@@ -495,7 +498,7 @@ class ORM implements JsonSerializable {
         $tmp->CheckTable();
         $q = 'SELECT * FROM ' . $tmp->getTable() . " WHERE $where";
 
-        $q = DB::query($q, $parameters);
+        $q = DB::run($q, $parameters);
         $list = [];
         foreach($q->result as $row) {
             $list[] = new $cl($row);
@@ -513,7 +516,7 @@ class ORM implements JsonSerializable {
         $cl = get_called_class();
         $tmp = new $cl();
         $tmp->CheckTable();
-        DB::query('DELETE FROM ' . $tmp->getTable() . " WHERE $where", $parameters);
+        DB::run('DELETE FROM ' . $tmp->getTable() . " WHERE $where", $parameters);
     }
 
     /**
@@ -528,7 +531,7 @@ class ORM implements JsonSerializable {
         $cl = get_called_class();
         $tmp = new $cl();
         $tmp->CheckTable();
-        $res = DB::query('SELECT COUNT(*) AS count FROM ' . $tmp->getTable() . " WHERE $where", $parameters);
+        $res = DB::run('SELECT COUNT(*) AS count FROM ' . $tmp->getTable() . " WHERE $where", $parameters);
         return intval($res->first->count);
     }
 

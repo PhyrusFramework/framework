@@ -176,7 +176,7 @@ class RelationORM {
             }
         }
 
-        $res = DB::query('SELECT * FROM ' . $this->getTable() . " WHERE $where LIMIT 1", $parameters);
+        $res = DB::run('SELECT * FROM ' . $this->getTable() . " WHERE $where LIMIT 1", $parameters);
 
         if (!$res->something) return new Generic($parameters);
         return $res->first;
@@ -238,7 +238,7 @@ class RelationORM {
 
         $obj = new $class();
         $table = $obj->getTable();
-        $res = DB::query("SELECT * FROM $table WHERE ID = :id", [
+        $res = DB::run("SELECT * FROM $table WHERE ID = :id", [
             'id' => $this->{$column}
         ]);
 
@@ -307,7 +307,7 @@ class RelationORM {
         $where = $cond['where'];
         $parameters = $cond['parameters'];
 
-        $res = DB::query("SELECT * FROM $t WHERE $where", $parameters);
+        $res = DB::run("SELECT * FROM $t WHERE $where", $parameters);
 
         if ($res->something) {
             $this->__update();
@@ -357,7 +357,7 @@ class RelationORM {
             $parameters[$k] = $v;
         }
 
-        DB::query($q, $parameters);
+        DB::run($q, $parameters);
     }
 
     /**
@@ -396,7 +396,7 @@ class RelationORM {
 
         $q .= ');';
 
-        DB::query($q, $parameters);
+        DB::run($q, $parameters);
 
     }
 
@@ -406,7 +406,7 @@ class RelationORM {
     public function delete() {
         $t = $this->getTable();
         $cond = $this->whereForMe();
-        $res = DB::query("DELETE FROM $t " . $cond['where'], $cond['parameters']);
+        $res = DB::run("DELETE FROM $t " . $cond['where'], $cond['parameters']);
     }
 
     /**
@@ -432,7 +432,7 @@ class RelationORM {
         $tmp->__checkDB();
         $q = 'SELECT * FROM ' . $tmp->getTable() . " WHERE $where LIMIT 1";
 
-        $q = DB::query($q, $parameters);
+        $q = DB::run($q, $parameters);
         if ($q->something) {
             $o = new $cl($q->first);;
             return $o;
@@ -455,7 +455,7 @@ class RelationORM {
         $tmp->__checkDB();
         $q = 'SELECT * FROM ' . $tmp->getTable() . " WHERE $where";
 
-        $q = DB::query($q, $parameters);
+        $q = DB::run($q, $parameters);
         $list = [];
         foreach($q->result as $row) {
             $list[] = new $cl($row);
@@ -472,7 +472,7 @@ class RelationORM {
     public static function deleteWhere(string $where, array $parameters = []) {
         $cl = get_called_class();
         $tmp = new $cl();
-        DB::query('DELETE FROM ' . $tmp->getTable() . " WHERE $where", $parameters);
+        DB::run('DELETE FROM ' . $tmp->getTable() . " WHERE $where", $parameters);
     }
 
 
@@ -513,7 +513,7 @@ class RelationORM {
 
         $q = 'SELECT ' . $column . ' FROM ' . $tmp->getTable() . " WHERE $where";
 
-        $res = DB::query('SELECT * FROM ' . $m->getTable() . " WHERE ID IN ($q)", $parameters);
+        $res = DB::run('SELECT * FROM ' . $m->getTable() . " WHERE ID IN ($q)", $parameters);
         $list = [];
         foreach($res->result as $r) {
             $list[] = new $model($r);
@@ -533,7 +533,7 @@ class RelationORM {
     public static function count(string $where, array $parameters = []) : int {
         $cl = get_called_class();
         $tmp = new $cl();
-        $res = DB::query('SELECT COUNT(*) AS count FROM ' . $tmp->getTable() . " WHERE $where", $parameters);
+        $res = DB::run('SELECT COUNT(*) AS count FROM ' . $tmp->getTable() . " WHERE $where", $parameters);
         return intval($res->first->count);
     }
 

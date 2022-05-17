@@ -297,21 +297,21 @@ class AdvancedORM extends ORM {
 
         $t = $this->meta_table();
         if (DB::tableExists($t)) {
-            DB::query("DELETE FROM $t WHERE $ref = :ID", [
+            DB::run("DELETE FROM $t WHERE $ref = :ID", [
                 'ID' => $this->ID
             ]);
         }
 
         $t = $this->translations_table();
         if (DB::tableExists($t)) {
-            DB::query("DELETE FROM $t WHERE $ref = :ID", [
+            DB::run("DELETE FROM $t WHERE $ref = :ID", [
                 'ID' => $this->ID
             ]);
         }
 
         $t = $this->resources_table();
         if (DB::tableExists($t)) {
-            DB::query("DELETE FROM $t WHERE $ref = :ID", [
+            DB::run("DELETE FROM $t WHERE $ref = :ID", [
                 'ID' => $this->ID
             ]);
         }
@@ -337,14 +337,14 @@ class AdvancedORM extends ORM {
         $ref = $this->reference_column();
 
         if ($value == null) {
-            DB::query("DELETE FROM $t WHERE $ref = :ID AND meta_key = :name", [
+            DB::run("DELETE FROM $t WHERE $ref = :ID AND meta_key = :name", [
                 'ID' => $this->ID,
                 'name' => $name
             ]);
             return $this;
         }
 
-        $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND meta_key = :name LIMIT 1", [
+        $res = DB::run("SELECT * FROM $t WHERE $ref = :ID AND meta_key = :name LIMIT 1", [
             'name' => $name,
             'ID' => $this->ID
         ]);
@@ -359,14 +359,14 @@ class AdvancedORM extends ORM {
         }
 
         if ($res->something) {
-            DB::query("UPDATE $t SET meta_value = :value WHERE $ref = :ID AND meta_key = :name", [
+            DB::run("UPDATE $t SET meta_value = :value WHERE $ref = :ID AND meta_key = :name", [
                 'ID' => $this->ID,
                 'name' => $name,
                 'value' => $v
             ]);
         }
         else {
-            DB::query("INSERT INTO $t ($ref, meta_key, meta_value) VALUES (:ID, :name, :value)", [
+            DB::run("INSERT INTO $t ($ref, meta_key, meta_value) VALUES (:ID, :name, :value)", [
                 'ID' => $this->ID,
                 'name' => $name,
                 'value' => $v
@@ -390,7 +390,7 @@ class AdvancedORM extends ORM {
 
         $t = $this->meta_table();
         $ref = $this->reference_column();
-        $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND meta_key = :name LIMIT 1", [
+        $res = DB::run("SELECT * FROM $t WHERE $ref = :ID AND meta_key = :name LIMIT 1", [
             'ID' => $this->ID,
             'name' => $name
         ]);
@@ -422,13 +422,13 @@ class AdvancedORM extends ORM {
 
         if (empty($names)) {
 
-            $res = DB::query("SELECT * FROM $t WHERE $ref = :ID", [
+            $res = DB::run("SELECT * FROM $t WHERE $ref = :ID", [
                 'ID' => $this->ID
             ])->result;
 
         } else {
 
-            $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND meta_key IN :metas", [
+            $res = DB::run("SELECT * FROM $t WHERE $ref = :ID AND meta_key IN :metas", [
                 'ID' => $this->ID,
                 'metas' => $names
             ])->result;
@@ -464,7 +464,7 @@ class AdvancedORM extends ORM {
         $ref = $this->reference_column();
 
         if ($value == null) {
-            DB::query("DELETE FROM $t WHERE $ref = :ID AND name = :name AND locale = :locale", [
+            DB::run("DELETE FROM $t WHERE $ref = :ID AND name = :name AND locale = :locale", [
                 'ID' => $this->ID,
                 'name' => $name,
                 'locale' => $locale
@@ -472,14 +472,14 @@ class AdvancedORM extends ORM {
             return $this;
         }
 
-        $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND name = :name AND locale = :locale LIMIT 1", [
+        $res = DB::run("SELECT * FROM $t WHERE $ref = :ID AND name = :name AND locale = :locale LIMIT 1", [
             'name' => $name,
             'ID' => $this->ID,
             'locale' => $locale
         ]);
 
         if ($res->something) {
-            DB::query("UPDATE $t SET value = :value WHERE $ref = :ID AND name = :name AND locale = :locale", [
+            DB::run("UPDATE $t SET value = :value WHERE $ref = :ID AND name = :name AND locale = :locale", [
                 'ID' => $this->ID,
                 'name' => $name,
                 'locale' => $locale,
@@ -487,7 +487,7 @@ class AdvancedORM extends ORM {
             ]);
         }
         else {
-            DB::query("INSERT INTO $t ($ref, name, locale, value) VALUES (:ID, :name, :locale, :value)", [
+            DB::run("INSERT INTO $t ($ref, name, locale, value) VALUES (:ID, :name, :locale, :value)", [
                 'ID' => $this->ID,
                 'name' => $name,
                 'locale' => $locale,
@@ -517,7 +517,7 @@ class AdvancedORM extends ORM {
         $t = $this->translations_table();
         $ref = $this->reference_column();
     
-        $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND name = :name AND locale = :locale LIMIT 1", [
+        $res = DB::run("SELECT * FROM $t WHERE $ref = :ID AND name = :name AND locale = :locale LIMIT 1", [
             'name' => $name,
             'ID' => $this->ID,
             'locale' => $locale
@@ -560,7 +560,7 @@ class AdvancedORM extends ORM {
                 $t = $this->translations_table();
                 $ref = $this->reference_column();
             
-                $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND name = :name LIMIT 1", [
+                $res = DB::run("SELECT * FROM $t WHERE $ref = :ID AND name = :name LIMIT 1", [
                     'name' => $name,
                     'ID' => $this->ID
                 ]);
@@ -597,7 +597,7 @@ class AdvancedORM extends ORM {
         if ($language != null) {
             $query .= ' AND locale = :locale';
 
-            $res = DB::query($query, [
+            $res = DB::run($query, [
                 'ID' => $this->ID,
                 'locale' => $language
             ]);
@@ -612,7 +612,7 @@ class AdvancedORM extends ORM {
 
         }
 
-        $res = DB::query($query, [
+        $res = DB::run($query, [
             'ID' => $this->ID
         ]);
 
@@ -646,7 +646,7 @@ class AdvancedORM extends ORM {
         $ref = $this->reference_column();
 
         if ($type == null) {
-            $res = DB::query("SELECT * FROM $t WHERE $ref = :ID ORDER BY position ASC", [
+            $res = DB::run("SELECT * FROM $t WHERE $ref = :ID ORDER BY position ASC", [
                 'ID' => $this->ID
             ]);
         }
@@ -654,7 +654,7 @@ class AdvancedORM extends ORM {
             if (!$refresh && isset($this->__resources[$type]))
                 return $this->__resources[$type];
 
-            $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND type = :type ORDER BY position ASC", [
+            $res = DB::run("SELECT * FROM $t WHERE $ref = :ID AND type = :type ORDER BY position ASC", [
                 'ID' => $this->ID,
                 'type' => $type
             ]);
@@ -686,7 +686,7 @@ class AdvancedORM extends ORM {
         $ref = $this->reference_column();
 
         if (sizeof($types) == 0) {
-            $res = DB::query("SELECT * FROM $t WHERE $ref = :ID ORDER BY position ASC", [
+            $res = DB::run("SELECT * FROM $t WHERE $ref = :ID ORDER BY position ASC", [
                 'ID' => $this->ID
             ]);
 
@@ -705,7 +705,7 @@ class AdvancedORM extends ORM {
 
         }
 
-        $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND type IN :types ORDER BY position ASC", [
+        $res = DB::run("SELECT * FROM $t WHERE $ref = :ID AND type IN :types ORDER BY position ASC", [
             'ID' => $this->ID,
             'types' => $types
         ]);
@@ -765,7 +765,7 @@ class AdvancedORM extends ORM {
         $t = $this->resources_table();
         $ref = $this->reference_column();
 
-        $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND file = :file", [
+        $res = DB::run("SELECT * FROM $t WHERE $ref = :ID AND file = :file", [
             'ID' => $this->ID,
             'file' => $file
         ]);
@@ -790,21 +790,21 @@ class AdvancedORM extends ORM {
         $ref = $this->reference_column();
 
         // get top position
-        $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND type = :type ORDER BY position DESC LIMIT 1", [
+        $res = DB::run("SELECT * FROM $t WHERE $ref = :ID AND type = :type ORDER BY position DESC LIMIT 1", [
             'ID' => $this->ID,
             'type' => $type
         ]);
 
         $position = $res->something ? intval($res->first->position) + 1 : 1;
 
-        DB::query("INSERT INTO $t ($ref, type, file, position) VALUES (:ID, :type, :file, :position)", [
+        DB::run("INSERT INTO $t ($ref, type, file, position) VALUES (:ID, :type, :file, :position)", [
             'ID' => $this->ID,
             'type' => $type,
             'file' => $file,
             'position' => $position
         ]);
 
-        $res = DB::query("SELECT * FROM $t WHERE $ref = :ID AND type = :type AND file = :file ORDER BY position DESC LIMIT 1", [
+        $res = DB::run("SELECT * FROM $t WHERE $ref = :ID AND type = :type AND file = :file ORDER BY position DESC LIMIT 1", [
             'ID' => $this->ID,
             'type' => $type,
             'file' => $file
@@ -831,7 +831,7 @@ class AdvancedORM extends ORM {
         if ($type != null)
             $q .= ' AND type = :type';
 
-        DB::query($q, [
+        DB::run($q, [
             'ID' => $this->ID,
             'type' => $type
         ]);
@@ -845,7 +845,7 @@ class AdvancedORM extends ORM {
      * Drops all tables.
      */
     public static function dropTable() {
-        $this->dropTables();
+        self::dropTables();
     }
     
     /**
@@ -1041,7 +1041,7 @@ class AdvancedORM extends ORM {
             }
         }
 
-        $res = DB::query($q, $params);
+        $res = DB::run($q, $params);
 
         $list = [];
         foreach($res->result as $row) {
@@ -1084,7 +1084,7 @@ class AdvancedORM extends ORM {
 
         $q = "SELECT $t.* FROM $t INNER JOIN $tr ON $t.ID = $tr.$ref WHERE $tr.name = :name $lq ORDER BY $tr.value $direction";
 
-        $res = DB::query($q, $params);
+        $res = DB::run($q, $params);
 
         $list = [];
         foreach($res->result as $row) {
@@ -1159,7 +1159,7 @@ class ORMResource {
             $this->__absorbObject($ID);
         }
         else {
-            $res = DB::query("SELECT * FROM $this->__table WHERE ID = :ID", [
+            $res = DB::run("SELECT * FROM $this->__table WHERE ID = :ID", [
                 'ID' => $ID
             ]);
 
@@ -1190,9 +1190,9 @@ class ORMResource {
         $t = $this->__table;
         $ref = $this->__object->reference_column();
 
-        DB::query("DELETE FROM $t WHERE ID = :ID", ['ID' => $this->ID]);
+        DB::run("DELETE FROM $t WHERE ID = :ID", ['ID' => $this->ID]);
 
-        DB::query("UPDATE $t SET position = position - 1 WHERE $ref = :ID AND type = :type AND position > :position",
+        DB::run("UPDATE $t SET position = position - 1 WHERE $ref = :ID AND type = :type AND position > :position",
         [
             'ID' => $this->__object->ID,
             'type' => $this->type,
@@ -1209,7 +1209,7 @@ class ORMResource {
         $t = $this->__table;
         $this->file = $file;
 
-        DB::query("UPDATE $t SET file = :file WHERE ID = :ID", [
+        DB::run("UPDATE $t SET file = :file WHERE ID = :ID", [
             'ID' => $this->ID,
             'file' => $file
         ]);
@@ -1276,21 +1276,21 @@ class ORMResource {
         $t = $this->__table;
         $ref = $this->__object->reference_column();
         if ($destination->position < $this->position) {
-            DB::query("UPDATE $t SET position = position + 1 WHERE $ref = :ID AND type = :type AND position <= :position", [
+            DB::run("UPDATE $t SET position = position + 1 WHERE $ref = :ID AND type = :type AND position <= :position", [
                 'ID' => $this->__object->ID,
                 'type' => $this->type,
                 'position' => $destination->position
             ]);
         }
         else {
-            DB::query("UPDATE $t SET position = position - 1 WHERE $ref = :ID AND type = :type AND position >= :position", [
+            DB::run("UPDATE $t SET position = position - 1 WHERE $ref = :ID AND type = :type AND position >= :position", [
                 'ID' => $this->__object->ID,
                 'type' => $this->type,
                 'position' => $destination->position
             ]);
         }
 
-        DB::query("UPDATE $t SET position = :position WHERE ID = :ID", [
+        DB::run("UPDATE $t SET position = :position WHERE ID = :ID", [
             'ID' => $this->ID,
             'position' => $destination->position
         ]);

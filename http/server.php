@@ -11,7 +11,21 @@ if (!defined('USING_CLI')) {
     // Headers
     $headers = Config::get('web.headers', []);
     foreach($headers as $header => $value) {
-        header("$header: $value");
+        if ($header != 'content-security-policy')
+            header("$header: $value");
+    }
+
+    if (isset($headers['content-security-policy'])) {
+        $csp = $headers['content-security-policy'];
+
+        $str = 'default-src ' . $csp['default'] . ';';
+        $str .= 'img ' . $csp['img'] . ';';
+        $str .= 'font ' . $csp['fonts'] . ';';
+        $str .= 'frame-src ' . $csp['frames'] . ';';
+        $str .= 'style-src-elem ' . $csp['styles'] . ';';
+        $str .= 'script-src-elem ' . $csp['js'] . ';';
+
+        header("content-security-policy: $str");
     }
 
     // CORS

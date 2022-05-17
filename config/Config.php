@@ -121,9 +121,6 @@ class Config {
         $path = "$PROJECT_PATH/config";
 
         $parts = explode('.', $key);
-        if (sizeof($parts) < 2) {
-            throw new FrameworkException('Wrong configuration key', 'The configuration key must have at least two parts divided by a dot (.) x.y');
-        }
 
         $yaml = $parts[0];
         $route = substr($key, strlen($yaml) + 1);
@@ -136,14 +133,18 @@ class Config {
         }
 
         $current = &$arr;
-        for($i = 1; $i < sizeof($parts); ++$i) {
-            $k = $parts[$i];
-            if ($i < sizeof($parts) - 1) {
-                $current[$k] = [];
-                $current = &$current[$k];
-            } else {
-                $current[$k] = $value;
+        if (sizeof($parts) > 1) {
+            for($i = 1; $i < sizeof($parts); ++$i) {
+                $k = $parts[$i];
+                if ($i < sizeof($parts) - 1) {
+                    $current[$k] = [];
+                    $current = &$current[$k];
+                } else {
+                    $current[$k] = $value;
+                }
             }
+        } else {
+            $current = $value;
         }
 
         $content = new YAML();

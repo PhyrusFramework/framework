@@ -119,7 +119,7 @@ class MigrationDBStore {
 
     public function reset() {
         if ($this->checkTable()) {
-            DB::query('DELETE FROM migrations');
+            DB::run('DELETE FROM migrations');
         }
     }
 
@@ -127,7 +127,7 @@ class MigrationDBStore {
 
         $notExecuted = [];
         $this->checkTable();
-        $res = DB::query('SELECT * FROM migrations')->result;
+        $res = DB::run('SELECT * FROM migrations')->result;
 
         foreach($files as $file) {
             $name = File::instance($file)->name(false);
@@ -156,17 +156,17 @@ class MigrationDBStore {
         $this->checkTable();
         foreach($names as $name) {
             
-            $count = DB::query('SELECT COUNT(*) as count FROM migrations WHERE name = :name', [
+            $count = DB::run('SELECT COUNT(*) as count FROM migrations WHERE name = :name', [
                 'name' => $name
             ])->first->count;
 
             if (intval($count) > 0) {
-                DB::query('UPDATE migrations SET migratedAt = :now WHERE name = :name', [
+                DB::run('UPDATE migrations SET migratedAt = :now WHERE name = :name', [
                     'name' => $name,
                     'now' => datenow()
                 ]);
             } else {
-                DB::query('INSERT INTO migrations (name, migratedAt) VALUES (:name, :now)', [
+                DB::run('INSERT INTO migrations (name, migratedAt) VALUES (:name, :now)', [
                     'name' => $name,
                     'now' => datenow()
                 ]);
@@ -179,7 +179,7 @@ class MigrationDBStore {
 
         $executed = [];
         $this->checkTable();
-        $rows = DB::query("SELECT * FROM migrations ORDER BY migratedAt DESC")->result;
+        $rows = DB::run("SELECT * FROM migrations ORDER BY migratedAt DESC")->result;
 
         foreach($files as $f) {
             $n = File::instance($f)->name(false);
@@ -217,7 +217,7 @@ class MigrationDBStore {
     public function remove($names) {
         if (sizeof($names) == 0) return;
         $this->checkTable();
-        DB::query("DELETE FROM migrations WHERE name IN :names", [
+        DB::run("DELETE FROM migrations WHERE name IN :names", [
             'names' => $names
         ]);
     }

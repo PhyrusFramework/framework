@@ -46,18 +46,16 @@ class CRUD {
     public function generate() : CRUD {
 
         if ($this->_list || $this->_create) {
-            Router::add($this->route, function() {
-                $req = new RequestData();
-                $req->requireMethod(
-                    $this->_list ? 'GET' : '',
-                    $this->_create ? 'POST' : ''
-                );
 
-                if ($req->method() == 'GET') {
-                    return $this->_list[0]();
-                }
-                return $this->_create[0]();
-            });
+            $route = [];
+            if ($this->_list) {
+                $route['GET'] = $this->_list[0];
+            }
+            if ($this->_create) {
+                $route['POST'] = $this->_create[0];
+            }
+
+            Router::add($this->route, $route);
         }
 
         if (
@@ -65,23 +63,19 @@ class CRUD {
             $this->_edit ||
             $this->_delete
         ) {
-            Router::add($this->route . '/:id', function($parameters) {
-                $req = new RequestData();
-                $req->requireMethod(
-                    $this->_get ? 'GET' : '',
-                    $this->_edit ? 'PUT' : '',
-                    $this->_delete ? 'DELETE' : ''
-                );
+            $route = [];
 
-                if ($req->method() == 'GET') {
-                    return $this->_get[0](...$parameters);
-                }
-                if ($req->method() == 'PUT') {
-                    return $this->_edit[0](...$parameters);
-                }
-                
-                return $this->_delete[0](...$parameters);
-            });
+            if ($this->_get) {
+                $route['GET'] = $this->_get[0];
+            }
+            if ($this->_edit) {
+                $route['PUT'] = $this->_edit[0];
+            }
+            if ($this->_delete) {
+                $route['DELETE'] = $this->_delete[0];
+            }
+
+            Router::add($this->route . '/:id', $route);
         }
 
         return $this;
