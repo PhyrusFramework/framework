@@ -18,12 +18,10 @@ if (!defined('USING_CLI')) {
     if (isset($headers['content-security-policy'])) {
         $csp = $headers['content-security-policy'];
 
-        $str = 'default-src ' . $csp['default'] . ';';
-        $str .= 'img ' . $csp['img'] . ';';
-        $str .= 'font ' . $csp['fonts'] . ';';
-        $str .= 'frame-src ' . $csp['frames'] . ';';
-        $str .= 'style-src-elem ' . $csp['styles'] . ';';
-        $str .= 'script-src-elem ' . $csp['js'] . ';';
+        $str = '';
+        foreach($csp as $k => $v) {
+            $str .= "$k $v;";
+        }
 
         header("content-security-policy: $str");
     }

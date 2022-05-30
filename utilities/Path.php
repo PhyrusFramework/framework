@@ -71,6 +71,17 @@ class Path {
         return self::project($relative) . "/$w";
     }
 
+     /**
+     * Get path to /front-end
+     * 
+     * @param bool $relative [Default false]
+     * 
+     * @return string
+     */
+    public static function front(bool $relative = false) : string {
+        $w = Definition('front');
+        return self::project($relative) . "/$w";
+    }
 
     /**
      * Get path to the framework

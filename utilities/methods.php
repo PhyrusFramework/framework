@@ -136,3 +136,17 @@ function forn(int $n, callable $func) {
         $func($i);
     }
 }
+
+/**
+ * Run a shell command and display the output in realtime.
+ * 
+ * @param string $command
+ */
+function cmd(string $command) {
+    $proc = popen($command, 'r');
+    while (!feof($proc))
+    {
+        echo fread($proc, 4096);
+        @ flush();
+    }
+}

@@ -4,6 +4,8 @@ class CRUD {
 
     private $route;
 
+    private $_middleware = null;
+
     private $_list = null;
     private $_get = null;
     private $_create = null;
@@ -16,6 +18,11 @@ class CRUD {
 
     function __construct(string $route) {
         $this->route = $route;
+    }
+
+    public function middleware($middleware) : CRUD {
+        $this->_middleware = $middleware;
+        return $this;
     }
 
     public function list(callable $action) : CRUD {
@@ -48,6 +55,11 @@ class CRUD {
         if ($this->_list || $this->_create) {
 
             $route = [];
+
+            if ($this->_middleware) {
+                $route['middleware'] = $this->_middleware;
+            }
+
             if ($this->_list) {
                 $route['GET'] = $this->_list[0];
             }
@@ -64,6 +76,10 @@ class CRUD {
             $this->_delete
         ) {
             $route = [];
+
+            if ($this->_middleware) {
+                $route['middleware'] = $this->_middleware;
+            }
 
             if ($this->_get) {
                 $route['GET'] = $this->_get[0];

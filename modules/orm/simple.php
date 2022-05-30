@@ -17,6 +17,13 @@ class ORM implements JsonSerializable {
     private array $__definition = [];
 
     /**
+     * Data used to avoid infinite loop when serializing other models.
+     * 
+     * @var array $__serializersTree
+     */
+    private array $__serializersTree = [];
+
+    /**
      * ID
      * 
      * @var int $ID
@@ -51,6 +58,32 @@ class ORM implements JsonSerializable {
         return JSON::stringify($this->jsonSerialize());
     }
 
+    /**
+     * Serialize this model avoiding infinite loop serializing other models.
+     * 
+     * return array
+     */
+    private function serializeWithTree($tree) : array {
+        $this->__serializersTree = $tree;
+        return $this->jsonSerialize();
+    }
+
+    /**
+     * Get the tree of the serialized models in this iteration.
+     * 
+     * @return array
+     */
+    private function getSerializersTree() : array {
+        $tree = $this->__serializersTree;
+        $cl = get_called_class();
+        if (!isset($tree[$cl])) {
+            $tree[$cl] = [$this->ID];
+        } else {
+            $tree[$cl][] = $this->ID;
+        }
+        return $tree;
+    }
+
     public function jsonSerialize() {
         $value = [];
         $cols = $this->__columns();
@@ -58,6 +91,35 @@ class ORM implements JsonSerializable {
             if (isset($col['serialize']) && $col['serialize'] === false) {
                 continue;
             }
+
+            if (isset($col['serializeRelation'])) {
+                $cl = $col['serializeRelation'];
+                $id = $this->{$col['name']};
+
+                if (empty($id)) continue;
+
+                if (isset($this->__serializersTree[$cl])
+                && in_array($id, $this->__serializersTree[$cl])) {
+                    $value[$col['name']] = $this->{$col['name']};
+                    continue;
+                }
+
+                if (class_exists($cl)) {
+                    $m = $cl::findOne('ID = :ID', [
+                        'ID' => $this->{$col['name']}
+                    ]);
+
+                    if (!$m) continue;
+
+                    $n = $col['name'];
+                    $n = str_replace('_id', '', $n);
+                    $n = str_replace('Id', '', $n);
+
+                    $value[$n] = $m->serializeWithTree($this->getSerializersTree());
+                    continue;
+                }
+            }
+
             $value[$col['name']] = $this->{$col['name']};
         }
         return $value;
@@ -167,6 +229,17 @@ class ORM implements JsonSerializable {
             'auto_increment' => true
         ]);
         return $columns;
+    }
+
+    /**
+     * Create model table if not exists.
+     * 
+     * @return bool existed already.
+     */
+    public static function CreateTable() : bool {
+        $cl = get_called_class();
+        $obj = new $cl();
+        return $obj->checkTable();
     }
 
     /**
@@ -541,6 +614,11 @@ class ORM implements JsonSerializable {
 
         $gen = new Generic();
 
+        $gen->set('middleware', function($middleware) use ($gen, $crud) {
+            $crud->middleware($middleware);
+            return $gen;
+        });
+
         $gen->set('generate', function() use ($gen, $crud) {
             $crud->generate();
             return $gen;
@@ -550,8 +628,9 @@ class ORM implements JsonSerializable {
 
             $crud->list(function() use ($param, $cl) {
 
+                $req = new RequestData();
                 if (is_callable($param)) {
-                    return $param();
+                    return $param($req);
                 }
                 $list = $cl::find();
                 return $list;
@@ -572,8 +651,10 @@ class ORM implements JsonSerializable {
                     response_die('not-found');
                 }
 
+                $req = new RequestData();
+
                 if (is_callable($param)) {
-                    return $param($obj);
+                    return $param($req, $obj);
                 }
                 return $obj;
 
@@ -587,10 +668,10 @@ class ORM implements JsonSerializable {
 
             $crud->create(function() use ($param, $cl) {
 
-                if (is_callable($param)) {
-                    return $param();
-                }
                 $req = new RequestData();
+                if (is_callable($param)) {
+                    return $param($req);
+                }
                 $obj = new $cl($req);
                 $obj->save();
                 return $obj;
@@ -610,8 +691,10 @@ class ORM implements JsonSerializable {
                     response_die('not-found');
                 }
 
+                $req = new RequestData();
+
                 if (is_callable($param)) {
-                    return $param($obj);
+                    return $param($req, $obj);
                 }
                 $req = new RequestData();
                 $obj = new $cl($req);
@@ -634,8 +717,10 @@ class ORM implements JsonSerializable {
                     response_die('not-found');
                 }
 
+                $req = new RequestData();
+
                 if (is_callable($param)) {
-                    return $param($obj);
+                    return $param($req, $obj);
                 }
                 $obj->delete();
                 return $obj;

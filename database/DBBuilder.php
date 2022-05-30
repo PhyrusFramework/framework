@@ -130,11 +130,26 @@ class DBBuilder {
     }
 
     /**
-     * Specify that this column must not be used when serializing
+     * Specify that this column must not be used when serializing.
+     * 
+     * @return DBBuilder
      */
-    public function notSerializable() {
+    public function notSerializable() : DBBuilder {
         if (!$this->lastColumn) return $this;
         $this->definition['columns'][$this->lastColumn]['serialize'] = false;
+        return $this;
+    }
+
+    /**
+     * Specify that this column must serialize another object.
+     * 
+     * @param string $references
+     * 
+     * @return DBBuilder
+     */
+    public function serializeRelation(string $references) : DBBuilder {
+        if (!$this->lastColumn) return $this;
+        $this->definition['columns'][$this->lastColumn]['serializeRelation'] = $references;
         return $this;
     }
 

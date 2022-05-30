@@ -4,6 +4,11 @@ class CLI_Test extends CLI_Module {
 
     function command_run() {
 
+        if ($this->command == 'create') {
+            $this->command_create();
+            return;
+        }
+
         $this->replace_database();
 
         if (sizeof($this->params) == 0) {
@@ -36,6 +41,37 @@ class CLI_Test extends CLI_Module {
 
         }
 
+    }
+
+    public function command_create() {
+        if (sizeof($this->params) < 1) {
+            echo "\nTest name not specified\n";
+            return;
+        }
+
+        $name = $this->params[0];
+        $route = Path::tests();
+        create_folder($route);
+
+        $file = "$route/$name.php";
+        $ucfirst = ucfirst($name);
+
+        ob_start();?>
+<<?= '?' ?>php      
+
+class <?= $ucfirst ?>Test extends Test {
+
+    function run() {
+        if (!true) {
+            $this->addError('Something went wrong!');
+        }
+    }
+
+}<?php
+        $content = ob_get_clean();
+        file_put_contents($file, $content);
+
+        echo "\nTest created at $file\n";
     }
 
     private function replace_database() {

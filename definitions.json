@@ -1,6 +1,7 @@
 {
     "src": "back-end",
     "public": "public",
+    "front": "front-end",
     "code": "code",
     "routes": "routes",
     "middlewares": "middlewares",

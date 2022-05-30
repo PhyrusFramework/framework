@@ -6,6 +6,17 @@ class Router {
     private static $finders = [];
 
     private static $middlewareCount = [];
+    private static $registeredMiddlewares = [];
+
+    /**
+     * Register a middleware function by name.
+     * 
+     * @param string $name
+     * @param callable $func
+     */
+    public static function addMiddleware(string $name, callable $func) {
+        self::$registeredMiddlewares[$name] = $func;
+    }
 
     /**
      * Add a route manually
@@ -14,7 +25,47 @@ class Router {
      * @param string|array $options Array or path to php file.
      */
     public static function add(string $route, mixed $options) {
-        self::$routes[$route] = $options;
+
+        $r = [];
+        if (isset(self::$routes[$route])) {
+            $r = self::$routes[$route];
+        }
+
+        $r = self::parseRoute($options, $r);
+        
+        self::$routes[$route] = $r;
+    }
+
+    /**
+     * Convert the route specifications to the required format
+     * 
+     * @param mixed $options
+     * @param array $r
+     * 
+     * @return array
+     */
+    private static function parseRoute(mixed $options, array $r = []) : array {
+
+        foreach($options as $k => $v) {
+            if ($k == 'middleware') continue;
+
+            $m = [
+                'action' => is_array($v) ? $v[0] : $v
+            ];
+
+            if (isset($options['middleware'])) {
+                $m['middleware'] = $options['middleware'];
+            }
+
+            if (is_array($v) && isset($v['middleware'])) {
+                $m['middleware'] = $v['middleware'];
+            }
+
+            $r[$k] = $m;
+        }
+
+        return $r;
+
     }
 
     /**
@@ -130,7 +181,7 @@ class Router {
         }
 
         return [
-            'options' => $index,
+            'options' => self::parseRoute($index),
             'params' => $params
         ];
     }
@@ -218,17 +269,46 @@ class Router {
             return;
         }
 
-        $func = self::getMiddleware($options['middleware'] ?? 'default');
+        $m = $options[$method];
+
+        if (!isset($m['action'])) {
+            response_die('not-found');
+            return;
+        }
+
+        $md = $m['middleware'] ?? 'default';
+        $action = $m['action'];
+
+        $func = null;
+        if (is_callable($md)) {
+            $func = $md;
+        } else if (is_string($md)) {
+            $func = self::getMiddleware($md);
+        }
         $ret = null;
 
         if (!$func) {
-            $ret = $options[$method]($req, $params);
+            $ret = $action($req, $params);
 
         } else {
             $next = $func($req, $params);
+
+            if ($next instanceof Promise) {
+                $next
+                ->then(function() use ($action, $req, $params) {
+                    $ret = $action($req, $params);
+
+                    if (is_array($ret)) {
+                        response_die('ok', JSON::stringify($ret));
+                    } else if (is_string($ret) || is_numeric($ret)) {
+                        response_die('ok', $ret);
+                    }
+                });
+                return;
+            }
             
             if ($next !== false) {
-                $ret = $options[$method]($req, $params);
+                $ret = $action($req, $params);
             } else return;
         }
 
@@ -240,6 +320,14 @@ class Router {
     }
 
     private static function getMiddleware(string $name) {
+
+        if (isset(self::$registeredMiddlewares[$name])) {
+            $md = self::$registeredMiddlewares[$name];
+            if (is_callable($md)) {
+                return $md;
+            }
+        }
+
         $file = Path::middlewares() . "/$name.php";
 
         if (!file_exists($file)) return null;

@@ -7,12 +7,9 @@ class CLI {
      * CLI Modules
      */
     private static $_modules = [
-        'generate' => 'CLI_Generate',
-        'performance' => 'CLI_Performance',
+        'nuxt' => 'CLI_Nuxt',
         'config' => 'CLI_Config',
         'cron' => 'CLI_Cron',
-        'clear-caches' => 'CLI_ClearCache',
-        'serve' => 'CLI_Serve',
         'test' => 'CLI_Test',
         'migrate' => 'CLI_Migrate',
         'script' => 'CLI_Script'

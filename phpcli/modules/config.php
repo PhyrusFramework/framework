@@ -2,6 +2,24 @@
 
 class CLI_Config extends CLI_Module {
 
+    public function command_add() {
+
+        if (sizeof($this->params) < 1) {
+            echo 'File name not specified.';
+            return;
+        }
+
+        $name = $this->params[0];
+
+        if (Config::hasFile($name)) {
+            echo "File $name.yaml already exists.";
+            return;
+        }
+
+        Config::save($name, []);
+        echo "File $name.yaml created.";
+
+    }
 
     public function command_set() {
 
@@ -20,7 +38,7 @@ class CLI_Config extends CLI_Module {
 
     public function command_show() {
         if (sizeof($this->params) == 0) {
-            $this->displayArray(Config::get());
+            print_r(Config::get());
             return;
         }
         

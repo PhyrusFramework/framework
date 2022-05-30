@@ -1,6 +1,6 @@
 {
     "name": "phyrus/framework",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "Phyrus PHP Framework",
     "type": "library",
     "license": "MIT",

@@ -77,7 +77,7 @@ function create_folder(string $path, int $permissions = 0777) : bool {
  */
 function subfolders(string $path) : array {
     if (!is_dir($path)) return [];
-    return array_filter(glob($path . '/*'), 'is_dir');
+    return array_filter(glob($path . '/{,.}*[!.]*',GLOB_MARK|GLOB_BRACE), 'is_dir');
 }
 
 /**
@@ -89,7 +89,19 @@ function subfolders(string $path) : array {
  * @return string[]
  */
 function subfiles(string $path, string $extension = '*') : array {
-    return glob($path . "/*.$extension");
+    $ext = "";
+    if ($extension != '*') {
+        $ext = ".$extension";
+    }
+    $aux = glob($path . "/{,.}*[!.]*$ext",GLOB_MARK|GLOB_BRACE);
+
+    $list = [];
+    foreach($aux as $i) {
+        if (!is_dir($i)) {
+            $list[] = $i;
+        }
+    }
+    return $list;
 }
 
 /**
@@ -346,9 +358,12 @@ class Folder {
 
     /**
      * Create this folder if not exists.
+     * 
+     * @return Folder
      */
-    public function create() {
+    public function create() : Folder {
         create_folder($this->path);
+        return $this;
     }
 
     /**
@@ -362,9 +377,11 @@ class Folder {
 
     /**
      * Delete everything in this folder.
+     * 
+     * @return Folder
      */
-    public function empty() {
-        if (!is_dir($this->path)) return;
+    public function empty() : Folder {
+        if (!is_dir($this->path)) return $this;
 
         $files = $this->subfiles();
         foreach($files as $file) {
@@ -379,15 +396,20 @@ class Folder {
             $fo = new Folder($f);
             $fo->delete();
         }
+
+        return $this;
     }
 
     /**
      * Delete this folder.
+     * 
+     * @return Folder
      */
-    public function delete() {
-        if (!is_dir($this->path)) return;
+    public function delete() : Folder {
+        if (!is_dir($this->path)) return $this;
         $this->empty();
         rmdir($this->path);
+        return $this;
     }
 
     /**
@@ -405,15 +427,17 @@ class Folder {
      * @return array
      */
     public function ls() : array {
-        return glob($this->path . '/*');
+        return glob($this->path . "/{,.}*[!.]*",GLOB_MARK|GLOB_BRACE);
     }
 
     /**
      * Navigate through the directory.
      * 
      * @param string $displace
+     * 
+     * @return Folder
      */
-    public function cd(string $displace) {
+    public function cd(string $displace) : Folder {
 
         if (strpos($displace, '/'))
             $d = explode('/', $displace);
@@ -427,8 +451,10 @@ class Folder {
             else if (is_dir($this->path . "/$p"))
                 $this->path .= "/$p";
             else
-                return;
+                return $this;
         }
+
+        return $this;
 
     }
 
@@ -461,13 +487,15 @@ class Folder {
      * Copy folder and all its contents to another location.
      * 
      * @param string $newpath
+     * 
+     * @return Folder
      */
-    public function copyTo(string $newpath) {
+    public function copyTo(string $newpath) : Folder {
 
         if (!is_dir($newpath)) {
             create_folder($newpath);
 
-            if (!is_dir($newpath)) return;
+            if (!is_dir($newpath)) return $this;
         }
 
         $files = $this->subfiles();
@@ -484,18 +512,63 @@ class Folder {
             Folder::instance($fold)->copyTo($p);
         }
 
+        return $this;
     }
 
     /**
      * Move this folder and all its content to another location.
      * 
      * @param string $newpath
+     * 
+     * @return Folder
      */
-    public function moveTo(string $newpath) {
+    public function moveTo(string $newpath) : Folder {
         
         $this->copyTo($newpath);
         $this->delete();
+        return $this;
 
+    }
+
+    /**
+     * Copy files and directories inside to another location.
+     * 
+     * @param string new path
+     * @param bool merge folders
+     * 
+     * @return Folder
+     */
+    public function copyContentsTo(string $newpath, bool $merge = true) : Folder {
+        $contents = $this->ls();
+
+        foreach($contents as $f) {
+
+            $p = str_replace($this->path, $newpath, $f);
+
+            if (is_dir($f)) {
+
+                if (file_exists($p)) {
+
+                    if (!$merge) {
+                        Folder::instance($p)->delete();
+                        Folder::instance($f)->copyTo($p);
+                    } else {
+                        Folder::instance($f)->copyContentsTo($p, true);
+                    }
+
+                } else {
+                    Folder::instance($f)->copyTo($p);
+                }
+
+            } else {
+
+                $file = new File($f);
+                $file->copyTo($p, true);
+            }
+
+        }
+
+        return $this;
     }
 
 }
@@ -581,39 +654,51 @@ class File {
      * Write content into file.
      * 
      * @param string $content
+     * 
+     * @return File
      */
-    public function write(string $content) {
+    public function write(string $content) : File {
         $file = fopen($this->path, 'w');
         fwrite($file, $content);
         fclose($file);
+        return $this;
     }
 
     /**
      * Append content to file.
      * 
      * @param string $content
+     * 
+     * @return File
      */
-    public function append(string $content) {
+    public function append(string $content) : File {
         $c = $this->content();
         $this->write($c . $content);
+        return $this;
     }
 
     /**
      * Prepend content to file.
      * 
      * @param string $content
+     * 
+     * @return File
      */
-    public function prepend($content) {
+    public function prepend($content) : File {
         $c = $this->content();
         $this->write($content . $c);
+        return $this;
     }
 
     /**
      * Delete file.
+     * 
+     * @return File
      */
-    public function delete() {
-        if (!$this->exists()) return;
+    public function delete() : File {
+        if (!$this->exists()) return $this;
         unlink($this->path);
+        return $this;
     }
 
     /**

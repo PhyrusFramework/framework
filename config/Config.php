@@ -123,38 +123,56 @@ class Config {
         $parts = explode('.', $key);
 
         $yaml = $parts[0];
-        $route = substr($key, strlen($yaml) + 1);
 
         $file = "$path/$yaml.yaml";
 
-        $arr = [];
-        if (file_exists($file)) {
-            $arr = YAML::fromFile($file);
-        }
-
-        $current = &$arr;
-        if (sizeof($parts) > 1) {
-            for($i = 1; $i < sizeof($parts); ++$i) {
-                $k = $parts[$i];
-                if ($i < sizeof($parts) - 1) {
-                    $current[$k] = [];
-                    $current = &$current[$k];
-                } else {
-                    $current[$k] = $value;
-                }
-            }
-        } else {
-            $current = $value;
-        }
-
         $content = new YAML();
-        $content = $content->dump($arr);
+
+        if (sizeof($parts) > 1) {
+            $arr = [];
+            if (file_exists($file)) {
+                $arr = YAML::fromFile($file);
+            }
+
+            $route = substr($key, strlen($yaml) + 1);
+            $current = &$arr;
+            if (sizeof($parts) > 1) {
+                for($i = 1; $i < sizeof($parts); ++$i) {
+                    $k = $parts[$i];
+                    if ($i < sizeof($parts) - 1) {
+                        $current[$k] = [];
+                        $current = &$current[$k];
+                    } else {
+                        $current[$k] = $value;
+                    }
+                }
+            } else {
+                $current = $value;
+            }
+
+            $content = $content->dump($arr);
+        }
+        else {
+            $content = $content->dump($value);
+        }
+
         file_put_contents($file, $content);
 
         $cached = "$PROJECT_PATH/config/generated.json";
         if (file_exists($cached)) {
             unlink($cached);
         }
+    }
+
+    /**
+     * Check if YAML configuration file exists.
+     * 
+     * @return bool
+     */
+    public static function hasFile($name) : bool {
+        global $PROJECT_PATH;
+        $path = "$PROJECT_PATH/config/$name.yaml";
+        return file_exists($name);
     }
 
 }
