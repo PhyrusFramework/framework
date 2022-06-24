@@ -81,7 +81,7 @@ class DATABASE
         try {
             $result = $this->db->query( $q );
         } catch(Exception $e) {
-            throw new FrameworkException('SQL Query error: ' . $q, $q);
+            throw new FrameworkException("SQL Query error: `$q`, ERROR: " . ($this->db->error ?? 'unknown, possibly foreign keys.'), $q);
         }
 
         $result = $result == null ? [] : $result->fetchAll();

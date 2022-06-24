@@ -98,6 +98,20 @@ class DBTable {
         return $res;
     }
 
+    /**
+     * Remove column from table. 
+     * 
+     * @param string $column
+     * 
+     * @return DBTable
+     */
+    public function dropColumn(string $column) : DBTable {
+
+        $this->db->run("ALTER TABLE $this->_name DROP COLUMN $column");
+
+        return $this;
+    }
+
     public function query() : DBQuery {
         return new DBQuery($this->_name);
     }

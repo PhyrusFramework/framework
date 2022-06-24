@@ -1,11 +1,10 @@
 <?php
-Config::save('translate', [
+Config::save('translations', [
     'use_cookies' => true,
     'default_language' => 'en',
     'supported_languages' => ['en'],
     'inherit' => [],
-    'directory' => '/translations',
-    'javascript' => false
+    'directory' => '/translations'
 ]);
 
 $path = Path::project() . '/translations';

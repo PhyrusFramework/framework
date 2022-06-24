@@ -94,7 +94,7 @@ export default <?php echo ($page ? 'AppPage()' : 'AppComponent') ?>.extend({
 
     public function command_sync() {
 
-        cmd("npm --prefix ./front-end/ run generate");
+        cmd('npm --prefix ./front-end/ run generate');
 
         $path = Path::root() . '/www';
 
@@ -104,6 +104,10 @@ export default <?php echo ($page ? 'AppPage()' : 'AppComponent') ?>.extend({
 
         echo "Output files moved to /public\n";
 
+    }
+
+    public function command_run() {
+        cmd('npm --prefix ./front-end/ run dev');
     }
 
     public function help() {?>
@@ -116,6 +120,12 @@ export default <?php echo ($page ? 'AppPage()' : 'AppComponent') ?>.extend({
 
         - component <name>
         Create a nuxt component
+
+        - run 
+        Run your front-end project at localhost:3000 
+
+        - sync
+        Publish your front-end changes to /public
 
     <?php }
 

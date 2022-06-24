@@ -22,6 +22,6 @@ spl_autoload_register(function($name) {
 
 });
 
-if (Config::get('translate.javascript', false)) {
+if (Config::get('translations.javascript', false)) {
     Translate::use('user')->addJavascript();
 }

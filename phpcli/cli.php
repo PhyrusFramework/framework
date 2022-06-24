@@ -12,7 +12,8 @@ class CLI {
         'cron' => 'CLI_Cron',
         'test' => 'CLI_Test',
         'migrate' => 'CLI_Migrate',
-        'script' => 'CLI_Script'
+        'script' => 'CLI_Script',
+        'watcher' => 'CLI_Watcher'
     ];
 
     /**

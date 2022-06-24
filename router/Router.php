@@ -19,6 +19,20 @@ class Router {
     }
 
     /**
+     * Use a registered middleware to get its response.
+     * 
+     * @param string $name
+     * @param array $params
+     * 
+     * @return mixed
+     */
+    public static function useMiddleware(string $name, array $params = []) {
+        if (!isset(self::$registeredMiddlewares[$name])) return true;
+
+        return !(self::$registeredMiddlewares[$name](new RequestData(true), $params) === FALSE);
+    }
+
+    /**
      * Add a route manually
      * 
      * @param string $route
@@ -181,7 +195,7 @@ class Router {
         }
 
         return [
-            'options' => self::parseRoute($index),
+            'options' => self::parseRoute(include($index)),
             'params' => $params
         ];
     }
@@ -255,14 +269,14 @@ class Router {
             return new Exception('Route PHP file does not return options array.');
         }
 
-        self::run($ops, $res['params']);
+        self::run($ops, new Generic($res['params']));
 
     }
 
     private static function run($options, $params = []) {
 
-        $req = new RequestData();
-        $method = $req->method();
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        $req = new RequestData(in_array($method, ['GET', 'DELETE']));
 
         if (!isset($options[$method])) {
             response_die('method-not-allowed');

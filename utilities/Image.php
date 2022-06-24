@@ -272,4 +272,60 @@ class Image {
     return new Image($img, $format);
   }
 
+  /**
+   * Copy another image over this image.
+   * 
+   * @param Image $other
+   * @param array $position
+   * 
+   * @return Image
+   */
+  public function append(Image $otherImage, $position = [0,0]) : Image {
+    $gd = $otherImage->getGDImage();
+    imagealphablending($this->image, true);
+    imagesavealpha($gd, true);
+    imagecopy($this->image, $gd, $position[0], $position[1], 0, 0, $otherImage->width(), $otherImage->height());
+    return $this;
+  }
+
+  /**
+   * Calculate the area in pixels that this text will need to be printed.
+   * 
+   * @param string $text
+   * @param array $options = ['font', 'size']
+   * 
+   * @return array
+   */
+  public function areaForText(string $text, $options = [
+    'font' => null,
+    'size' => 12
+  ]) : array {
+    $area = imagettfbbox($options['size'], 0, $options['font'], $text);
+    return $area;
+  }
+
+  /**
+   * Write text on the image.
+   * 
+   * @param array $options
+   * 
+   * @return array Area of the written text
+   */
+  public function writeText($text, $options = [
+    'color' => [0,0,0],
+    'font' => null,
+    'position' => [0,0],
+    'size' => 12
+  ]) : array {
+
+    $color = imagecolorallocate($this->image, $options['color'][0], $options['color'][1], $options['color'][2]);
+    
+    $area = imagettfbbox($options['size'], 0, $options['font'], $text);
+
+    imagettftext($this->image, $options['size'], 0,
+      $options['position'][0], $options['position'][1], $color, $options['font'], $text);
+
+    return $area;
+  }
+
 }

@@ -291,7 +291,7 @@ class AdvancedORM extends ORM {
      * 
      * @return AdvancedORM
      */
-    public function delete() : AdvancedORM {
+    public function delete() {
 
         $ref = $this->reference_column();
 
@@ -726,9 +726,9 @@ class AdvancedORM extends ORM {
      * @param string $type
      * @param int $position [Default first]
      * 
-     * @return ORMResource
+     * @return ORMResource|null
      */
-    public function getResource(string $type, int $position = 1) : ORMResource {
+    public function getResource(string $type, int $position = 1) {
         $resources = $this->getResources($type);
 
         $r = null;

@@ -500,6 +500,43 @@ class ORM implements JsonSerializable {
         return $arr;
     }
 
+     /**
+     * Get another ORM object referenced by a field of this object.
+     * 
+     * @param string $column
+     * @param string $otherObjectColumn
+     * @param string $class
+     * 
+     * @return ORM|null
+     */
+    public function getRelated(string $column, string $otherObjectColumn = 'ID', string $class = '') {
+
+        if (!isset($this->{$column})) {
+            return null;
+        }
+
+        $cl = $class;
+        if ($cl == '') {
+            // Try to guess class by definition serializeRelation column
+            $cols = $this->__columns();
+            foreach($cols as $col) {
+                if ($col['name'] != $column) continue;
+                if (!isset($col['serializeRelation'])) continue;
+
+                $cl = $col['serializeRelation'];
+                break;
+            }
+            if (empty($cl)) return null;
+        }
+
+        return $cl::findOne("$otherObjectColumn = :value", [
+            'value' => $this->{$column}
+        ]);
+
+    }
+
+    ////////// Static methods
+
     /**
      * Drop database table
      */
@@ -507,9 +544,6 @@ class ORM implements JsonSerializable {
         if (DB::tableExists(self::Table()))
             DBTable::instance(self::Table())->drop();
     }
-
-
-    ////////// Static methods
 
     /**
      * Get the table name.
@@ -608,6 +642,53 @@ class ORM implements JsonSerializable {
         return intval($res->first->count);
     }
 
+    /**
+     * Get a paginated response for this model.
+     * 
+     * @param array $options
+     * @param string $where
+     * @param array $parameters
+     * 
+     * @return array
+     */
+    public static function paginate(array $options = [
+        'page' => 0,
+        'offset' => -1,
+        'pageSize' => 10
+    ], string $where = '1', array $parameters = []) : array {
+
+        $total = self::count($where, $parameters);
+
+        $cl = get_called_class();
+        $tmp = new $cl();
+        $t = $tmp->getTable();
+
+        $l = $options['pageSize'] ?? 10;
+        if (isset($options['offset']) && $options['offset'] != -1) {
+            $o = $options['offset'];
+        } else {
+            $o = ($options['page'] ?? 0) * $l;
+        }
+
+        $limit = "LIMIT $l OFFSET $o";
+
+        $res = self::find($where . " $limit", $parameters);
+
+        return ApiResponse::paginate($res, [
+            'total' => $total,
+            'pageSize' => $l,
+            'offset' => $o,
+            'page' => $options['page'] ?? (floor($o / $l))
+        ]);
+    }
+
+    /**
+     * Generate routes for this model.
+     * 
+     * @param $route
+     * 
+     * @return Generic
+     */
     public static function CRUD($route = null) {
         $cl = get_called_class();
         $crud = new CRUD($route ? $route : (new $cl())->getTable());
@@ -624,13 +705,18 @@ class ORM implements JsonSerializable {
             return $gen;
         });
 
+        $gen->set('custom', function(string $method, string $route, callable $action) use ($gen, $crud) {
+            $crud->custom($method, $route, $action);
+            return $gen;
+        });
+
         $gen->set('list', function($param = true) use ($gen, $crud, $cl) {
 
-            $crud->list(function() use ($param, $cl) {
+            $crud->list(function($req, $params) use ($param, $cl) {
 
                 $req = new RequestData();
                 if (is_callable($param)) {
-                    return $param($req);
+                    return $param($req, $params);
                 }
                 $list = $cl::find();
                 return $list;
@@ -641,21 +727,35 @@ class ORM implements JsonSerializable {
 
         });
 
+        $gen->set('listPaginated', function(array $options = [
+            'page' => 0,
+            'offset' => -1,
+            'pageSize' => 10
+        ], string $where = '1', array $parameters = []) use ($gen, $crud, $cl) {
+
+            $crud->list(function() use ($options, $where, $parameters, $cl) {
+                return $cl::paginate($options, $where, $parameters);
+            });
+
+            return $gen;
+
+        });
+
         $gen->set('get', function($param = true) use ($gen, $crud, $cl) {
 
-            $crud->get(function($id) use ($param, $cl) {
+            $crud->get(function($req, $params) use ($param, $cl) {
+
+                if (is_callable($param)) {
+                    return $param($req, $params);
+                }
                 
+                $id = intval($params->id);
                 $obj = $cl::findID($id);
 
                 if ($obj == null) {
                     response_die('not-found');
                 }
 
-                $req = new RequestData();
-
-                if (is_callable($param)) {
-                    return $param($req, $obj);
-                }
                 return $obj;
 
             });
@@ -666,11 +766,10 @@ class ORM implements JsonSerializable {
 
         $gen->set('create', function($param = true) use ($gen, $crud, $cl) {
 
-            $crud->create(function() use ($param, $cl) {
+            $crud->create(function($req, $params) use ($param, $cl) {
 
-                $req = new RequestData();
                 if (is_callable($param)) {
-                    return $param($req);
+                    return $param($req, $params);
                 }
                 $obj = new $cl($req);
                 $obj->save();
@@ -684,19 +783,18 @@ class ORM implements JsonSerializable {
 
         $gen->set('edit', function($param = true) use ($gen, $crud, $cl) {
                 
-            $crud->get(function($id) use ($param, $cl) {
+            $crud->edit(function($req, $params) use ($param, $cl) {
+
+                if (is_callable($param)) {
+                    return $param($req, $params);
+                }
                 
+                $id = intval($params->id);
                 $obj = $cl::findID($id);
                 if ($obj == null) {
                     response_die('not-found');
                 }
 
-                $req = new RequestData();
-
-                if (is_callable($param)) {
-                    return $param($req, $obj);
-                }
-                $req = new RequestData();
                 $obj = new $cl($req);
                 $obj->ID = $id;
                 $obj->save();
@@ -710,18 +808,18 @@ class ORM implements JsonSerializable {
 
         $gen->set('delete', function($param = true) use ($gen, $crud, $cl) {
                 
-            $crud->get(function($id) use ($param, $cl) {
+            $crud->delete(function($req, $params) use ($param, $cl) {
+
+                if (is_callable($param)) {
+                    return $param($req, $params);
+                }
                 
+                $id = intval($params->id);
                 $obj = $cl::findID($id);
                 if ($obj == null) {
                     response_die('not-found');
                 }
 
-                $req = new RequestData();
-
-                if (is_callable($param)) {
-                    return $param($req, $obj);
-                }
                 $obj->delete();
                 return $obj;
 

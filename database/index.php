@@ -12,6 +12,7 @@ require_once(__DIR__.'/DBTable.php');
 require_once(__DIR__.'/BackupDatabase.php');
 
 autoload('DBBuilder', __DIR__.'/DBBuilder.php');
+autoload('InsecureString', __DIR__.'/InsecureString.php');
 
 global $DATABASE;
 try{
@@ -19,28 +20,3 @@ try{
     global $DATABASE_CONNECTED;
     $DATABASE_CONNECTED = true;
 } catch(Exception $e) {}
-
-class InsecureString {
-
-    private $text = '';
-
-    function __construct($value) {
-        if (is_array($value)) {
-            $this->text = JSON::stringify($value);
-        } else if (gettype($value) == 'Arr') {
-            $this->text = JSON::stringify($value->getArray());
-        } else {
-            $this->text = "$value";
-        }
-    }
-
-    /**
-     * Returns the string intact.
-     * 
-     * @return string
-     */
-    public function getString() : string {
-        return $this->text;
-    }
-
-}

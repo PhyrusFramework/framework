@@ -335,6 +335,8 @@ class Text {
                     }
                 } else {
                     $str .= $tag . $ch;
+                    $tag = '';
+                    $pos = 0;
                 }
 
             } else {
@@ -351,6 +353,8 @@ class Text {
                     }
                 } else {
                     $current .= $tag . $ch;
+                    $tag = '';
+                    $pos = 0;
                 }
 
             }

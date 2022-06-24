@@ -16,4 +16,8 @@ spl_autoload_register(function($name) {
         require_once(__DIR__ . '/CRUD.php');
     }
 
+    if ($name == 'Uploader') {
+        require_once(__DIR__ . '/Uploader.php');
+    }
+
 });

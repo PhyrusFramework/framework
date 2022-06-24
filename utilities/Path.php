@@ -2,11 +2,20 @@
 
 class Path {
 
-    /**
+     /**
      * Convert path to relative
      */
-    public static function toRelative($path) {
+    public static function toRelative(string $path, bool $public = false) {
         $path = str_replace(self::root(), '', str_replace('\\', '/', $path));
+
+        if ($public) {
+            $publicDir = '/' . Definition('public');
+
+            if (substr($path, 0, strlen($publicDir)) == $publicDir) {
+                $path = substr($path, strlen($publicDir));
+            }
+        }
+
         return $path;
     }
 
@@ -80,6 +89,18 @@ class Path {
      */
     public static function front(bool $relative = false) : string {
         $w = Definition('front');
+        return self::project($relative) . "/$w";
+    }
+
+    /**
+     * Get path to /back-end
+     * 
+     * @param bool $relative [Default false]
+     * 
+     * @return string
+     */
+    public static function back(bool $relative = false) : string {
+        $w = Definition('back');
         return self::project($relative) . "/$w";
     }
 

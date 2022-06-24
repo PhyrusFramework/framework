@@ -2,10 +2,12 @@
     "src": "back-end",
     "public": "public",
     "front": "front-end",
+    "back": "back-end",
     "code": "code",
     "routes": "routes",
     "middlewares": "middlewares",
     "tests": "tests",
     "migrations": "migrations",
-    "scripts": "scripts"
+    "scripts": "scripts",
+    "watcher": "watcher"
 }

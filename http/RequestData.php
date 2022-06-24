@@ -14,8 +14,8 @@ class RequestData {
      * 
      * @return RequestData
      */
-    public static function instance() : RequestData {
-        return new RequestData();
+    public static function instance(bool $urlParams = false) : RequestData {
+        return new RequestData($urlParams);
     }
 
     /**

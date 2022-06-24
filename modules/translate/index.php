@@ -35,7 +35,7 @@ class Translate {
      */
     public static function setLanguage(string $language) {
         $l = Translate::resolveLanguage($language);
-        if (Config::get('translate.use_cookies'))
+        if (Config::get('translations.use_cookies'))
             Cookie::set('language', $l);
         else
             SESSION::set('language', $l);
@@ -48,7 +48,7 @@ class Translate {
      */
     public static function getLanguage() : string {
 
-        $useCookies = Config::get('translate.use_cookies');
+        $useCookies = Config::get('translations.use_cookies');
         $lang = $useCookies ? Cookie::get('language') : SESSION::get('language');
 
         if (!empty($lang)) {
@@ -96,7 +96,7 @@ class Translate {
      * @return string
      */
     public static function defaultLanguage() : string {
-        $lang = Config::get('translate.default_language');
+        $lang = Config::get('translations.default_language');
         return empty($lang) ? self::resolveLanguage($lang) : $lang;
     }
 
@@ -106,7 +106,7 @@ class Translate {
      * @return array
      */
     public static function supportedLanguages() : array {
-        return Config::get('translate.supported_languages');
+        return Config::get('translations.supported_languages');
     }
 
     /**
@@ -121,7 +121,7 @@ class Translate {
 
         if (in_array($language, $supported)) return $language;
 
-        $inherit = Config::get('translate.inherit');
+        $inherit = Config::get('translations.inherit');
         $def = self::defaultLanguage();
 
         if (is_array($inherit)) {
@@ -161,7 +161,7 @@ class Translate {
      * @return string
      */
     public static function translationsDir() : string {
-        return Config::get('translate.directory');
+        return Config::get('translations.directory');
     }
 
     public function __construct($language = null) {

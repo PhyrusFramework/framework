@@ -154,4 +154,30 @@ class ApiResponse {
 
     }
 
+     /**
+     * Return a paginated result.
+     * 
+     * @param array $list
+     * @param array $options
+     * 
+     * @return array
+     */
+    public static function paginate(array $list, array $options = [
+        'pageSize' => 10,
+        'total' => -1,
+        'page' => 0,
+        'offset' => 0
+    ]) : array {
+        $response = [
+            'items' => $list,
+            'page' => $options['page'] ?? 0,
+            'offset' => $options['offset'] ?? 0,
+            'pageSize' => $options['pageSize'] ?? 10,
+            'total' => (isset($options['total']) && $options['total'] > -1) ? 
+                $options['total'] : sizeof($list)
+        ];
+
+        return $response;
+    }
+
 }

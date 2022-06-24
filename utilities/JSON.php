@@ -84,8 +84,7 @@ class JSON {
      * @return string
     */
     public function string(bool $pretty = false) : string {
-        if (!$pretty) return json_encode($this->_object, JSON_UNESCAPED_UNICODE);
-        return json_encode($this->_object, JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);
+        return self::stringify($this->_object, $pretty);
     }
 
     /**
@@ -99,16 +98,16 @@ class JSON {
     }
 
     /**
-     * Get JSON string.
+     * Convert object or array to JSON string.
      * 
-     * @param array $array
+     * @param $obj
      * @param bool $pretty [Default false]
      * 
      * @return string
      */
-    public static function stringify(array $array, bool $pretty = false) : string {
-        $json = new JSON($array);
-        return $json->string($pretty);
+    public static function stringify($obj, bool $pretty = false) : string {
+        if (!$pretty) return json_encode($obj, JSON_UNESCAPED_UNICODE);
+        return json_encode($obj, JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);
     }
 
     /**
