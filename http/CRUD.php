@@ -122,6 +122,19 @@ class CRUD {
      */
     public function generate() : CRUD {
 
+        if (sizeof($this->_customs) > 0) {
+
+            foreach($this->_customs as $route => $endpoint) {
+
+                if ($this->_middleware) {
+                    $endpoint['middleware'] = $this->_middleware;
+                }
+
+                Router::add($this->route . $route, $endpoint);
+            }
+
+        }
+
         if ($this->_list || $this->_create) {
 
             $route = [];
@@ -169,19 +182,6 @@ class CRUD {
             }
 
             Router::add($this->route . '/:id', $route);
-        }
-
-        if (sizeof($this->_customs) > 0) {
-
-            foreach($this->_customs as $route => $endpoint) {
-
-                if ($this->_middleware) {
-                    $endpoint['middleware'] = $this->_middleware;
-                }
-
-                Router::add($this->route . $route, $endpoint);
-            }
-
         }
 
         return $this;

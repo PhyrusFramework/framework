@@ -7,7 +7,7 @@ Config::save('translations', [
     'directory' => '/translations'
 ]);
 
-$path = Path::project() . '/translations';
+$path = Path::root() . '/translations';
 if (!is_dir($path))
     mkdir($path);
 $trans = '{}';

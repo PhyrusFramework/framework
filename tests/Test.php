@@ -193,7 +193,7 @@ class Test {
 
         $log = ob_get_flush();
         if (!empty($this->arguments['log'])) {
-            $logfile = Path::project() . '/tests';
+            $logfile = Path::root() . '/tests';
             if (!is_dir($logfile)) {
                 create_folder($logfile);
             }

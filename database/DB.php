@@ -33,7 +33,7 @@ class DB {
      * 
      * @return DBQuery
      */
-    public function query(string $table) : DBQuery {
+    public static function query(string $table) : DBQuery {
         return new DBQuery($table);
     }
 

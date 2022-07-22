@@ -289,7 +289,9 @@ class ORM implements JsonSerializable {
                 }
                 $coldef['position'] = $col['position'];
 
-                $tableObj->addColumn($coldef);
+                try {
+                    $tableObj->addColumn($coldef);
+                } catch (Exception $e) {}
             }
 
         }

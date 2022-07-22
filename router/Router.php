@@ -202,8 +202,8 @@ class Router {
 
     static function launch($url = null) {
 
-        // Load php in /code
-        php_in(Path::code());
+        // Load php files automatically
+        self::loadAutoloads();
 
         $u = $url ?? URL::route();
         $path = URL::path($u);
@@ -306,24 +306,12 @@ class Router {
 
         } else {
             $next = $func($req, $params);
-
-            if ($next instanceof Promise) {
-                $next
-                ->then(function() use ($action, $req, $params) {
-                    $ret = $action($req, $params);
-
-                    if (is_array($ret)) {
-                        response_die('ok', JSON::stringify($ret));
-                    } else if (is_string($ret) || is_numeric($ret)) {
-                        response_die('ok', $ret);
-                    }
-                });
-                return;
-            }
             
             if ($next !== false) {
                 $ret = $action($req, $params);
-            } else return;
+            } else {
+                response_die('unauthorized');
+            }
         }
 
         if (is_array($ret)) {
@@ -377,9 +365,50 @@ class Router {
         exit();
     }
 
-    public static function reboot($newpath) {
-        self::launch($newpath);
-        return false;
+    /**
+     * Load PHP files in autoload paths.
+     */
+    public static function loadAutoloads() {
+
+        $root = Path::back();
+        $file = $root . '/autoload.php';
+        if (!file_exists($file)) return;
+
+        $json = include($file);
+
+        // Files imported always
+        if (isset($json['always'])) {
+            foreach($json['always'] as $path) {
+                $p = $path[0] == '/' ? $path : "/$path";
+                $f = $root . $p;
+                if (!file_exists($f)) return;
+
+                php_in($f);
+            }
+        }
+
+        // Files imported when class is used
+        if (isset($json['classByFile'])) {
+            foreach($json['classByFile'] as $path) {
+                $p = $path[0] == '/' ? $path : "/$path";
+                $f = $root . $p;
+                if (!file_exists($f)) return;
+
+                php_in($f, true);
+            }
+        }
+
+        if (isset($json['classByName'])) {
+
+            foreach($json['classByName'] as $name => $path) {
+                $p = $path[0] == '/' ? $path : "/$path";
+                $f = $root . $p;
+                if (!file_exists($f)) return;
+
+                autoload($name, $f);
+            }
+
+        }
     }
 
 }

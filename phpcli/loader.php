@@ -6,7 +6,14 @@ require_once(__DIR__ . "/cli.php");
 global $CLI;
 $CLI = new CLI($argv);
 
-require_once(realpath(__DIR__ . "/../index.php"));
-php_in(Path::src() . "/cli");
+$vendor = realpath(__DIR__ . '/../../../../') . '/vendor';
+if (file_exists($vendor)) {
+    require_once(realpath("$vendor/autoload.php"));
+} else {
+    require_once(realpath(__DIR__ . "/../index.php"));
+}
+
+Router::loadAutoloads();
+php_in(Path::root() . "/cli");
 
 $CLI->run();

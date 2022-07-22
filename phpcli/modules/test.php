@@ -23,7 +23,7 @@ class CLI_Test extends CLI_Module {
         }
         else {
             $test = $this->params[0];
-            $test_path = Path::project() . "/tests/$test.php";
+            $test_path = Path::root() . "/tests/$test.php";
             if (!file_exists($test_path)) {
 
                 echo "\nTest $test not found. Make sure the file $test.php exists in the path /tests.\n";
@@ -95,6 +95,9 @@ class <?= $ucfirst ?>Test extends Test {
     
         The test command lets you run your Tests directly from CLI.
         To know more about tests read the framework documentation.
+
+        - php cli test create <name>
+        Create a test file.
 
         - php cli test run
         Run all of your tests at once.

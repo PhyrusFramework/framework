@@ -6,6 +6,8 @@ class Uploader {
      * Get an uploaded file.
      * 
      * @param string $name (optional)
+     * 
+     * @return null|Generic
      */
     public static function getFile($name = '') {
         $req = new RequestData();

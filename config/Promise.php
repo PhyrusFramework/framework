@@ -10,6 +10,10 @@ class Promise {
     private $onReject;
     private $onAnyway;
 
+    public static function instance(callable $action) {
+        return new Promise($action);
+    }
+
     function __construct(callable $action) {
 
         $resolve = function($parameter = null) {
@@ -48,6 +52,16 @@ class Promise {
 
     public static function create(callable $action) {
         return new Promise($action);
+    }
+
+    public function resolve(callable $onSuccess, callable $onError) {
+        if ($this->result == 'success') {
+            return $onSuccess($this->response);
+        } 
+        if ($this->result == 'error') {
+            return $onError($this->error);
+        }
+        return null;
     }
 
     public function then(callable $func) {

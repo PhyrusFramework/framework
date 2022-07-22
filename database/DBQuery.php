@@ -10,10 +10,11 @@ class DBQuery {
 
     private $wheres = [];
     private $whereins = [];
+    private $rawWheres = [];
 
     private $sets = [];
 
-    private $join = '';
+    private $joins = [];
 
     private $limit = 0;
     private $offset = 0;
@@ -64,6 +65,14 @@ class DBQuery {
         return $this;
     }
 
+    public function rawWhere(string $line, array $params = []) {
+        $this->rawWheres[] = [
+            'line' => $line,
+            'params' => $params
+        ];
+        return $this;
+    }
+
     public function where($column, $valueOrOperator = '=', $value = null) {
 
         if (is_array($column)) {
@@ -87,6 +96,7 @@ class DBQuery {
             'column' => $column,
             'subquery' => $subquery
         ];
+        return $this;
     }
 
     public function whereNotIn(string $column, DBQuery $subquery) {
@@ -95,6 +105,7 @@ class DBQuery {
             'column' => $column,
             'subquery' => $subquery
         ];
+        return $this;
     }
 
     public function set(string $column, $value) {
@@ -103,7 +114,8 @@ class DBQuery {
     }
 
     public function join(string $table, string $on) {
-        $this->join = "JOIN $table ON $on";
+        $this->joins[$table] = $on;
+        return $this;
     }
 
     public function get() {
@@ -136,7 +148,7 @@ class DBQuery {
 
     public function count() {
         $query = $this->buildQuery('count');
-        return $this->db->run($query[0], $query[1]);
+        return intval($this->db->run($query[0], $query[1])->first->count);
     }
 
     public function buildQuery(string $action) {
@@ -157,15 +169,15 @@ class DBQuery {
                 $query .= ' *';
             } else {
                 for($i = 0; $i < sizeof($this->selects); ++$i) {
-                    $query .= $this->selects[$i];
+                    $query .= ' ' . $this->selects[$i];
 
                     if ($i < sizeof($this->selects) - 1) {
-                        $query .= ', ';
+                        $query .= ',';
                     }
                 }
             }
         } else if ($action == 'count') {
-            $query .= ' COUNT(*)';
+            $query .= ' COUNT(*) as count';
         }
 
         // TABLE NAME
@@ -175,6 +187,10 @@ class DBQuery {
             $query .= ' ' . $this->table;
         } else {
             $query .= " FROM $this->table";
+
+            foreach($this->joins as $table => $on) {
+                $query .= " JOIN $table ON $on";
+            }
         }
 
         $query .= ' ';
@@ -235,7 +251,7 @@ class DBQuery {
         }
 
         // WHEREs
-        if (sizeof($wheres) > 0 && $action != 'insert') {
+        if (sizeof($this->wheres) > 0 && $action != 'insert') {
 
             $query .= ' WHERE ';
 
@@ -290,6 +306,8 @@ class DBQuery {
 
             if (sizeof($this->wheres) > 0) {
                 $query .= ' AND ';
+            } else {
+                $query .= ' WHERE ';
             }
 
             foreach($this->whereins as $w) {
@@ -306,7 +324,34 @@ class DBQuery {
 
             }
 
-        } 
+        }
+
+        // Raw wheres
+        if (sizeof($this->rawWheres) > 0 && $action != 'insert') {
+
+            if (sizeof($this->wheres) > 0 || sizeof($this->whereins) > 0) {
+                $query .= ' AND ';
+            } else {
+                $query .= ' WHERE ';
+            }
+
+            $count = 0;
+            foreach($this->rawWheres as $w) {
+
+                $query .= $w['line'];
+
+                foreach($w['params'] as $k => $v) {
+                    $params[$k] = $v;
+                }
+
+                if ($count < sizeof($this->rawWheres) - 1) {
+                    $query .= ' AND ';
+                }
+
+                ++ $count;
+
+            }
+        }
 
         // EXTRAS
         if ($action == 'select') {

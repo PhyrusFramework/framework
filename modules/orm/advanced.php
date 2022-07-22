@@ -1216,6 +1216,15 @@ class ORMResource {
     }
 
     /**
+     * Get the resource position.
+     * 
+     * @return int $position
+     */
+    public function getPosition() : int {
+        return $this->position;
+    }
+
+    /**
      * Move the position of this resource up.
      */
     public function moveUp() {

@@ -170,7 +170,7 @@ class Translate {
 
         if (!isset(self::$translations[$this->language])) {
 
-            $file = Path::project() . self::translationsDir() . '/' . $this->language . '.json';
+            $file = Path::root() . self::translationsDir() . '/' . $this->language . '.json';
             self::$translations[$this->language] = arr(JSON::fromFile($file)->asArray());
 
         }

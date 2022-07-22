@@ -227,14 +227,6 @@ function response($name, $message = null)
         return;
     }
 
-    if (!empty($message)) {
-        if (is_array($message)) {
-            echo JSON::stringify($message);
-        } else {
-            echo $message;
-        }
-    }
-
     $responses = _get_http_responses();
 
     if (isset($responses[$name])) {
@@ -253,7 +245,15 @@ function response($name, $message = null)
         foreach($name as $code => $header) {
             header($header);
             http_response_code($code);
-            return;
+            break;
+        }
+    }
+
+    if (!empty($message)) {
+        if (is_array($message)) {
+            echo JSON::stringify($message);
+        } else {
+            echo $message;
         }
     }
 }

@@ -46,29 +46,6 @@ class Path {
     }
 
     /**
-     * Get root path.
-     * 
-     * @param bool $relative [Default false]
-     * 
-     * @return string
-     */
-    public static function project(bool $relative = false) : string {
-        return self::root($relative);
-    }
-
-    /**
-     * Get path to /src
-     * 
-     * @param bool $relative [Default false]
-     * 
-     * @return string
-     */
-    public static function src(bool $relative = false) : string {
-        $w = Definition('src');
-        return self::project($relative) . "/$w";
-    }
-
-    /**
      * Get path to /public
      * 
      * @param bool $relative [Default false]
@@ -77,7 +54,7 @@ class Path {
      */
     public static function public(bool $relative = false) : string {
         $w = Definition('public');
-        return self::project($relative) . "/$w";
+        return self::root($relative) . "/$w";
     }
 
      /**
@@ -89,7 +66,7 @@ class Path {
      */
     public static function front(bool $relative = false) : string {
         $w = Definition('front');
-        return self::project($relative) . "/$w";
+        return self::root($relative) . "/$w";
     }
 
     /**
@@ -101,7 +78,7 @@ class Path {
      */
     public static function back(bool $relative = false) : string {
         $w = Definition('back');
-        return self::project($relative) . "/$w";
+        return self::root($relative) . "/$w";
     }
 
     /**
@@ -124,18 +101,7 @@ class Path {
      * @return string
      */
     public static function tests(bool $relative = false) : string {
-        return self::project($relative) . '/' . Definition('tests');
-    }
-
-    /**
-     * Get path to /src/code
-     * 
-     * @param bool $relative [Default false]
-     * 
-     * @return string
-     */
-    public static function code(bool $relative = false) : string {
-        return self::src($relative) . '/' . Definition('code');
+        return self::root($relative) . '/' . Definition('tests');
     }
 
     /**
@@ -146,7 +112,7 @@ class Path {
      * @return string
      */
     public static function middlewares(bool $relative = false) : string {
-        return self::src($relative) . '/' . Definition('middlewares');
+        return self::back($relative) . '/' . Definition('middlewares');
     }
 
     /**
@@ -157,7 +123,7 @@ class Path {
      * @return string
      */
     public static function routes(bool $relative = false) : string {
-        return self::src($relative) . '/' . Definition('routes');
+        return self::back($relative) . '/' . Definition('routes');
     }
 
 }

@@ -81,7 +81,10 @@ class DATABASE
         try {
             $result = $this->db->query( $q );
         } catch(Exception $e) {
-            throw new FrameworkException("SQL Query error: `$q`, ERROR: " . ($this->db->error ?? 'unknown, possibly foreign keys.'), $q);
+
+            $err = $e->getMessage();
+
+            throw new FrameworkException("SQL Query error: `$q`, ERROR: $err", $q);
         }
 
         $result = $result == null ? [] : $result->fetchAll();
@@ -192,12 +195,12 @@ class DATABASE
 
             } else {
 
-                if (ctype_alpha($query[$i]) || $query[$i] == '_') {
+                if (ctype_alpha($query[$i]) || $query[$i] == '_' || ctype_alnum($query[$i])) {
                     $current .= $query[$i];
                 } else {
                     if (!empty($current)) {
-                        if (isset($parameters[$current])) {
-                            $str .= Database::prepare($parameters[$current]);
+                        if (array_key_exists($current, $parameters)) {
+                            $str .= self::prepare($parameters[$current]);
                         } else {
                             $str .= ":$current";
                         }

@@ -14,7 +14,7 @@ define('RUNNING_TEST', true);
 if ($useFrameworkTests) {
     WebLoader::php_in(Path::framework() . '/tests/framework');
 } else {
-    WebLoader::php_in(Path::project() . '/tests');
+    WebLoader::php_in(Path::root() . '/tests');
 }
 
 if (Test::$TEST_COUNT == 0) {

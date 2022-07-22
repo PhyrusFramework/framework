@@ -691,6 +691,21 @@ class File {
     }
 
     /**
+     * Find and replace text inside the file.
+     * 
+     * @param string $text
+     * @param string $replace
+     * 
+     * @return File self
+     */
+    public function replace(string $text, string $replace) : File {
+        $c = $this->content();
+        $c = str_replace($text, $replace, $c);
+        $this->write($c);
+        return $this;
+    }
+
+    /**
      * Delete file.
      * 
      * @return File

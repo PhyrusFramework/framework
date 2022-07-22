@@ -9,7 +9,7 @@ class Sitemap {
      */
     public static function generate(array $map) {
 
-        $path = Path::project() . '/sitemap';
+        $path = Path::root() . '/sitemap';
         if (!is_dir($path))
             mkdir($path);
 

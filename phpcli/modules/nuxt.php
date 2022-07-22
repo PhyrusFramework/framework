@@ -103,11 +103,31 @@ export default <?php echo ($page ? 'AppPage()' : 'AppComponent') ?>.extend({
         ->delete();
 
         echo "Output files moved to /public\n";
+    }
 
+    private function npm_install() {
+        cmd('cd ./front-end && npm install');
     }
 
     public function command_run() {
+        $modules = Path::front() . '/node_modules';
+
+        if (!file_exists($modules)) {
+            $this->npm_install();
+        }
+
         cmd('npm --prefix ./front-end/ run dev');
+    }
+
+    public function command_install() {
+        $modules = Path::front() . '/node_modules';
+
+        if (file_exists($modules)) {
+            Folder::instance($modules)->delete();
+            echo "\nPrevious node_modules folder deleted.\n";
+        }
+
+        $this->npm_install();
     }
 
     public function help() {?>
@@ -126,6 +146,9 @@ export default <?php echo ($page ? 'AppPage()' : 'AppComponent') ?>.extend({
 
         - sync
         Publish your front-end changes to /public
+
+        - install
+        Install npm dependencies.
 
     <?php }
 
