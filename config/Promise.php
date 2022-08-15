@@ -2,43 +2,78 @@
 
 class Promise {
 
+    /**
+     * @var mixed Promise response
+     */
     private $response = null;
+
+    /**
+     * @var mixed Promise error
+     */
     private $error = null;
+
+    /**
+     * @var string Promise status: none, success or error
+     */
     private $result = 'none';
 
-    private $onResolve;
-    private $onReject;
-    private $onAnyway;
+    /**
+     * @var array Methods map
+     */
+    private array $__methods = [];
 
-    public static function instance(callable $action) {
+    function __call($func, $params) {
+
+        foreach($this->__methods as $k => $v) {
+            if ($func == $k) {
+                return $v(...$params);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Create a new Promise
+     * 
+     * @param callable Action to run
+     * 
+     * @return Promise
+     */
+    public static function instance(callable $action) : Promise {
         return new Promise($action);
     }
 
     function __construct(callable $action) {
 
         $resolve = function($parameter = null) {
+
             $this->result = 'success';
             $this->response = $parameter;
-            if ($this->onResolve != null) {
-                $this->onResolve($parameter);
-                $this->onResolve = null;
+
+            if (isset($this->__methods['resolve'])) {
+                $this->resolve($parameter);
+                unset($this->__methods['resolve']);
             }
-            if ($this->onAnyway != null) {
-                $this->onAnyway($parameter);
-                $this->onAnyway = null;
+
+            if (isset($this->__methods['anyway'])) {
+                $this->anyway($parameter);
+                unset($this->__methods['anyway']);
             }
+
         };
 
         $reject = function($error = null) {
             $this->result = 'error';
             $this->error = $error;
-            if ($this->onReject != null) {
-                $this->onReject($error);
-                $this->onReject = null;
+
+            if (isset($this->__methods['error'])) {
+                $this->error($error);
+                unset($this->__methods['error']);
             }
-            if ($this->onAnyway != null) {
-                $this->onAnyway($error);
-                $this->onAnyway = null;
+
+            if (isset($this->__methods['anyway'])) {
+                $this->anyway($error);
+                unset($this->__methods['anyway']);
             }
         };
 
@@ -50,48 +85,91 @@ class Promise {
 
     }
 
-    public static function create(callable $action) {
-        return new Promise($action);
+    /**
+     * Was this promise rejected?
+     * 
+     * @return bool
+     */
+    public function isError() : bool {
+        return $this->result == 'error';
     }
 
-    public function resolve(callable $onSuccess, callable $onError) {
-        if ($this->result == 'success') {
-            return $onSuccess($this->response);
-        } 
-        if ($this->result == 'error') {
-            return $onError($this->error);
-        }
-        return null;
+    /**
+     * Was this promise resolved successfully?
+     * 
+     * @return bool
+     */
+    public function isSuccess() : bool {
+        return $this->result == 'success';
     }
 
-    public function then(callable $func) {
+    /**
+     * Get the response after the promise execution.
+     * 
+     * @return mixed
+     */
+    public function getResponse() {
+        return $this->response;
+    }
+
+    /**
+     * If the Promise failed, get the error.
+     * 
+     * @return mixed
+     */
+    public function getError() {
+        return $this->error;
+    }
+
+    /**
+     * Run some action when the promise is finished
+     * 
+     * @param callable Action
+     * 
+     * @return Promise self
+     */
+    public function then(callable $func) : Promise {
 
         if ($this->result == 'success') {
             $func($this->response);
         } else {
-            $this->onResolve = $func;
+            $this->__methods['resolve'] = $func;
         }
 
         return $this;
     }
 
-    public function catch(callable $func) {
+    /**
+     * Catch the error if the Promise fails
+     * 
+     * @param callable Action
+     * 
+     * @return Promise self
+     */
+    public function catch(callable $func) : Promise {
         if ($this->result == 'error') {
             $func($this->error);
         } else {
-            $this->onReject = $func;
+            $this->__methods['error'] = $func;
         }
 
         return $this;
     }
 
-    public function finally(callable $func) {
+    /**
+     * Do something either if the Promise works or fails.
+     * 
+     * @param callable Action
+     * 
+     * @return Promise self
+     */
+    public function finally(callable $func) : Promise {
         if ($this->result == 'success') {
             $func($this->response);
         } else if ($this->result == 'error') {
             $func($this->error);
         } else {
-            $this->onAnyway = $func;
+            $this->__methods['anyway'] = $func;
         }
 
         return $this;

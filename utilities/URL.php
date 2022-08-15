@@ -20,9 +20,9 @@ class URL {
      */
     public static function host(string $url = null) : string {
         if ($url == null)
-        return URL::protocol() . (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost');
+            return URL::protocol() . (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost');
 
-        $parts = parse_url($u);
+        $parts = parse_url($url);
         if (empty($parts['host']))
             return '';
 
@@ -44,7 +44,15 @@ class URL {
         $parts = parse_url($u);
         if (empty($parts['query']))
             return [];
-        parse_str($parts['query'], $query);
+
+        $parts = explode('&', $parts['query']);
+        $query = [];
+        foreach($parts as $p) {
+            $kv = explode('=', $p);
+            if (sizeof($kv) != 2) continue;
+            $query[$kv[0]] = urldecode($kv[1]);
+        }
+
         return $query;
     }
 
@@ -97,7 +105,7 @@ class URL {
      */
     public static function hostname(string $url = null) : string {
         if ($url == null) return isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost';
-        $parts = parse_url($u);
+        $parts = parse_url($url);
         return $parts['host'];
     }
 

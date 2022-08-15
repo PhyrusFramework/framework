@@ -42,7 +42,7 @@ class CLI_Nuxt extends CLI_Module {
 
         // scss
         ob_start();?>
-#<?= $name ?> {
+<?= ($page ? '#' : '.') ?><?= $name ?> {
 
 }<?php
         $content = ob_get_clean();
@@ -51,7 +51,7 @@ class CLI_Nuxt extends CLI_Module {
         // vue
         ob_start();?>
 <template>
-    <div id="<?= $name ?>">
+    <div <?= ($page ? 'id' : 'class') ?>="<?= $name ?>">
 
     </div>
 </template>
@@ -64,9 +64,9 @@ class CLI_Nuxt extends CLI_Module {
 
         // ts
         ob_start();?>
-import { <?php echo ($page ? 'AppPage' : 'AppComponent') ?> } from 'phyrus-nuxt';
+import { AppComponent } from 'phyrus-nuxt';
 
-export default <?php echo ($page ? 'AppPage()' : 'AppComponent') ?>.extend({
+export default AppComponent.extend({
 
     data() {
         const data : {
@@ -130,10 +130,38 @@ export default <?php echo ($page ? 'AppPage()' : 'AppComponent') ?>.extend({
         $this->npm_install();
     }
 
+    public function command_remove() {
+
+        Folder::instance(Path::front())->delete();
+
+        $files = Folder::instance(Path::public())->subfiles();
+        foreach($files as $file) {
+            $n = basename($file);
+
+            if (!in_array($n, [
+                'index.php',
+                '.htaccess'
+            ])) {
+                File::instance($file)->delete();
+            }
+        }
+
+        $dirs = Folder::instance(Path::public())->subfolders();
+        foreach($dirs as $dir) {
+            Folder::instance($dir)->delete();
+        }
+
+        Config::save('project.only_API', true);
+
+    }
+
     public function help() {?>
 
         The Nuxt command allows you to create project
         content in a moment: pages, components, classes, etc.
+
+        -remove
+        Remove front support and convert this project into a simple API.
 
         - page <name>
         Create a nuxt page.

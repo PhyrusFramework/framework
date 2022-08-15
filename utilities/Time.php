@@ -162,12 +162,12 @@ class Time {
     /**
      * Add time to this time.
      * 
-     * @param int $amount
+     * @param int|TimeInterval $amount
      * @param string $type second|minute|hour|day|month|year
      * 
      * @return Time self
      */
-    public function add(int $amount, string $type = 'day') : Time {
+    public function add($amount, string $type = 'day') : Time {
 
         if (gettype($amount) == 'object' && get_class($amount) == 'TimeInterval') {
 
@@ -394,7 +394,7 @@ class TimeInterval {
             $rest = $this->days - $count * 12;
 
             // Half years
-            $count2 = floor($res / 183) * 6;
+            $count2 = floor($rest / 183) * 6;
             $rest = $this->days - $count*12 - $count2*6;
 
             // Rest 1 month = 30 days

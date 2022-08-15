@@ -138,34 +138,11 @@ class ErrorHandler {
 
         if (!class_exists('RequestData')) {
 
-            if (!defined('USING_CLI')) {
-                self::view($parameters);
-            } else {
-                self::json($parameters);
-            }
+            self::json($parameters);
             return;
         }
 
-        $req = new RequestData();
-        if ($req->method() == 'POST' || $req->has('ajaxActionName') || defined('USING_CLI')) {
-            self::json($parameters);
-        }
-        else {
-            self::view($parameters);
-        }
-    }
-
-    /**
-     * Display error HTML View
-     * 
-     * @param array $parameters Error data
-     */
-    private static function view(array $parameters) {
-        foreach($parameters as $k => $v) {
-            ${$k} = $v;
-        }
-        include(__DIR__ . '/error_page/view.php');
-        DebugConsole::print();
+        self::json($parameters);
     }
 
     /**

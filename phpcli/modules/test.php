@@ -67,7 +67,8 @@ class <?= $ucfirst ?>Test extends Test {
         }
     }
 
-}<?php
+}
+new <?= $ucfirst ?>();<?php
         $content = ob_get_clean();
         file_put_contents($file, $content);
 

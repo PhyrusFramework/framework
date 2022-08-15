@@ -10,6 +10,22 @@ class RequestData {
     public HTTPHeaders $headers;
 
     /**
+     * Data as array
+     * 
+     * @var array Data
+     */
+    private array $_arr = [];
+
+    /**
+     * Get data as array
+     * 
+     * @return array
+     */
+    public function getData() : array {
+        return $this->_arr;
+    }
+
+    /**
      * Get an instance object of RequestData.
      * 
      * @return RequestData
@@ -41,13 +57,18 @@ class RequestData {
 
         foreach($_POST as $k => $v) {
             $this->{$k} = $v;
+            $arr[$k] = $v;
         }
 
         if ($urlParams) {
             $q = URL::parameters();
-            foreach($q as $k => $v)
+            foreach($q as $k => $v) {
                 $this->{$k} = $v;
+                $arr[$k] = $v;
+            }
         }
+
+        $this->_arr = $arr;
     }
 
     /**

@@ -126,4 +126,12 @@ class Path {
         return self::back($relative) . '/' . Definition('routes');
     }
 
+    public static function publicUploads(bool $relative = false) {
+        return self::public($relative) . '/' . Config::get('project.uploads.publicDir');
+    }
+
+    public static function privateUploads(bool $relative = false) {
+        return self::public($relative) . '/' . Config::get('project.uploads.privateDir');
+    }
+
 }

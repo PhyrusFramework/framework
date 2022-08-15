@@ -7,7 +7,7 @@ class CLI {
      * CLI Modules
      */
     private static $_modules = [
-        'nuxt' => 'CLI_Nuxt',
+        'front' => 'CLI_Nuxt',
         'config' => 'CLI_Config',
         'cron' => 'CLI_Cron',
         'test' => 'CLI_Test',

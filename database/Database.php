@@ -89,6 +89,14 @@ class DATABASE
 
         $result = $result == null ? [] : $result->fetchAll();
 
+        if (Config::get('database.debug') && !empty($this->db->error)) {
+            var_dump([
+                'query' => $q,
+                'error' => $this->db->error
+            ]);
+            response_die('error');
+        }
+
         return new DBQueryResult($q, $this->db->error, $result);
     }
 
@@ -304,7 +312,7 @@ class DATABASE
     public function createTable(array $table) : DBQueryResult {
 
         $name = $table['name'];
-        $q = "CREATE TABLE $name (";
+        $q = "CREATE TABLE `$name` (";
 
         $primary = '';
         foreach($table['columns'] as $col) {
@@ -312,7 +320,7 @@ class DATABASE
                 if (!$primary == '') {
                     $primary .= ', ';
                 }
-                $primary .= $col['name'];
+                $primary .= '`' . $col['name'] . '`';
             }
         }
 
@@ -326,7 +334,7 @@ class DATABASE
             $fname = $field['name'];
             $type = isset($field['type']) ? $field['type'] : 'BIGINT';
             
-            $q .= "$fname $type";
+            $q .= "`$fname` $type";
     
             if (!empty($field['notnull']) && $field['notnull'])
                 $q .= ' NOT NULL';
@@ -349,7 +357,7 @@ class DATABASE
         }
         foreach($uniques as $u)
         {
-            $q .= "UNIQUE($u), ";
+            $q .= "UNIQUE(`$u`), ";
         }
 
         if (empty($primary))
@@ -359,7 +367,9 @@ class DATABASE
     
         foreach($foreign as $f)
         {
-            $q .= ', FOREIGN KEY(' . $f['field'] . ') REFERENCES ' . $f['reference'];
+            $ref = $f['reference'];
+            $ref = str_replace('(', '`(', $ref);
+            $q .= ', FOREIGN KEY(' . $f['field'] . ") REFERENCES `$ref";
         }
     
         $q .= ');';

@@ -155,7 +155,7 @@ class SESSION
         }
 
         self::start();
-        unset($_SESSION[self::$prefix . $key]);
+        unset($_SESSION[$key]);
     }
 
     /**

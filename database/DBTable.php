@@ -55,7 +55,7 @@ class DBTable {
      * @return DBQueryResult
      */
     public function drop() : DBQueryResult {
-        return $this->db->run('DROP TABLE ' . $this->_name);
+        return $this->db->run('DROP TABLE `' . $this->_name . '`');
     }
 
     /**
@@ -88,11 +88,11 @@ class DBTable {
         $res = $this->db->run($q);
 
         if (!empty($definition['unique'])) {
-            $this->db->run("ALTER TABLE $this->_name ADD CONSTRAINT $this->_name"."_$name"."_unique UNIQUE ($name)");
+            $this->db->run("ALTER TABLE `$this->_name` ADD CONSTRAINT $this->_name"."_$name"."_unique UNIQUE ($name)");
         }
 
         if (!empty($definition['foreign'])) {
-            $this->db->run("ALTER TABLE $this->_name ADD FOREIGN KEY ($name) REFERENCES " . $definition['foreign']);
+            $this->db->run("ALTER TABLE `$this->_name` ADD FOREIGN KEY ($name) REFERENCES " . $definition['foreign']);
         }
 
         return $res;
@@ -107,7 +107,7 @@ class DBTable {
      */
     public function dropColumn(string $column) : DBTable {
 
-        $this->db->run("ALTER TABLE $this->_name DROP COLUMN $column");
+        $this->db->run("ALTER TABLE `$this->_name` DROP COLUMN $column");
 
         return $this;
     }
@@ -122,7 +122,7 @@ class DBTable {
      * @return DBQueryResult
      */
     public function empty() : DBQueryResult {
-        return $this->db->run("DELETE FROM $this->_name");
+        return $this->db->run("DELETE FROM `$this->_name`");
     }
 
     /**

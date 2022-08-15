@@ -7,7 +7,7 @@
  * 
  * @return Arr
  */
-function arr($array) : Arr {
+function arr($array) {
     if (is_array($array)) {
         return new Arr($array);
     }

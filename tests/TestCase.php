@@ -27,11 +27,12 @@ class TestCase {
         $p = $path;
         if (strlen($p) < 1 || $p[0] != '/')
             $p = "/$p";
-        $url = URL::host() . (isset($options['port']) ? ':' . $options['port'] : '') . $p;
+
+        $url = (isset($options['host']) ? $options['host'] : URL::host()) 
+            . (isset($options['port']) ? ':' . $options['port'] : '') . $p;
         $this->path = $p;
 
         $method = $options['method'] ?? 'GET';
-        $probablyAPI = $method != 'GET';
 
         $ops = arr($options)->force([
             'url' => $url,
@@ -41,8 +42,8 @@ class TestCase {
             'format' => $options['format'] ?? 'json',
             'curl' => [],
             'info' => [],
-            'content-type' => $probablyAPI ? 'application/json' : 'text/html; charset=UTF-8',
-            'decode' => $options['decode'] ?? ($probablyAPI ? 'json' : 'none'),
+            'content-type' => $options['content-type'] ? $options['content-type'] : 'application/json',
+            'decode' => $options['decode'] ?? 'json',
             'auth' => '',
             'report' => true,
             'timeout' => $options['timeout'] ?? 30,
@@ -79,9 +80,9 @@ class TestCase {
     /**
      * Get the response message.
      * 
-     * @return string
+     * @return mixed
      */
-    public function getResponse() : string {
+    public function getResponse() {
         return $this->response['response'];
     }
 

@@ -38,7 +38,7 @@ class Router {
      * @param string $route
      * @param string|array $options Array or path to php file.
      */
-    public static function add(string $route, mixed $options) {
+    public static function add(string $route, $options) {
 
         $r = [];
         if (isset(self::$routes[$route])) {
@@ -53,12 +53,12 @@ class Router {
     /**
      * Convert the route specifications to the required format
      * 
-     * @param mixed $options
+     * @param $options
      * @param array $r
      * 
      * @return array
      */
-    private static function parseRoute(mixed $options, array $r = []) : array {
+    private static function parseRoute($options, array $r = []) : array {
 
         foreach($options as $k => $v) {
             if ($k == 'middleware') continue;
@@ -249,6 +249,11 @@ class Router {
         }
 
         if (!$res) {
+
+            if (Config::get('project.only_API')) {
+                response_die('not-found', 'Route not found');
+            }
+
             // Load Front-End
             $html = Path::public() . '/index.html';
 
@@ -258,6 +263,8 @@ class Router {
             return;
 
         }
+
+        header('Content-Type: application/json');
 
         // Load Back-End
         $ops = $res['options'];
@@ -314,7 +321,11 @@ class Router {
             }
         }
 
-        if (is_array($ret)) {
+        if (!$ret) {
+            response_die('ok');
+        }
+
+        if (is_array($ret) || method_exists($ret, 'jsonSerialize')) {
             response_die('ok', JSON::stringify($ret));
         } else if (is_string($ret) || is_numeric($ret)) {
             response_die('ok', $ret);

@@ -111,7 +111,7 @@ class JWT {
      * 
      * @param string $token
      * 
-     * @return array|false $payload
+     * @return stdClass|false $payload
      */
     public function decode(string $token) {
         try {

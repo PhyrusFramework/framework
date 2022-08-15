@@ -1,6 +1,6 @@
 <?php
 
-class ORM implements JsonSerializable {
+class TableORM implements JsonSerializable {
 
     /**
      * Check if table is checked.
@@ -24,13 +24,6 @@ class ORM implements JsonSerializable {
     private array $__serializersTree = [];
 
     /**
-     * ID
-     * 
-     * @var int $ID
-     */
-    public ?int $ID = 0;
-
-    /**
      * Get the table definition.
      * 
      */
@@ -38,20 +31,10 @@ class ORM implements JsonSerializable {
         $builder->name(get_called_class());
     }
 
-    public function __construct($ID = null) {
+    public function __construct($row = null) {
         $this->__inflate();
-        if ($ID == null) return;
-
-        if (is_object($ID)) {
-            $this->__absorbObject($ID);
-        }
-        else {
-            $res = DB::run('SELECT * FROM '.$this->getTable().' WHERE ID = :id', ['id' => $ID]);
-            if (!$res->something) return;
-
-            $this->__absorbObject($res->first);
-        }
-
+        if ($row == null) return;
+        $this->__absorbObject($row);
     }
 
     public function __toString() {
@@ -149,7 +132,6 @@ class ORM implements JsonSerializable {
     private function __inflate() {
         $def = $this->__getDefinition();
 
-        $this->ID = 0;
         $this->createdAt = datenow();
         foreach($def['columns'] as $col) {
             if (!isset($col['name'])) continue;
@@ -191,7 +173,6 @@ class ORM implements JsonSerializable {
             }
         }
 
-        $this->ID = intval($this->ID);
     }
 
     /**
@@ -207,7 +188,6 @@ class ORM implements JsonSerializable {
         $def = $def->toArray();
         
         if (!isset($def['columns'])) return [];
-        if (isset($def['primary'])) unset($def['primary']);
         if (!isset($def['name'])) $def['name'] = get_called_class();
 
         $columns = $def['columns'];
@@ -231,12 +211,6 @@ class ORM implements JsonSerializable {
 
         $columns = $this->__getDefinition()['columns'];
         if ($columns == null) return [];
-        array_unshift($columns, [
-            'name' => 'ID',
-            'type' => 'BIGINT',
-            'notnull' => true,
-            'auto_increment' => true
-        ]);
         return $columns;
     }
 
@@ -309,33 +283,12 @@ class ORM implements JsonSerializable {
     }
 
     /**
-     * Find the ID by the time it was created.
-     * 
-     * @param string $creationTime
-     * 
-     * @return int
-     */
-    private function __findID(string $creationTime) : int {
-
-
-        $res = DB::query($this->getTable())
-        ->where('createdAt', $creationTime)
-        ->orderBy('ID DESC')
-        ->first();
-
-        if (!$res) return 0;
-        $this->{'ID'} = intval($res->ID);
-        return $this->ID;
-
-    }
-
-    /**
     * Has this model been already inserted?
      * 
      * @return bool
      */
     public function isCreated() : bool {
-        return isset($this->{'ID'});
+        return !empty($this->{'createdAt'});
     }
 
     /**
@@ -349,28 +302,33 @@ class ORM implements JsonSerializable {
     }
 
     /**
-     * Exists in the database?
+     * Generate a selector query for this row.
      * 
-     * @return bool
+     * @return DBQuery
      */
-    public function exists() : bool {
-        if (!$this->isCreated()) return false;
-        return DB::query($this->getTable())
-        ->where('ID', $this->ID)
-        ->count() > 0;
+    private function __selector() : DBQuery {
+        $q = DB::query($this->getTable());
+
+        $cols = $this->__columns();
+        foreach($cols as $col) {
+            $n = $col['name'];
+
+            if (!empty($this->{$n})) {
+                $q->where($n, $this->{$n});
+            }
+        }
+
+        return $q;
     }
 
     /**
-     * Delete.
+     * Delete
      * 
-     * @return ORM self
+     * @return TableORM self
      */
-    public function delete() : ORM {
+    public function delete() : TableORM {
         if (!$this->isCreated()) return $this;
-        DB::query($this->getTable())
-        ->where('ID', $this->ID)
-        ->delete();
-
+        $this->__selector()->delete();
         return $this;
     }
 
@@ -382,7 +340,7 @@ class ORM implements JsonSerializable {
     public function save(...$columns) {
         $this->CheckTable();
 
-        if ($this->exists()) {
+        if ($this->isCreated()) {
             $this->__update($columns);
         }
         else {
@@ -393,17 +351,15 @@ class ORM implements JsonSerializable {
     }
 
     /**
-     * Update.
+     * Update
      * 
      * @param array ...$columns
      * 
-     * @return ORM
+     * @return TableORM
      */
-    private function __update($columns = []) : ORM {
+    private function __update($columns = []) : TableORM {
 
-        $q = DB::query($this->getTable())
-        ->where('ID', $this->ID);
-
+        $q = $this->__selector();
         $cols = [];
 
         foreach($columns as $col) {
@@ -427,10 +383,6 @@ class ORM implements JsonSerializable {
 
 
         foreach($cols as $name) {
-            if ($name == 'ID') {
-                continue;
-            }
-
             $q->set($name, $this->{$name});
         }
 
@@ -454,16 +406,10 @@ class ORM implements JsonSerializable {
 
         foreach($columns as $col) {
             $name = $col['name'];
-
-            if ($name == 'ID') {
-                continue;
-            }
-
             $q->set($name, $this->{$name});
         }
 
         $q->insert();
-        $this->__findID($this->createdAt);
     }
 
     /**
@@ -474,7 +420,6 @@ class ORM implements JsonSerializable {
     public function toArray(...$columns) {
 
         $arr = [
-            'ID' => $this->ID,
             'createdAt' => $this->createdAt
         ];
 
@@ -553,23 +498,12 @@ class ORM implements JsonSerializable {
     }
 
     /**
-     * Find the object with this ID.
-     * 
-     * @param int ID
-     * 
-     * @return ORM|null
-     */
-    public static function findID(int $ID) {
-        return self::findOne('ID = :ID', ['ID' => intval($ID)]);
-    }
-
-    /**
      * Find one object of this class.
      * 
      * @param string $where [Default none]
      * @param array $parameters [Default empty] Query parameters.
      * 
-     * @return ORM
+     * @return TableORM|null
      */
     public static function findOne(string $where = '1', array $parameters = []) {
 

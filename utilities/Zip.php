@@ -125,7 +125,7 @@ class Zip {
             foreach($files as $file) {
                 $diff = str_replace($base, '', dirname($file));
 
-                $this->addFile($file, $diff);
+                $this->add($file, $diff);
             }
 
             $sub = $folder->subfolders();

@@ -80,6 +80,11 @@ class Test {
     public function __construct() {
         $this->getArguments();
 
+        ?>
+        ------ Running test <?php echo get_called_class(); ?> -------
+        [<?= datenow(); ?>]
+        <?php
+
         self::$TEST_COUNT += 1;
         $this->run();
         $this->success = sizeof($this->errors) == 0;
@@ -110,11 +115,10 @@ class Test {
             $args = $_GET;
         }
 
-        $config = Config::get('tests');
-        $config = arr($config)->force([
+        $config = [
             'log' => false,
-            'alternativeDatabase' => null
-        ]);
+            'alternativeDatabase' => Config::get('database.forTests')
+        ];
 
         $args = arr($args)->force($config);
 
@@ -153,9 +157,6 @@ class Test {
      */
     protected function print() { 
         ob_start(); ?>
-
-        ----- Running test <?php echo get_called_class(); ?> ------------
-        [<?php echo datenow(); ?>]
 
         <?php 
         if (sizeof($this->errors) > 0) {
