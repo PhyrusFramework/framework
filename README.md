@@ -1,14 +1,14 @@
-﻿# Phyrus PHP Framework
+﻿# Phyrus Framework
 
-Phyrus is a simple, intuitive and friendly PHP framework that makes all development much easier. Phyrus tries to make PHP coding much simpler and friendly for developers, so projects become more readable, reusable and scalable.
+Phyrus is the Full-Stack, simple, intuitive and friendly framework that combines Back-End with PHP and Front-End with Nuxt (Vue) to bring you the definitive website development tool.
 
-Find more about Phyrus in the website: https://phyrus.org
+Phyrus is made by developers for developers, to be easy to learn, easy to use, easy to work with. Fast, efficient and clean. Build anything from an API to a WebApp with less code.
 
-> Phyrus is currently still in beta until the version 1.0 is released.
+Find more about Phyrus in the website: https://phyrus.org or read the documentation in https://phyrus.gitbook.io/phyrus-documentation/ 
 
 ## Installation
 
-To create a new Phyrus project you will need PHP and Composer, then run this command in your terminal:
+To create a new Phyrus project you will need PHP and Composer, then run this command in the terminal:
 
     composer create-project phyrus/project
     
@@ -20,7 +20,7 @@ You can find all the official documentation in the website: https://phyrus.gitbo
 
 ## Contribute
 
-If you want to contribute with Phyrus there are multiple things you can do:
+If you want to contribute with Phyrus there are multiple things you can do to support:
 
  - Use it and develop projects
  - Report issues in Github

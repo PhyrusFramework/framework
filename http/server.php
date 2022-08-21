@@ -268,3 +268,38 @@ function response_die(string $name, $message = null) {
     response($name, $message);
     die();
 }
+
+/**
+ * Specify the returned data type.
+ * 
+ * @param string 'html'|'pdf'|'json'|'text'|'xml'|'bytes'|'image'|'jpg'|'png' or free
+ */
+function ContentType(string $type) {
+
+    $value = 'application/json';
+
+    if ($type == 'html') {
+        $value = 'text/html; charset=utf-8';
+    } else if ($type == 'json') {
+        $value = 'application/json';
+    } else if ($type == 'pdf') {
+        $value = 'application/pdf';
+    } else if ($type == 'text') {
+        $value = 'text/plain; charset=utf-8';
+    } else if ($type == 'xml') {
+        $value = 'application/xml';
+    } else if ($type == 'bytes') {
+        $value = 'application/octet-stream';
+    } else if ($type == 'image') {
+        $value = 'image/*';
+    } else if ($type == 'jpg') {
+        $value = 'image/jpeg';
+    } else if ($type == 'png') {
+        $value = 'image/png';
+    }
+    else {
+        $value = $type;
+    }
+
+    header("Content-Type: $value");
+}

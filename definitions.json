@@ -1,6 +1,7 @@
 {
     "src": "back-end",
     "public": "public",
+    "config": "config",
     "front": "front-end",
     "back": "back-end",
     "routes": "routes",

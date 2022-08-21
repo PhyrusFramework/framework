@@ -184,12 +184,13 @@ class DB {
     /**
      * Create a single table using DBGen definition.
      * 
-     * @param array $table
+     * @param string Table name
+     * @param array Table columns
      */
-    public static function createTable(array $table) {
+    public static function createTable(string $name, array $columns) {
         global $DATABASE;
         if ($DATABASE == null) return;
-        $DATABASE->createTable($table);
+        $DATABASE->createTable($name, $columns);
     }
 
     /**

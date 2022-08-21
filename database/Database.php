@@ -295,9 +295,9 @@ class DATABASE
      */
     public function createTables(array $tables) {
 
-        foreach($tables as $table)
+        foreach($tables as $name => $columns)
         {
-            $this->createTable($table);
+            $this->createTable($name, $columns);
         }
     
     }
@@ -305,19 +305,19 @@ class DATABASE
     /**
      * Create a single table using DBGen definition.
      * 
-     * @param array $table
+     * @param string Table name
+     * @param array Table columns
      * 
      * @return DBQueryResult.
      */
-    public function createTable(array $table) : DBQueryResult {
+    public function createTable(string $name, array $columns) : DBQueryResult {
 
-        $name = $table['name'];
         $q = "CREATE TABLE `$name` (";
 
         $primary = '';
-        foreach($table['columns'] as $col) {
+        foreach($columns as $col) {
             if (!empty($col['primary'])) {
-                if (!$primary == '') {
+                if ($primary != '') {
                     $primary .= ', ';
                 }
                 $primary .= '`' . $col['name'] . '`';
@@ -329,7 +329,7 @@ class DATABASE
 
         $uniques = [];
         $foreign = [];
-        foreach($table['columns'] as $field)
+        foreach($columns as $field)
         {
             $fname = $field['name'];
             $type = isset($field['type']) ? $field['type'] : 'BIGINT';

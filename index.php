@@ -34,7 +34,3 @@ $components = [
 foreach($components as $c) {
     require_once(__DIR__."/$c/index.php");
 }
-
-if (class_exists('CLI_Performance')) {
-    CLI_Performance::record('Framework loaded');
-}

@@ -14,7 +14,7 @@ class TableORM implements JsonSerializable {
      * 
      * @var array $__definition
      */
-    private array $__definition = [];
+    protected array $__definition = [];
 
     /**
      * Data used to avoid infinite loop when serializing other models.
@@ -114,22 +114,13 @@ class TableORM implements JsonSerializable {
      * @return string
      */
     public function getTable() : string {
-        return $this->__getDefinition()['name'];
-    }
-
-    /**
-     * Get the column making reference to this model.
-     * 
-     * @return string
-     */
-    public function reference_column() {
-        return strtolower($this->getTable()) . '_id';
+        return array_keys($this->__getDefinition())[0];
     }
 
     /**
      * Assign default values.
      */
-    private function __inflate() {
+    protected function __inflate() {
         $def = $this->__getDefinition();
 
         $this->createdAt = datenow();
@@ -142,7 +133,12 @@ class TableORM implements JsonSerializable {
                 if (empty($col['notnull'])) {
                     $this->{$col['name']} = null;
                 } else {
-                    $this->{$col['name']} = '';
+                    $type = strtolower($col['type'] ?? 'VARCHAR');
+                    if ($type == 'text' || strpos($type, 'char') !== FALSE) {
+                        $this->{$col['name']} = '';
+                    } else {
+                        $this->{$col['name']} = 0;
+                    }
                 }
             }
         }
@@ -153,7 +149,7 @@ class TableORM implements JsonSerializable {
      * 
      * @param Generic $row
      */
-    private function __absorbObject(Generic $row) {
+    protected function __absorbObject(Generic $row) {
         $cols = $this->__columns();
         foreach($cols as $col) {
             $name = $col['name'];
@@ -186,20 +182,34 @@ class TableORM implements JsonSerializable {
         $def = new DBBuilder();
         $this->Definition($def);
         $def = $def->toArray();
-        
-        if (!isset($def['columns'])) return [];
-        if (!isset($def['name'])) $def['name'] = get_called_class();
 
-        $columns = $def['columns'];
-        $columns[] = [
-            'name' => 'createdAt',
-            'type' => 'DATETIME',
-            'notnull' => true
-        ];
+        $tableName = '';
+        $cols = [];
+        foreach($def as $table => $columns) {
+            $tableName = $table;
+            $cols = $columns;
+        }
 
-        $def['columns'] = $columns;
-        $this->__definition = $def;
+        $this->__addAdditionalColumns($cols);
+
+        if (empty($tableName)) {
+            $this->__definition = [
+                $tableName => []
+            ];
+        } else {
+            $this->__definition = [
+                $tableName => $cols
+            ];
+        }
+
         return $this->__definition;
+    }
+
+    /**
+     * To be overridden. Add columns to the table.
+     */
+    protected function __addAdditionalColumns(array &$columns) {
+        return;
     }
 
     /**
@@ -207,11 +217,12 @@ class TableORM implements JsonSerializable {
      * 
      * @return array
      */
-    private function __columns() : array {
+    protected function __columns() : array {
+        if (empty($this->__definition)) {
+            $this->__getDefinition();
+        }
 
-        $columns = $this->__getDefinition()['columns'];
-        if ($columns == null) return [];
-        return $columns;
+        return $this->__definition[$this->getTable()];
     }
 
     /**
@@ -237,11 +248,11 @@ class TableORM implements JsonSerializable {
         $existed = true;
         if (!DB::tableExists($this->getTable())){
             $existed = false;
-            DB::createTable($this->__getDefinition());
+            DB::createTables($this->__getDefinition());
         } else {
             // Check columns
             $definitionColumns = $this->__columns();
-            $tableColumns = DB::run('SHOW COLUMNS FROM ' . $this->getTable())->result;
+            $tableColumns = DB::run('SHOW COLUMNS FROM `' . $this->getTable() . '`')->result;
 
             $tableObj = DBTable::instance($this->getTable());
 
@@ -264,6 +275,8 @@ class TableORM implements JsonSerializable {
                 $position = 'AFTER ' . $col['name'];
             }
 
+            $was = Config::get('database.debug');
+            Config::set('database.debug', false);
             foreach($missing as $col) {
 
                 $coldef = [];
@@ -276,29 +289,11 @@ class TableORM implements JsonSerializable {
                     $tableObj->addColumn($coldef);
                 } catch (Exception $e) {}
             }
+            Config::set('database.debug', $was);
 
         }
         $this->__table_checked = true;
         return $existed;
-    }
-
-    /**
-    * Has this model been already inserted?
-     * 
-     * @return bool
-     */
-    public function isCreated() : bool {
-        return !empty($this->{'createdAt'});
-    }
-
-    /**
-     * Creation date.
-     * 
-     * @return string
-     */
-    public function creationDate() : string {
-        if (!$this->isCreated()) return '';
-        return $this->createdAt;
     }
 
     /**
@@ -327,7 +322,6 @@ class TableORM implements JsonSerializable {
      * @return TableORM self
      */
     public function delete() : TableORM {
-        if (!$this->isCreated()) return $this;
         $this->__selector()->delete();
         return $this;
     }
@@ -340,7 +334,9 @@ class TableORM implements JsonSerializable {
     public function save(...$columns) {
         $this->CheckTable();
 
-        if ($this->isCreated()) {
+        $found = $this->__selector()->first();
+
+        if ($found) {
             $this->__update($columns);
         }
         else {
@@ -357,7 +353,7 @@ class TableORM implements JsonSerializable {
      * 
      * @return TableORM
      */
-    private function __update($columns = []) : TableORM {
+    protected function __update($columns = []) : TableORM {
 
         $q = $this->__selector();
         $cols = [];
@@ -394,15 +390,11 @@ class TableORM implements JsonSerializable {
     /**
      * Create.
      */
-    private function __create() {
+    protected function __create() {
 
         $q = DB::query($this->getTable());
 
         $columns = $this->__columns();
-
-        if (empty($this->{'createdAt'})) {
-            $this->{'createdAt'} = datenow();
-        }
 
         foreach($columns as $col) {
             $name = $col['name'];
@@ -419,9 +411,7 @@ class TableORM implements JsonSerializable {
      */
     public function toArray(...$columns) {
 
-        $arr = [
-            'createdAt' => $this->createdAt
-        ];
+        $arr = [];
 
         if (empty($columns)) {
 
@@ -503,14 +493,14 @@ class TableORM implements JsonSerializable {
      * @param string $where [Default none]
      * @param array $parameters [Default empty] Query parameters.
      * 
-     * @return TableORM|null
+     * @return mixed
      */
     public static function findOne(string $where = '1', array $parameters = []) {
 
         $cl = get_called_class();
         $tmp = new $cl();
         $tmp->CheckTable();
-        $q = 'SELECT * FROM ' . $tmp->getTable() . " WHERE $where LIMIT 1";
+        $q = 'SELECT * FROM `' . $tmp->getTable() . "` WHERE $where LIMIT 1";
 
         $q = DB::run($q, $parameters);
         if ($q->something) {
@@ -533,7 +523,7 @@ class TableORM implements JsonSerializable {
         $cl = get_called_class();
         $tmp = new $cl();
         $tmp->CheckTable();
-        $q = 'SELECT * FROM ' . $tmp->getTable() . " WHERE $where";
+        $q = 'SELECT * FROM `' . $tmp->getTable() . "` WHERE $where";
 
         $q = DB::run($q, $parameters);
         $list = [];
@@ -553,7 +543,7 @@ class TableORM implements JsonSerializable {
         $cl = get_called_class();
         $tmp = new $cl();
         $tmp->CheckTable();
-        DB::run('DELETE FROM ' . $tmp->getTable() . " WHERE $where", $parameters);
+        DB::run('DELETE FROM `' . $tmp->getTable() . "` WHERE $where", $parameters);
     }
 
     /**
@@ -568,7 +558,7 @@ class TableORM implements JsonSerializable {
         $cl = get_called_class();
         $tmp = new $cl();
         $tmp->CheckTable();
-        $res = DB::run('SELECT COUNT(*) AS count FROM ' . $tmp->getTable() . " WHERE $where", $parameters);
+        $res = DB::run('SELECT COUNT(*) AS count FROM `' . $tmp->getTable() . "` WHERE $where", $parameters);
         return intval($res->first->count);
     }
 
@@ -631,7 +621,7 @@ class TableORM implements JsonSerializable {
      * 
      * @return DBQuery
      */
-    public static function getQuery() : DBQuery {
+    public static function query() : DBQuery {
         $cl = get_called_class();
         $sample = new $cl();
         return DB::query($sample->getTable())->setClass($cl);

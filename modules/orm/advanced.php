@@ -141,26 +141,28 @@ class AdvancedORM extends ORM {
             $existed = false;
             self::$_tables_checked[$table] = true;
 
-            DB::createTable([
-                'name' => $this->meta_table(),
-                'columns' => [
-                    [
-                        'name' => $this->reference_column(),
-                        'type' => 'BIGINT',
-                        'notnull' => true,
-                        'foreign' => $this->getTable() . '(ID)'
-                    ],
-                    [
-                        'name' => 'meta_key',
-                        'type' => 'VARCHAR(100)',
-                        'notnull' => true
-                    ],
-                    [
-                        'name' => 'meta_value',
-                        'type' => 'TEXT'
-                    ]
+            DB::createTable($this->meta_table(), [
+                [
+                    'name' => $this->reference_column(),
+                    'type' => 'BIGINT',
+                    'notnull' => true,
+                    'foreign' => $this->getTable() . '(ID)',
+                    'primary' => true
                 ],
-                'primary' => $this->reference_column() . ', meta_key'
+                [
+                    'name' => 'meta_key',
+                    'type' => 'VARCHAR(100)',
+                    'notnull' => true,
+                    'primary' => true
+                ],
+                [
+                    'name' => 'meta_value',
+                    'type' => 'TEXT'
+                ],
+                [
+                    'name' => 'createdAt',
+                    'type' => 'DATETIME'
+                ]
             ]);
         }
 
@@ -196,31 +198,30 @@ class AdvancedORM extends ORM {
             $existed = false;
             self::$_tables_checked[$table] = true;
 
-            DB::createTable([
-                'name' => $this->translations_table(),
-                'columns' => [
-                    [
-                        'name' => $this->reference_column(),
-                        'type' => 'BIGINT',
-                        'notnull' => true,
-                        'foreign' => $this->getTable() . '(ID)'
-                    ],
-                    [
-                        'name' => 'name',
-                        'type' => 'VARCHAR(100)',
-                        'notnull' => true
-                    ],
-                    [
-                        'name' => 'locale',
-                        'type' => 'VARCHAR(10)',
-                        'notnull' => true
-                    ],
-                    [
-                        'name' => 'value',
-                        'type' => 'TEXT'
-                    ]
+            DB::createTable($this->translations_table(), [
+                [
+                    'name' => $this->reference_column(),
+                    'type' => 'BIGINT',
+                    'notnull' => true,
+                    'foreign' => $this->getTable() . '(ID)',
+                    'primary' => true
                 ],
-                'primary' => $this->reference_column() . ', name, locale'
+                [
+                    'name' => 'name',
+                    'type' => 'VARCHAR(100)',
+                    'notnull' => true,
+                    'primary' => true
+                ],
+                [
+                    'name' => 'locale',
+                    'type' => 'VARCHAR(10)',
+                    'notnull' => true,
+                    'primary' => true
+                ],
+                [
+                    'name' => 'value',
+                    'type' => 'TEXT'
+                ]
             ]);
         }
 
@@ -256,29 +257,26 @@ class AdvancedORM extends ORM {
             $existed = false;
             self::$_tables_checked[$table] = true;
 
-            DB::createTable([
-                'name' => $this->resources_table(),
-                'columns' => [
-                    [
-                        'name' => $this->reference_column(),
-                        'type' => 'BIGINT',
-                        'notnull' => true,
-                        'foreign' => $this->getTable() . '(ID)'
-                    ],
-                    [
-                        'name' => 'type',
-                        'type' => 'VARCHAR(100)',
-                        'notnull' => true
-                    ],
-                    [
-                        'name' => 'file',
-                        'type' => 'TEXT'
-                    ],
-                    [
-                        'name' => 'position',
-                        'type' => 'INT',
-                        'notnull' => true
-                    ]
+            DB::createTable($this->resources_table(), [
+                [
+                    'name' => $this->reference_column(),
+                    'type' => 'BIGINT',
+                    'notnull' => true,
+                    'foreign' => $this->getTable() . '(ID)',
+                ],
+                [
+                    'name' => 'type',
+                    'type' => 'VARCHAR(100)',
+                    'notnull' => true
+                ],
+                [
+                    'name' => 'position',
+                    'type' => 'INT',
+                    'notnull' => true
+                ],
+                [
+                    'name' => 'file',
+                    'type' => 'TEXT'
                 ]
             ]); 
         }
@@ -362,6 +360,7 @@ class AdvancedORM extends ORM {
         if (sizeof($res)) {
             DB::query($t)
             ->set('meta_value', $v)
+            ->set('createdAt', datenow())
             ->where($ref, $this->ID)
             ->where('meta_key', $name)
             ->update();
@@ -371,6 +370,7 @@ class AdvancedORM extends ORM {
             ->set($ref, $this->ID)
             ->set('meta_key', $name)
             ->set('meta_value', $v)
+            ->set('createdAt', datenow())
             ->insert();
         }
 
@@ -440,6 +440,7 @@ class AdvancedORM extends ORM {
 
         $arr = [];
         foreach($res as $row) {
+            $this->__metas[$row->meta_key] = $row->meta_value;
             $arr[$row->meta_key] = $row->meta_value;
         }
 
@@ -981,9 +982,9 @@ class AdvancedORM extends ORM {
         
                     if (is_string($value)) {
                         if (strpos($value, '%') === FALSE) {
-                            $operator .= '=';
+                            $operator = '=';
                         } else {
-                            $operator .= 'LIKE';
+                            $operator = 'LIKE';
                         }
                     } else if (is_array($value)){
                         $operator = 'IN';
@@ -1089,6 +1090,18 @@ class AdvancedORM extends ORM {
         return $list;
 
     }
+
+    /**
+     * Find the object with this ID.
+     * 
+     * @param int ID
+     * 
+     * @return AdvancedORM|null
+     */
+    public static function findID(int $ID) {
+        return parent::findID($ID);
+    }
+
 
 }
 

@@ -131,7 +131,7 @@ class Path {
     }
 
     public static function privateUploads(bool $relative = false) {
-        return self::public($relative) . '/' . Config::get('project.uploads.privateDir');
+        return self::root($relative) . '/' . Config::get('project.uploads.privateDir');
     }
 
 }

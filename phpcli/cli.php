@@ -7,7 +7,7 @@ class CLI {
      * CLI Modules
      */
     private static $_modules = [
-        'front' => 'CLI_Nuxt',
+        'front' => 'CLI_Front',
         'config' => 'CLI_Config',
         'cron' => 'CLI_Cron',
         'test' => 'CLI_Test',
@@ -159,17 +159,13 @@ class CLI {
         Phyrus CLI helps you manage the project via terminal.
         You can use any of the following commands:
 
-        - performance: analyze how long your website takes to load.
-        - modules: download, install and uninstall modules.
-        - generate: generate pages, components, classes, etc.
-        - config: manage the config.json file.
-        - framework: check the framework version or changelog.
-        - test: run tests.
-        - migrate: run migrations.
-        - script: run scripts.
+        - front: manage the front-end project.
+        - config: manage the project configuration.
+        - test: create or run tests.
+        - migrate: create or run migrations.
+        - script: create or run scripts.
         - cron: manage cronjobs from cli.
-        - clear-caches: clear all kind of project caches.
-        - serve: starts a local server at localhost:8000.
+        - watcher: manage the watcher process.
 
         To get help for a specific command use:
         php framework/cli <command> help

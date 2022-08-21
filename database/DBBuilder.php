@@ -3,16 +3,19 @@
 class DBBuilder {
 
     /**
-     * Table definition
-     * 
-     * @var array
+     * @var array Columns definition
      */
     private array $definition = [];
 
     /**
-     * Last inserted column
+     * @var mixed Last inserted column
      */
     private $lastColumn = null;
+
+    /**
+     * @var string Current table name
+     */
+    private string $name = '';
 
     /**
      * Create a DBBuilder instance
@@ -24,10 +27,7 @@ class DBBuilder {
     }
 
     function __construct() {
-        $this->definition = [
-            'name' => '',
-            'columns' => []
-        ];
+        $this->definition = [];
     }
 
     /**
@@ -38,7 +38,8 @@ class DBBuilder {
      * @return DBBuilder
      */
     public function name(string $name) : DBBuilder {
-        $this->definition['name'] = $name;
+        $this->name = $name;
+        $this->definition[$name] = [];
         return $this;
     }
 
@@ -51,7 +52,7 @@ class DBBuilder {
      * @return DBBuilder
      */
     public function column(string $name, string $type = 'VARCHAR(255)') : DBBuilder {
-        $this->definition['columns'][$name] = [
+        $this->definition[$this->name][$name] = [
             'name' => $name,
             'type' => $type,
             'notnull' => true
@@ -79,7 +80,7 @@ class DBBuilder {
      */
     public function primary() : DBBuilder {
         if (!$this->lastColumn) return $this;
-        $this->definition['columns'][$this->lastColumn]['primary'] = true;
+        $this->definition[$this->name][$this->lastColumn]['primary'] = true;
         return $this;
     }
 
@@ -90,7 +91,7 @@ class DBBuilder {
      */
     public function autoIncrement() : DBBuilder {
         if (!$this->lastColumn) return $this;
-        $this->definition['columns'][$this->lastColumn]['auto_increment'] = true;
+        $this->definition[$this->name][$this->lastColumn]['auto_increment'] = true;
         return $this;
     }
 
@@ -103,7 +104,7 @@ class DBBuilder {
      */
     public function default($value) : DBBuilder {
         if (!$this->lastColumn) return $this;
-        $this->definition['columns'][$this->lastColumn]['default'] = $value;
+        $this->definition[$this->name][$this->lastColumn]['default'] = $value;
         return $this;
     }
 
@@ -114,7 +115,7 @@ class DBBuilder {
      */
     public function nullable() : DBBuilder {
         if (!$this->lastColumn) return $this;
-        $this->definition['columns'][$this->lastColumn]['notnull'] = false;
+        $this->definition[$this->name][$this->lastColumn]['notnull'] = false;
         return $this;
     }
 
@@ -125,7 +126,7 @@ class DBBuilder {
      */
     public function unique() : DBBuilder {
         if (!$this->lastColumn) return $this;
-        $this->definition['columns'][$this->lastColumn]['unique'] = true;
+        $this->definition[$this->name][$this->lastColumn]['unique'] = true;
         return $this;
     }
 
@@ -136,7 +137,7 @@ class DBBuilder {
      */
     public function notSerializable() : DBBuilder {
         if (!$this->lastColumn) return $this;
-        $this->definition['columns'][$this->lastColumn]['serialize'] = false;
+        $this->definition[$this->name][$this->lastColumn]['serialize'] = false;
         return $this;
     }
 
@@ -149,7 +150,7 @@ class DBBuilder {
      */
     public function serializeRelation(string $references) : DBBuilder {
         if (!$this->lastColumn) return $this;
-        $this->definition['columns'][$this->lastColumn]['serializeRelation'] = $references;
+        $this->definition[$this->name][$this->lastColumn]['serializeRelation'] = $references;
         return $this;
     }
 
@@ -162,7 +163,7 @@ class DBBuilder {
      */
     public function references(string $tableColumn) : DBBuilder {
         if (!$this->lastColumn) return $this;
-        $this->definition['columns'][$this->lastColumn]['foreign'] = $tableColumn; 
+        $this->definition[$this->name][$this->lastColumn]['foreign'] = $tableColumn; 
         return $this;
     }
 
@@ -188,7 +189,7 @@ class DBBuilder {
      * Create this table in the current database.
      */
     public function execute() {
-        return DB::createTable($this->definition);
+        return DB::createTables($this->definition);
     }
 
 }

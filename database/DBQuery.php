@@ -409,7 +409,7 @@ class DBQuery {
         if ($action == 'insert') {
             $query .= " INTO `$this->table`";
         } else if ($action == 'update') {
-            $query .= ' ' . $this->table;
+            $query .= ' `' . $this->table . '`';
         } else {
             $query .= " FROM `$this->table`";
 
@@ -488,7 +488,8 @@ class DBQuery {
         }
 
         // WHEREs
-        if (sizeof($this->wheres) > 0 && $action != 'insert') {
+        if ( (sizeof($this->wheres) && sizeof($this->wheres[0])) 
+            && $action != 'insert') {
 
             $query .= ' WHERE (';
 
@@ -533,7 +534,7 @@ class DBQuery {
                     }
 
                     else if ($type == 'raw') {
-                        $q = $condition['line'];
+                        $q = $condition['query'];
                         $pms = $condition['params'];
 
                         $query .= $q;

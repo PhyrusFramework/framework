@@ -2,14 +2,31 @@
 
 class Uploader {
 
+    private $file;
+    private $path;
+    private $name;
+    private $sizeFiles = [];
+
+    function __construct($file) {
+        $this->file = $file;
+    }
+
+    public function extension() {
+        return $this->file->extension;
+    }
+
+    public function name() {
+        return $this->file->name;
+    }
+
     /**
      * Get an uploaded file.
      * 
      * @param string $name (optional)
      * 
-     * @return null|Generic
+     * @return null|UploaderFile
      */
-    public static function getFile($name = '') {
+    public static function getFile($name = '') : ?Uploader {
         $req = new RequestData();
 
         if (!$req->hasFiles()) {
@@ -31,104 +48,102 @@ class Uploader {
 
         if (!$file) return null;
 
-        $g = new Generic([
-            'file' => $file,
-            'path' => '',
-            'name' => ''
-        ]);
+        return new Uploader($file);
+    }
 
-        $saveFile = function($g, $dir, $filename, $overwrite = false) {
-            if (!file_exists($dir)) {
-                mkdir($dir);
+
+    private function saveFile($dir, $filename, $overwrite = false) {
+
+        $total = "$dir/$filename";
+        $folder = Folder::instance(dirname($total));
+
+        if (!$folder->exists()) {
+            $folder->create();
+        }
+        
+        $this->name = basename($filename);
+
+        $dir .= ($filename[0] == '/' ? $filename : "$filename");
+
+        if (file_exists($dir)) {
+            if ($overwrite) {
+                File::instance($dir)->delete();
+            } else {
+                return;
+            }
+        }
+
+        return File::instance($this->file->tmp)->copyTo($dir, $overwrite)->path;
+
+    }
+
+    public function savePublic(string $filename, bool $overwrite = false) {
+        $dir = Path::public() . '/' . Config::get('project.uploads.publicDir');
+        $this->path = $this->saveFile($dir, $filename, $overwrite);
+        return $this;
+    }
+
+    public function savePrivate(string $filename, bool $overwrite = false) {
+        $dir = Path::root() . '/' . Config::get('project.uploads.privateDir');
+        $this->path = $this->saveFile($dir, $filename, $overwrite);
+        return $this;
+    }
+
+    public function relativePath() {
+        $path = empty($this->path) ? '' : Path::toRelative($this->path, true);
+        return $path; 
+    }
+
+    public function absolutePath() {
+        return empty($this->path) ? '' : $this->path;
+    }
+
+    public function filename() {
+        return $this->name;
+    }
+
+    public function saveImage() {
+
+        $dir = Path::public() . '/' . Config::get('project.uploads.publicDir');;
+        if (!file_exists($dir)) {
+            mkdir($dir);
+        }
+
+        $dir .= '/' . Config::get('project.uploads.images.dir');
+        if (!file_exists($dir)) {
+            mkdir($dir);
+        }
+
+        $ext = $this->file->extension;
+        $ext = $ext == 'png' ? 'png' : 'jpg';
+
+        $img = Image::instance($this->file->tmp, $ext);
+        $name = GUID();
+
+        $this->name = "$name.$ext";
+
+        $sizes = Config::get('project.uploads.images.sizes');
+        $sizeFiles = [ ];
+
+        foreach($sizes as $size => $max) {
+
+            $sizeDir = $dir . "/$size";
+            if (!file_exists($sizeDir)) {
+                mkdir($sizeDir);
             }
 
-            $g->set('name', $filename);
+            $fileRoute = $img->cap($max, $max, true)->save($sizeDir . "/$name.$ext", $ext, 100);
+            $sizeFiles[$size] = Path::toRelative($fileRoute, true);
+        }
 
-            $dir .= "/$filename";
+        $this->sizeFiles = $sizeFiles;
 
-            if (file_exists($dir)) {
-                if ($overwrite) {
-                    File::instance($dir)->delete();
-                } else {
-                    return;
-                }
-            }
+        return $this;
 
-            return File::instance($g->file->tmp)->copyTo($dir, $overwrite)->path;
-        };
+    }
 
-        $g->set('savePublic', function(string $filename, bool $overwrite = false) 
-            use($file, $saveFile, $g) {
-
-            $dir = Path::public() . '/' . Config::get('project.uploads.publicDir');
-            $g->path = $saveFile($g, $dir, $filename, $overwrite);
-            return $g;
-        });
-
-        $g->set('savePrivate', function(string $filename, bool $overwrite = false) 
-            use($file, $saveFile, $g) {
-
-            $dir = Path::root() . '/' . Config::get('project.uploads.privateDir');
-            $g->path = $saveFile($g, $dir, $filename, $overwrite);
-            return $g;
-        });
-
-        $g->set('relativePath', function() use($g) {
-            $path = empty($g->path) ? '' : Path::toRelative($g->path, true);
-            return $path;
-        });
-
-        $g->set('absolutePath', function() use($g) {
-            return empty($g->path) ? '' : $g->path;
-        });
-
-        $g->set('filename', function() use($g) {
-            return $g->name;
-        });
-
-        $g->set('saveImage', function() use($g) {
-            $dir = Path::public() . '/' . Config::get('project.uploads.publicDir');;
-            if (!file_exists($dir)) {
-                mkdir($dir);
-            }
-
-            $dir .= '/' . Config::get('project.uploads.images.dir');
-            if (!file_exists($dir)) {
-                mkdir($dir);
-            }
-
-            $ext = $g->file->extension;
-            $ext = $ext == 'png' ? 'png' : 'jpg';
-
-            $img = Image::instance($g->file->tmp, $ext);
-            $name = GUID();
-
-            $g->set('name', "$name.$ext");
-
-            $sizes = Config::get('project.uploads.images.sizes');
-            $sizeFiles = [
-
-            ];
-
-            foreach($sizes as $size => $max) {
-
-                $sizeDir = $dir . "/$size";
-                if (!file_exists($sizeDir)) {
-                    mkdir($sizeDir);
-                }
-
-                $fileRoute = $img->cap($max, $max, true)->save($sizeDir . "/$name.$ext", $ext, 100);
-                $sizeFiles[$size] = Path::toRelative($fileRoute, true);
-            }
-
-            $g->set('getSize', function($name) use ($sizeFiles) {
-                return $sizeFiles[$name] ?? '';
-            });
-
-            return $g;
-        });
-
-        return $g;
+    public function getSize($name) {
+        return $this->sizeFiles[$name] ?? '';
     }
 
 }

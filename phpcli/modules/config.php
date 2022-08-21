@@ -53,6 +53,10 @@ class CLI_Config extends CLI_Module {
         print_r($v);
     }
 
+    public function command_clear() {
+        Config::clear();
+    }
+
     public function help() {?>
     
         The Config command is used to read or
@@ -66,6 +70,9 @@ class CLI_Config extends CLI_Module {
 
         - show <key>
         Display configuration.
+
+        - clear
+        Delete the cached configuration.
     
     <?php }
 

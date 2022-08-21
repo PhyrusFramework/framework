@@ -99,17 +99,14 @@ class MigrationDBStore {
 
     private function checkTable() {
         if (!DB::tableExists('migrations')) {
-            DB::createTable([
-                'name' => 'migrations',
-                'columns' => [
-                    [
-                        'name' => 'name',
-                        'type' => 'VARCHAR(100)'
-                    ],
-                    [
-                        'name' => 'migratedAt',
-                        'type' => 'DATETIME'
-                    ]
+            DB::createTable('migrations', [
+                [
+                    'name' => 'name',
+                    'type' => 'VARCHAR(100)'
+                ],
+                [
+                    'name' => 'migratedAt',
+                    'type' => 'DATETIME'
                 ]
             ]);
             return false;

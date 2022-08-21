@@ -1,6 +1,6 @@
 <?php
 
-class CLI_Nuxt extends CLI_Module {
+class CLI_Front extends CLI_Module {
 
     public function command_page() {
         $this->comm_create(true);
@@ -66,7 +66,7 @@ class CLI_Nuxt extends CLI_Module {
         ob_start();?>
 import { AppComponent } from 'phyrus-nuxt';
 
-export default AppComponent.extend({
+export default AppComponent().extend({
 
     data() {
         const data : {

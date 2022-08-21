@@ -48,11 +48,10 @@ class RequestData {
         // data
         $postdata = file_get_contents('php://input');
         $arr = json_decode($postdata, true);
+        if (!is_array($arr)) $arr = [];
 
-        if (is_array($arr)) {
-            foreach($arr as $k => $v) {
-                $this->{$k} = $v;
-            }
+        foreach($arr as $k => $v) {
+            $this->{$k} = $v;
         }
 
         foreach($_POST as $k => $v) {
@@ -107,10 +106,16 @@ class RequestData {
      * @param array ...$args
      */
     function require(...$args) {
+
+        $dev = Config::get('project.development_mode');
+
         foreach($args as $v) {
             if (!$this->has($v)) {
-                response('bad');
-                die();
+                if ($dev) {
+                    ApiResponse::badRequest("Field '$v' is missing.");
+                } else {
+                    response_die('bad');
+                }
             }
         }
     }

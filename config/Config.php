@@ -10,6 +10,19 @@ class Config {
     private static $config;
 
     /**
+     * Get the path to the cached file.
+     * 
+     * @return string
+     */
+    private static function cachedPath() {
+        return Path::framework() . '/config.json';
+    }
+
+    private static function configPath() {
+        return Path::root() . '/' . Definition('config');
+    }
+
+    /**
      * Get a project configuration.
      * 
      * @param string $key Name of configuration using dot notation.
@@ -40,7 +53,7 @@ class Config {
     private static function decode_folder(string $folder) {
 
         if (file_exists($folder) && is_dir($folder)) {
-            $files = glob($folder . "/*.yaml");
+            $files = glob("$folder/*.yaml");
             foreach($files as $file) {
                 $content = YAML::fromFile($file);
 
@@ -64,32 +77,28 @@ class Config {
      */
     private static function decode() {
 
-        global $PROJECT_PATH;
-
         /// CHECK IF CACHED VERSION EXISTS
-        $json = "$PROJECT_PATH/config/generated.json";
+        $json = self::cachedPath();
         
         if (file_exists($json)) {
             self::$config = arr(json_decode(file_get_contents($json), true));
 
-            // IF PRODUCTION, USE CACHED MODE
-            if (!self::get('project.development_mode')) {
+            if (!self::get('project.development_mode'))
                 return;
-            }
         }
 
         // IF NOT CACHED OR IN DEVELOPMENT MODE --> READ YAMLs
-        $folder = "$PROJECT_PATH/config";
+        $folder = self::configPath();
 
         self::$config = [];
         self::decode_folder($folder);
 
         if (isset(self::$config['project']) && isset(self::$config['project']['environment'])) {
             $env = self::$config['project']['environment'];
-            self::decode_folder("$PROJECT_PATH/$env");
+            self::decode_folder("$folder/$env");
         }
 
-        file_put_contents("$PROJECT_PATH/config/generated.json", json_encode(self::$config, JSON_UNESCAPED_UNICODE));
+        file_put_contents($json, json_encode(self::$config, JSON_UNESCAPED_UNICODE));
         self::$config = arr(self::$config);
     }
 
@@ -109,6 +118,16 @@ class Config {
     }
 
     /**
+     * Clear the cached version of the configuration.
+     */
+    public static function clear() {
+        $cached = self::cachedPath();
+        if (file_exists($cached)) {
+            unlink($cached);
+        }
+    }
+
+    /**
      * Change a configuration setting and saves the YAML file.
      * 
      * @param string $key Configuration name using dot notation.
@@ -117,9 +136,7 @@ class Config {
     public static function save(string $key, $value) {
         self::set($key, $value);
 
-        global $PROJECT_PATH;
-        $path = "$PROJECT_PATH/config";
-
+        $path = self::configPath();
         $parts = explode('.', $key);
 
         $yaml = $parts[0];
@@ -134,7 +151,6 @@ class Config {
                 $arr = YAML::fromFile($file);
             }
 
-            $route = substr($key, strlen($yaml) + 1);
             $current = &$arr;
             if (sizeof($parts) > 1) {
                 for($i = 1; $i < sizeof($parts); ++$i) {
@@ -158,10 +174,7 @@ class Config {
 
         file_put_contents($file, $content);
 
-        $cached = "$PROJECT_PATH/config/generated.json";
-        if (file_exists($cached)) {
-            unlink($cached);
-        }
+        self::clear();
     }
 
     /**
