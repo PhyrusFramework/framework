@@ -106,8 +106,9 @@ class JSON {
      * @return string
      */
     public static function stringify($obj, bool $pretty = false) : string {
-        if (!$pretty) return json_encode($obj, JSON_UNESCAPED_UNICODE);
-        return json_encode($obj, JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);
+        $flags = JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_NUMERIC_CHECK|JSON_HEX_QUOT;
+        $json = json_encode($obj, $pretty ? $flags|JSON_PRETTY_PRINT : $flags);
+        return str_replace("\u0022", "\\\\\"", $json);
     }
 
     /**

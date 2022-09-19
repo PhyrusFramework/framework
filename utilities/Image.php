@@ -76,12 +76,20 @@ class Image {
   }
 
   /**
-   * @param string|Resource $filename
+   * @param array|string|Resource $filename
    * @param string $format [Default automatic]
    */
   public function __construct($filename, string $format = null) {
 
-    if (is_string($filename)) {
+    if (is_array($filename)) {
+      $this->name = '';
+      $this->extension = $format == null ? 'png' : $format;
+      $this->image = imagecreate($filename[0], $filename[1]);
+      $this->_width = $filename[0];
+      $this->_height = $filename[1];
+      return;
+    }
+    else if (is_string($filename)) {
       $this->file = $filename;
       
       if (strpos($filename, '/')) {
@@ -173,6 +181,8 @@ class Image {
    * @return string $savefile
    */
   function save(string $savefile, string $format = 'jpg', int $quality = 100) : string {
+
+    Folder::instance(dirname($savefile))->create();
     
       if ($format == 'png') {
         // For PNG quality goes from 0 to 9
@@ -189,6 +199,13 @@ class Image {
         imagedestroy($bg);
       }
       return $savefile;
+  }
+
+  /**
+   * Fill image with color
+   */
+  public function fill(array $rgb) {
+    imagefill($this->image, 0, 0, imagecolorallocate($this->image, $rgb[0], $rgb[1], $rgb[2]));
   }
 
   /**
@@ -288,20 +305,57 @@ class Image {
     return $this;
   }
 
+  private function defaultFont() {
+    return __DIR__ . '/defaultFont.ttf';
+  }
+
   /**
    * Calculate the area in pixels that this text will need to be printed.
    * 
    * @param string $text
    * @param array $options = ['font', 'size']
    * 
-   * @return array
+   * @return Generic
    */
   public function areaForText(string $text, $options = [
     'font' => null,
     'size' => 12
-  ]) : array {
-    $area = imagettfbbox($options['size'], 0, $options['font'], $text);
-    return $area;
+  ]) : Generic {
+    $area = imagettfbbox(
+      $options['size'] ?? 12, 
+      0, 
+      $options['font'] ?? $this->defaultFont(), 
+      $text);
+
+    $topLeftX = $area[6];
+    $topLeftY = $area[7];
+
+    $bottomRightX = $area[2];
+    $bottomRightY = $area[3];
+
+    return new Generic([
+      'x' => $topLeftX,
+      'y' => $topLeftY,
+      'width' => $bottomRightX - $topLeftX,
+      'height' => $bottomRightY - $topLeftY
+    ]);
+  }
+
+  /**
+   * Write text centered in image
+   */
+  public function writeCenteredText($text, $options = [
+    'color' => [0,0,0],
+    'font' => null,
+    'size' => 12
+  ]) {
+    $area = $this->areaForText($text, $options);
+
+    $options['position'] = [
+      $this->_width / 2 - $area->width / 2,
+      $this->_height / 2 - $area->height / 2
+    ];
+    $this->writeText($text, $options);
   }
 
   /**
@@ -309,23 +363,57 @@ class Image {
    * 
    * @param array $options
    * 
-   * @return array Area of the written text
+   * @return Generic Area of the written text
    */
   public function writeText($text, $options = [
     'color' => [0,0,0],
     'font' => null,
     'position' => [0,0],
     'size' => 12
-  ]) : array {
+  ]) : Generic {
 
-    $color = imagecolorallocate($this->image, $options['color'][0], $options['color'][1], $options['color'][2]);
-    
-    $area = imagettfbbox($options['size'], 0, $options['font'], $text);
+    $color = $options['color'] ?? [0,0,0];
+    $color = imagecolorallocate($this->image, $color[0], $color[1], $color[2]);
 
-    imagettftext($this->image, $options['size'], 0,
-      $options['position'][0], $options['position'][1], $color, $options['font'], $text);
+    $size = $options['size'] ?? 12;
+    $position = $options['position'] ?? [0, 0];
+    $font = $options['font'] ?? $this->defaultFont();
+
+    $area = $this->areaForText($text, [
+      'color' => $color,
+      'font' => $font,
+      'position' => $position,
+      'size' => $size
+    ]);
+  
+    imagettftext($this->image, $size, 0,
+      $position[0], 
+      $position[1] + $area->height, 
+      $color, $font, 
+      $text);
 
     return $area;
+  }
+
+  /**
+   * Output the image data to the client as a png.
+   */
+  public function blob() {
+    header('Content-Type:image/png');
+    echo imagepng($this->image);
+  }
+
+  /**
+   * Output the image file data to the client.
+   */
+  public function blobFile(string $path) {
+    if (!file_exists($path)) {
+      return;
+    }
+
+    $format = strpos(strtolower($path), '.png') === FALSE ? 'jpeg' : 'png';
+    header("Content-Type:image/$format");
+    echo file_get_contents($path);
   }
 
 }

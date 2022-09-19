@@ -37,80 +37,111 @@ class CRUD {
     /**
      * Create the GET /model route.
      * 
-     * @param callable $action
+     * @param callable Action
+     * @param callable|null Endpoint info
      * 
      * @return CRUD
      */
-    public function list(callable $action) : CRUD {
-        $this->_list = [$action];
+    public function list(callable $action, ?callable $info) : CRUD {
+        $obj = [$action];
+        if (!empty($info)) {
+            $obj['info'] = $info;
+        }
+        $this->_list = $obj;
         return $this;
     }
 
     /**
      * Create the GET /model/:id route
      * 
-     * @param callable $action
+     * @param callable Action
+     * @param callable|null Endpoint info
      * 
      * @return CRUD
      */
-    public function get(callable $action) : CRUD {
-        $this->_get = [$action];
+    public function get(callable $action, ?callable $info) : CRUD {
+        $obj = [$action];
+        if (!empty($info)) {
+            $obj['info'] = $info;
+        }
+        $this->_get = $obj;
         return $this;
     }
 
     /**
      * Create the PUT /model/:id route
      * 
-     * @param callable $action
+     * @param callable Action
+     * @param callable|null Endpoint info
      * 
      * @return CRUD
      */
-    public function edit(callable $action) : CRUD {
-        $this->_edit = [$action];
+    public function edit(callable $action, ?callable $info) : CRUD {
+        $obj = [$action];
+        if (!empty($info)) {
+            $obj['info'] = $info;
+        }
+        $this->_edit = $obj;
         return $this;
     }
 
     /**
      * Create the POST /model route
      * 
-     * @param callable $action
+     * @param callable Action
+     * @param callable|null Endpoint info
      * 
      * @return CRUD
      */
-    public function create(callable $action) : CRUD {
-        $this->_create = [$action];
+    public function create(callable $action, ?callable $info) : CRUD {
+        $obj = [$action];
+        if (!empty($info)) {
+            $obj['info'] = $info;
+        }
+        $this->_create = $obj;
         return $this;
     }
 
     /**
      * Create the DELETE /model/:id route
      * 
-     * @param callable $action
+     * @param callable Action
+     * @param callable|null Endpoint info
      * 
      * @return CRUD
      */
-    public function delete(callable $action) : CRUD {
-        $this->_delete = [$action];
+    public function delete(callable $action, ?callable $info = null) : CRUD {
+        $obj = [$action];
+        if (!empty($info)) {
+            $obj['info'] = $info;
+        }
+        $this->_delete = $obj;
         return $this;
     }
 
     /**
      * Create a custom route.
      * 
-     * @param string $method
-     * @param string $route
-     * @param callable $action
+     * @param string Method
+     * @param string Route
+     * @param callable Action
+     * @param callable|null Endpoint info
      * 
      * @return CRUD
      */
-    public function custom(string $method, string $route, callable $action) : CRUD {
+    public function custom(string $method, string $route, callable $action, ?callable $info = null) : CRUD {
 
         $r = [];
         if (isset($this->_customs[$route])) {
             $r = $this->_customs[$route];
         }
 
-        $r[$method] = $action;
+        $obj = [$action];
+        if (!empty($info)) {
+            $obj['info'] = $info;
+        }
+
+        $r[$method] = $obj;;
         $this->_customs[$route] = $r;
         return $this;
     }

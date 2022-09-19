@@ -60,22 +60,42 @@ class Router {
      */
     private static function parseRoute($options, array $r = []) : array {
 
-        foreach($options as $k => $v) {
-            if ($k == 'middleware') continue;
+        /* EXAMPLE OF $options
+        [
+            'middleware' => '...',
+            'GET' => function() {...},
+            'POST' => [
+                'middleware' => '...',
+                'info' => '...',
+                function() => {...}  // <- index is always 0
+            ]
+        ]
+        */
 
+        foreach($options as $method => $v) {
+
+            // Ignore middleware, we only want methods (GET, POST, ...)
+            if ($method == 'middleware') continue;
+
+            // Build the object. Action = function
             $m = [
                 'action' => is_array($v) ? $v[0] : $v
             ];
 
+            // If set, add the middleware
             if (isset($options['middleware'])) {
                 $m['middleware'] = $options['middleware'];
-            }
-
-            if (is_array($v) && isset($v['middleware'])) {
+            } else if (is_array($v) && isset($v['middleware'])) {
                 $m['middleware'] = $v['middleware'];
             }
 
-            $r[$k] = $m;
+            // Add info object
+            if (isset($options['info'])) {
+                $m['info'] = $options['info'];
+            }
+
+            // Add to the current route
+            $r[$method] = $m;
         }
 
         return $r;
@@ -420,6 +440,33 @@ class Router {
             }
 
         }
+    }
+
+    /**
+     * Get the routes.
+     * 
+     * @return array
+     */
+    public static function getRoutes() : array {
+        return self::$routes;
+    }
+
+    /**
+     * Get the info of an endpoint.
+     * 
+     * @param string URL path
+     * @param string Method
+     * 
+     * @return mixed
+     */
+    public static function getInfo(string $route, string $method) {
+        if (!isset(self::$routes[$route])) return null;
+        $r = self::$routes[$route];
+        if (!isset($r[$method])) return null;
+        if (!isset($r[$method]['info'])) return null;
+        $info = $r[$method]['info'];
+        if (gettype($info) != 'callable') return $info;
+        return $info();
     }
 
 }

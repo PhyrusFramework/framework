@@ -18,11 +18,14 @@ class DBQuery {
     private array $selects = [];
 
     /**
-     * @var array conditions
+     * @var DBCondition condition
      */
-    private array $wheres = [
-        [] // First where
-    ];
+    private DBCondition $condition;
+
+    /**
+     * @var bool Next condition uses OR
+     */
+    private bool $_next_condition_is_or = false;
 
     /**
      * @var array values to set
@@ -68,6 +71,7 @@ class DBQuery {
         global $DATABASE;
         $this->db = $db == null ? $DATABASE : $db;
         $this->table = $table;
+        $this->condition = new DBCondition();
     }
 
     /**
@@ -177,14 +181,12 @@ class DBQuery {
      */
     public function where(string $column, $valueOrOperator = '=', $value = null) : DBQuery {
 
-        $last = sizeof($this->wheres) - 1;
-        $arr = &$this->wheres[$last];
-        $arr[] = [
+        $this->condition->add([
             'type' => 'simple',
             'column' => $column,
             'operator' => $value == null ? '=' : $valueOrOperator,
             'value' => $value == null ? $valueOrOperator : $value
-        ];
+        ]);
 
         return $this;
 
@@ -195,11 +197,23 @@ class DBQuery {
      * 
      * @return DBQuery self
      */
-    public function or() : DBQuery {
+    public function or(callable $block) : DBQuery {
 
-        $this->wheres[] = [];
+        $this->condition->openBlock('OR');
+        $block($this);
+        $this->condition->closeBlock();
 
         return $this;
+    }
+
+    public function and(callable $block) : DBQuery {
+
+        $this->condition->openBlock('AND');
+        $block($this);
+        $this->condition->closeBlock();
+        
+        return $this;
+
     }
 
     /**
@@ -212,13 +226,12 @@ class DBQuery {
      */
     public function rawWhere(string $line, array $params = []) : DBQuery {
 
-        $last = sizeof($this->wheres) - 1;
-        $arr = &$this->wheres[$last];
-        $arr[] = [
+        $this->condition->add([
             'type' => 'raw',
             'query' => $line,
             'params' => $params
-        ];
+        ]);
+
         return $this;
     }
 
@@ -232,14 +245,12 @@ class DBQuery {
      */
     public function whereIn(string $column, DBQuery $subquery) : DBQuery {
 
-        $last = sizeof($this->wheres) - 1;
-        $arr = &$this->wheres[$last];
-        $arr[] = [
+        $this->condition->add([
             'type' => 'wherein',
             'in' => true,
             'column' => $column,
             'subquery' => $subquery
-        ];
+        ]);
         return $this;
     }
 
@@ -252,14 +263,14 @@ class DBQuery {
      * @return DBQuery self
      */
     public function whereNotIn(string $column, DBQuery $subquery) : DBQuery {
-        $last = sizeof($this->wheres) - 1;
-        $arr = &$this->wheres[$last];
-        $arr[] = [
+
+        $this->condition->add([
             'type' => 'wherein',
             'in' => false,
             'column' => $column,
             'subquery' => $subquery
-        ];
+        ]);
+
         return $this;
     }
 
@@ -374,7 +385,7 @@ class DBQuery {
      * 
      * @return array
      */
-    public function buildQuery(string $action, int $paramCounter = 0) {
+    public function buildQuery(string $action = 'select', int $paramCounter = 0) {
 
         $counter = $paramCounter + 0;
 
@@ -488,72 +499,8 @@ class DBQuery {
         }
 
         // WHEREs
-        if ( (sizeof($this->wheres) && sizeof($this->wheres[0])) 
-            && $action != 'insert') {
-
-            $query .= ' WHERE (';
-
-            $first = true;
-            foreach($this->wheres as $conditions) {
-
-                if (!$first) {
-                    $query .= ') OR (';
-                }
-
-                $count = 0;
-                foreach($conditions as $condition) {
-
-                    if (!isset($condition['type'])) continue;
-                    $type = $condition['type'];
-
-                    if ($type == 'simple') {
-                        $col = $condition['column'];
-                        $op = $condition['operator'];
-                        $v = $condition['value'];
-
-                        $query .= "$col $op :p_$counter";
-                        $params["p_$counter"] = $v;
-                        ++ $counter;
-                        $first = false;
-                    }
-
-                    else if ($type == 'wherein') {
-                        $col = $condition['column'];
-                        $in = $condition['in'];
-                        $sub = $condition['subquery'];
-                        $sub = $sub->buildQuery('select', $counter + 1);
-
-                        $counter = $sub[2];
-                        $query .= "$col " . ($in ? 'IN ' : 'NOT IN ');
-                        $query .= $sub[0];
-
-                        // Params
-                        foreach($sub[1] as $k => $v) {
-                            $params[$k] = $v;
-                        }
-                    }
-
-                    else if ($type == 'raw') {
-                        $q = $condition['query'];
-                        $pms = $condition['params'];
-
-                        $query .= $q;
-                        foreach($pms as $k => $v) {
-                            $params[$k] = $v;
-                        }
-                    }
-
-                    ++ $count;
-
-                    if ($count < sizeof($conditions)) {
-                        $query .= ' AND ';
-                    }
-
-                }
-
-            }
-
-            $query .= ') ';
+        if ($action != 'insert' && $this->condition->notEmpty()) {
+            $query .= ' WHERE ' . $this->condition->toString($params, $counter)[0];
         }
 
         // EXTRAS

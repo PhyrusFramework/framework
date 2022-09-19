@@ -48,16 +48,14 @@ class Test {
      * Logs an error.
      * 
      * @param string $message
-     * @param string $detail
      * @param string $file
      * @param int $line
      */
-    public function addError(string $message, string $detail = null, string $file = null, int $line = null) {
+    public function addError(string $message, string $file = null, int $line = null) {
 
         $this->addLog("ERROR: $message");
         $this->errors[] = new Generic([
             'message' => $message,
-            'detail' => $detail,
             'file' => $file,
             'line' => $line
         ]);

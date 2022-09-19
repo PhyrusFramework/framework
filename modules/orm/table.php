@@ -124,23 +124,26 @@ class TableORM implements JsonSerializable {
         $def = $this->__getDefinition();
 
         $this->createdAt = datenow();
-        foreach($def['columns'] as $col) {
-            if (!isset($col['name'])) continue;
+        foreach($def as $table => $columns) {
+            foreach($columns as $col) {
+                if (!isset($col['name'])) continue;
 
-            if (isset($col['default'])) {
-                $this->{$col['name']} = $col['default'];
-            } else {
-                if (empty($col['notnull'])) {
-                    $this->{$col['name']} = null;
+                if (isset($col['default'])) {
+                    $this->{$col['name']} = $col['default'];
                 } else {
-                    $type = strtolower($col['type'] ?? 'VARCHAR');
-                    if ($type == 'text' || strpos($type, 'char') !== FALSE) {
-                        $this->{$col['name']} = '';
+                    if (empty($col['notnull'])) {
+                        $this->{$col['name']} = null;
                     } else {
-                        $this->{$col['name']} = 0;
+                        $type = strtolower($col['type'] ?? 'VARCHAR');
+                        if ($type == 'text' || strpos($type, 'char') !== FALSE) {
+                            $this->{$col['name']} = '';
+                        } else {
+                            $this->{$col['name']} = 0;
+                        }
                     }
                 }
             }
+            break;
         }
     }
 
@@ -155,14 +158,14 @@ class TableORM implements JsonSerializable {
             $name = $col['name'];
             $type = '_' . $col['type'];
 
-            $this->{$name} = null;
-
             if (isset($row->{$name})) {
 
                 $v = $row->{$name};
-                if (strpos($type, 'INT'))
+                if (strpos($type, 'INT') !== FALSE)
                     $v = intval($v);
-                if (strpos($type, 'DECIMAL') || strpos($type, 'FLOAT') || strpos($type, 'DOUBLE'))
+                if (strpos($type, 'DECIMAL') !== FALSE 
+                || strpos($type, 'FLOAT') !== FALSE 
+                || strpos($type, 'DOUBLE') !== FALSE)
                     $v = floatval($v);
 
                 $this->{$name} = $v;

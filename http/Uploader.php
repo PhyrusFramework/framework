@@ -2,20 +2,30 @@
 
 class Uploader {
 
-    private $file;
-    private $path;
-    private $name;
+    private $file = '';
+    private $path = '';
+    private $name = '';
     private $sizeFiles = [];
 
     function __construct($file) {
         $this->file = $file;
     }
 
-    public function extension() {
+    /**
+     * Get the file extension
+     * 
+     * @return string
+     */
+    public function extension() : string {
         return $this->file->extension;
     }
 
-    public function name() {
+    /**
+     * Get the file name
+     * 
+     * @return string
+     */
+    public function name() : string {
         return $this->file->name;
     }
 
@@ -51,7 +61,15 @@ class Uploader {
         return new Uploader($file);
     }
 
-
+    /**
+     * Stores the file.
+     * 
+     * @param string Directory
+     * @param string File name
+     * @param bool Overwrite
+     * 
+     * @return File|null
+     */
     private function saveFile($dir, $filename, $overwrite = false) {
 
         $total = "$dir/$filename";
@@ -63,7 +81,7 @@ class Uploader {
         
         $this->name = basename($filename);
 
-        $dir .= ($filename[0] == '/' ? $filename : "$filename");
+        $dir .= ($filename[0] == '/' ? $filename : "/$filename");
 
         if (file_exists($dir)) {
             if ($overwrite) {
@@ -77,52 +95,88 @@ class Uploader {
 
     }
 
-    public function savePublic(string $filename, bool $overwrite = false) {
+    /**
+     * Save the file as a public file.
+     * 
+     * @param string File name
+     * @param bool Overwrite if exists
+     * 
+     * @return Uploader self
+     */
+    public function savePublic(string $filename, bool $overwrite = false) : Uploader {
         $dir = Path::public() . '/' . Config::get('project.uploads.publicDir');
         $this->path = $this->saveFile($dir, $filename, $overwrite);
         return $this;
     }
 
-    public function savePrivate(string $filename, bool $overwrite = false) {
+    /**
+     * Save the file as a private file.
+     * 
+     * @param string File name
+     * @param bool Overwrite if exists
+     * 
+     * @return Uploader self
+     */
+    public function savePrivate(string $filename, bool $overwrite = false) : Uploader {
         $dir = Path::root() . '/' . Config::get('project.uploads.privateDir');
         $this->path = $this->saveFile($dir, $filename, $overwrite);
         return $this;
     }
 
-    public function relativePath() {
+    /**
+     * Get relative path to the file.
+     * 
+     * @return string
+     */
+    public function relativePath() : string {
         $path = empty($this->path) ? '' : Path::toRelative($this->path, true);
         return $path; 
     }
 
-    public function absolutePath() {
+    /**
+     * Get absolute path to the file.
+     * 
+     * @return string
+     */
+    public function absolutePath() : string {
         return empty($this->path) ? '' : $this->path;
     }
 
-    public function filename() {
+    /**
+     * Get the name of the stored file.
+     * 
+     * @return string
+     */
+    public function filename() : string {
         return $this->name;
     }
 
-    public function saveImage() {
+    /**
+     * Save this file as an image.
+     * 
+     * @param string|null File name. If not indicated, uses GUID()
+     * 
+     * @return Uploader self
+     */
+    public function saveImage($name = null) : Uploader {
 
-        $dir = Path::public() . '/' . Config::get('project.uploads.publicDir');;
-        if (!file_exists($dir)) {
-            mkdir($dir);
-        }
-
+        $dir = Path::public() . '/' . Config::get('project.uploads.publicDir');
         $dir .= '/' . Config::get('project.uploads.images.dir');
         if (!file_exists($dir)) {
-            mkdir($dir);
+            Folder::instance($dir)->create();
         }
 
         $ext = $this->file->extension;
         $ext = $ext == 'png' ? 'png' : 'jpg';
 
         $img = Image::instance($this->file->tmp, $ext);
-        $name = GUID();
+        $name = $name ?? GUID();
 
         $this->name = "$name.$ext";
 
         $sizes = Config::get('project.uploads.images.sizes');
+        if (empty($sizes)) return $this;
+
         $sizeFiles = [ ];
 
         foreach($sizes as $size => $max) {
@@ -142,7 +196,14 @@ class Uploader {
 
     }
 
-    public function getSize($name) {
+    /**
+     * Get the path to the image in a specific size.
+     * 
+     * @param string Name of the size
+     * 
+     * @return string
+     */
+    public function getSize(string $name) : string {
         return $this->sizeFiles[$name] ?? '';
     }
 

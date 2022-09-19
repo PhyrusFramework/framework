@@ -90,11 +90,33 @@ class DATABASE
         $result = $result == null ? [] : $result->fetchAll();
 
         if (Config::get('database.debug') && !empty($this->db->error)) {
-            var_dump([
-                'query' => $q,
-                'error' => $this->db->error
-            ]);
-            response_die('error');
+
+            $backtrace = [];
+            $bt = debug_backtrace();
+            foreach($bt as $f) {
+                $str = '';
+
+                if (isset($f['file']))
+                    $str .= Path::toRelative($f['file']);
+                else if ($f['function'])
+                    $str .= $f['function'];
+
+                if (isset($f['line'])) {
+                    $str .= ' (line ' . $f['line'] . ')';
+                }
+
+                $backtrace[] = $str;
+            }
+
+            if (defined('USING_CLI')) {
+                echo "SQL Query error: `$q`, ERROR: " . $this->db->error;
+            } else {
+                response_die('error', [
+                    'query' => $q,
+                    'error' => $this->db->error,
+                    'backtrace' => $backtrace
+                ]);
+            }
         }
 
         return new DBQueryResult($q, $this->db->error, $result);

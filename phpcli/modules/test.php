@@ -17,8 +17,6 @@ class CLI_Test extends CLI_Module {
                 echo "\nThe framework tests component is not found. Are you sure you are using the right version of the framework?\n";
                 return;
             }
-            
-            $useFrameworkTests = isset($this->flags['framework']);
             include($path);
         }
         else {

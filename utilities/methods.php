@@ -24,7 +24,15 @@ function caller() : ?string {
     $backtrace = debug_backtrace();
     if (sizeof($backtrace) < 3) return null;
 
-    return $backtrace[1]['file'];
+    $b = $backtrace[1];
+
+    $str = $b['file'];
+    
+    if (isset($b['function'])) {
+        $str .= ': ' . $b['function'] . '()';
+    }
+    
+    $str .= ' (line ' . $backtrace[1]['line'] . ')';
 
 }
 
@@ -140,15 +148,22 @@ function forn(int $n, callable $func) {
 /**
  * Run a shell command and display the output in realtime.
  * 
- * @param string $command
+ * @param string CLI command
+ * @param bool Output response?
+ * 
+ * @return string output
  */
-function cmd(string $command) {
+function cmd(string $command, bool $echo = true) : string {
     $proc = popen($command, 'r');
+    $total = '';
     while (!feof($proc))
     {
-        echo fread($proc, 4096);
+        $str = fread($proc, 4096);
+        if ($echo) echo $str;
+        $total .= $str;
         @ flush();
     }
+    return $total;
 }
 
 /**

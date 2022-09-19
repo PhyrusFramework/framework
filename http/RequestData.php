@@ -350,10 +350,16 @@ class HTTPHeaders {
      * @param array
      */
     public function require(...$args) {
+
+        $dev = Config::get('project.development_mode');
+
         foreach($args as $v) {
             if (!$this->has($v)) {
-                response('bad');
-                die();
+                if ($dev) {
+                    ApiResponse::badRequest("Header '$v' is missing.");
+                } else {
+                    response_die('bad');
+                }
             }
         }
     }

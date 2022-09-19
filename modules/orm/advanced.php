@@ -106,6 +106,14 @@ class AdvancedORM extends ORM {
     }
 
     /**
+     * Create the tables for this model.
+     */
+    public static function CreateTables() {
+        $cl = get_called_class();
+        (new $cl())->CheckTable(true);
+    }
+
+    /**
      * Tables that have already checked if they exist.
      * 
      * @var array $_tables_checked

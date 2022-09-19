@@ -2,6 +2,47 @@
 
 class ApiResponse {
 
+    private static $_log = [];
+
+    /**
+     * Add log to API response.
+     * 
+     * @param mixed Log content
+     */
+    public static function addLog($content) {
+
+        $obj = [
+            'data' => $content
+        ];
+
+        $backtrace = debug_backtrace();
+        if (sizeof($backtrace) >= 3) {
+            $b = $backtrace[1];
+            if (isset($b['file'])) {
+                $obj['file'] = $b['file'];
+                $obj['line'] = $b['line'];
+            }
+        }
+
+        self::$_log[] = $obj;
+    }
+
+    private static function output($code, $response) {
+
+        $resp = JSON::stringify($response);
+
+        if (Config::get('project.development_mode')
+        && sizeof(self::$_log) > 0) {
+            $resp = JSON::parse($resp);
+            $resp['log'] = self::$_log;
+            response_die('ok', $resp);
+            return;
+        }
+
+        response_die($code, $resp);
+
+    }
+
     /**
      * Request succeeded
      * 
@@ -20,7 +61,7 @@ class ApiResponse {
             $response[$k] = $v;
         }
 
-        response_die('ok', $response);
+        self::output('ok', $response);
     }
 
     /**
@@ -53,7 +94,7 @@ class ApiResponse {
             $response['data'] = $data;
         }
 
-        response_die($name, $response);
+        self::output($name, $response);
     }
 
     /**
