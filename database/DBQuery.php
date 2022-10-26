@@ -500,7 +500,9 @@ class DBQuery {
 
         // WHEREs
         if ($action != 'insert' && $this->condition->notEmpty()) {
-            $query .= ' WHERE ' . $this->condition->toString($params, $counter)[0];
+            $r = $this->condition->toString($params, $counter);
+            $counter = $r[1];
+            $query .= ' WHERE ' . $r[0];
         }
 
         // EXTRAS

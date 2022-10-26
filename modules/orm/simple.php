@@ -251,11 +251,11 @@ class ORM extends TableORM implements JsonSerializable {
     /**
      * Find the object with this ID.
      * 
-     * @param int ID
+     * @param ID
      * 
      * @return ORM|null
      */
-    public static function findID(int $ID) {
+    public static function findID($ID) {
         return self::findOne('ID = :ID', ['ID' => intval($ID)]);
     }
 

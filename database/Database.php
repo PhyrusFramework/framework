@@ -164,12 +164,6 @@ class DATABASE
         if ($v === null) {
             return 'NULL';
         }
-        if (is_bool($v)) {
-            return $v ? '1' : '0';
-        }
-        if (is_numeric($v) || is_int($v) || is_float($v)) {
-            return $v;
-        }
         if ($v instanceof InsecureString) {
             return ($quotes ? "'" : '') . $v->getString() . ($quotes ? "'" : '');
         }
@@ -178,6 +172,12 @@ class DATABASE
         }
         if ($v instanceof JSON) {
             return Database::text($v->string(), $quotes);
+        }
+        if (is_bool($v)) {
+            return $v ? '1' : '0';
+        }
+        if (is_numeric($v) || is_int($v) || is_float($v)) {
+            return $v;
         }
         if (is_array($value) || gettype($value) == 'Arr') {
 

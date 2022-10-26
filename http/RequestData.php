@@ -51,10 +51,12 @@ class RequestData {
         if (!is_array($arr)) $arr = [];
 
         foreach($arr as $k => $v) {
+            if ($v == 'null' || $v == 'undefined') continue;
             $this->{$k} = $v;
         }
 
         foreach($_POST as $k => $v) {
+            if ($v == 'null' || $v == 'undefined') continue;
             $this->{$k} = $v;
             $arr[$k] = $v;
         }
@@ -62,6 +64,7 @@ class RequestData {
         if ($urlParams) {
             $q = URL::parameters();
             foreach($q as $k => $v) {
+                if ($v == 'null' || $v == 'undefined') continue;
                 $this->{$k} = $v;
                 $arr[$k] = $v;
             }

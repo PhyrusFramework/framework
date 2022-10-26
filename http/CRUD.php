@@ -3,6 +3,9 @@
 class CRUD {
 
     private $route;
+    public function getRoute() {
+        return $this->route;
+    }
 
     private $_middleware = null;
 
@@ -42,7 +45,7 @@ class CRUD {
      * 
      * @return CRUD
      */
-    public function list(callable $action, ?callable $info) : CRUD {
+    public function list(callable $action, $info = null) : CRUD {
         $obj = [$action];
         if (!empty($info)) {
             $obj['info'] = $info;
@@ -59,7 +62,7 @@ class CRUD {
      * 
      * @return CRUD
      */
-    public function get(callable $action, ?callable $info) : CRUD {
+    public function get(callable $action, $info = null) : CRUD {
         $obj = [$action];
         if (!empty($info)) {
             $obj['info'] = $info;
@@ -76,7 +79,7 @@ class CRUD {
      * 
      * @return CRUD
      */
-    public function edit(callable $action, ?callable $info) : CRUD {
+    public function edit(callable $action, $info = null) : CRUD {
         $obj = [$action];
         if (!empty($info)) {
             $obj['info'] = $info;
@@ -93,7 +96,7 @@ class CRUD {
      * 
      * @return CRUD
      */
-    public function create(callable $action, ?callable $info) : CRUD {
+    public function create(callable $action, $info = null) : CRUD {
         $obj = [$action];
         if (!empty($info)) {
             $obj['info'] = $info;
@@ -110,7 +113,7 @@ class CRUD {
      * 
      * @return CRUD
      */
-    public function delete(callable $action, ?callable $info = null) : CRUD {
+    public function delete(callable $action, $info = null) : CRUD {
         $obj = [$action];
         if (!empty($info)) {
             $obj['info'] = $info;
@@ -129,7 +132,7 @@ class CRUD {
      * 
      * @return CRUD
      */
-    public function custom(string $method, string $route, callable $action, ?callable $info = null) : CRUD {
+    public function custom(string $method, string $route, callable $action, $info = null) : CRUD {
 
         $r = [];
         if (isset($this->_customs[$route])) {

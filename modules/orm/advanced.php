@@ -1102,11 +1102,11 @@ class AdvancedORM extends ORM {
     /**
      * Find the object with this ID.
      * 
-     * @param int ID
+     * @param int|string ID
      * 
      * @return AdvancedORM|null
      */
-    public static function findID(int $ID) {
+    public static function findID($ID) {
         return parent::findID($ID);
     }
 

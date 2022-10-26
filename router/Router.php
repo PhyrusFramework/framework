@@ -58,7 +58,7 @@ class Router {
      * 
      * @return array
      */
-    private static function parseRoute($options, array $r = []) : array {
+    private static function parseRoute($options, array &$r = []) : array {
 
         /* EXAMPLE OF $options
         [
@@ -82,16 +82,16 @@ class Router {
                 'action' => is_array($v) ? $v[0] : $v
             ];
 
+            // Add info object
+            if (is_array($v) && isset($v['info'])) {
+                $m['info'] = $v['info'];
+            }
+
             // If set, add the middleware
             if (isset($options['middleware'])) {
                 $m['middleware'] = $options['middleware'];
             } else if (is_array($v) && isset($v['middleware'])) {
                 $m['middleware'] = $v['middleware'];
-            }
-
-            // Add info object
-            if (isset($options['info'])) {
-                $m['info'] = $options['info'];
             }
 
             // Add to the current route
@@ -457,16 +457,46 @@ class Router {
      * @param string URL path
      * @param string Method
      * 
-     * @return mixed
+     * @return array
      */
-    public static function getInfo(string $route, string $method) {
-        if (!isset(self::$routes[$route])) return null;
+    public static function getRouteInfo(string $route, string $method) : array {
+        if (!isset(self::$routes[$route])) return [];
         $r = self::$routes[$route];
-        if (!isset($r[$method])) return null;
-        if (!isset($r[$method]['info'])) return null;
+        if (!isset($r[$method])) return [];
+        if (!isset($r[$method]['info'])) return [];
         $info = $r[$method]['info'];
         if (gettype($info) != 'callable') return $info;
         return $info();
+    }
+
+    /**
+     * Get all the API info.
+     * 
+     * @return array
+     */
+    public static function getInfo() : array {
+
+        $info = [];
+
+        foreach(self::$routes as $route => $obj) {
+
+            foreach($obj as $method => $o) {
+
+                if (!isset($o['info'])) {
+                    continue;
+                }
+
+                if (!isset($info[$route])) {
+                    $info[$route] = [];
+                }
+
+                $info[$route][$method] = $o['info']();
+
+            }
+
+        }
+
+        return $info;
     }
 
 }
