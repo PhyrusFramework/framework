@@ -13,7 +13,8 @@ class CLI {
         'test' => 'CLI_Test',
         'migrate' => 'CLI_Migrate',
         'script' => 'CLI_Script',
-        'watcher' => 'CLI_Watcher'
+        'watcher' => 'CLI_Watcher',
+        'install' => 'CLI_Install'
     ];
 
     /**
@@ -82,7 +83,7 @@ class CLI {
         $this->flags = $flags;
 
         if (isset($this->flags['database']) || 
-        in_array($this->command, ['test', 'migrate', 'script'])) {
+        in_array($this->command, ['test', 'migrate', 'script', 'install'])) {
             define('CLI_DATABASE', true);
         }
 
