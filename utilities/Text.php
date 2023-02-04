@@ -23,6 +23,15 @@ class Text {
     }
 
     /**
+     * Get the modified text.
+     * 
+     * @return string
+     */
+    public function getString() : string {
+        return $this->_txt;
+    }
+
+    /**
      * Explode string.
      * 
      * @param mixed $delimiter String or array
@@ -93,19 +102,21 @@ class Text {
     /**
      * Converts text to lowercase
      * 
-     * @return string lowercase
+     * @return Text self
      */
-    public function toLower() : string {
-        return mb_strtolower($this->_txt);
+    public function toLower() : Text {
+        $this->_txt = mb_strtolower($this->_txt);
+        return $this;
     }
 
     /**
      * Converts text to lowercase
      * 
-     * @return string lowercase
+     * @return Text self
      */
-    public function toUpper() : string {
-        return mb_strtoupper($this->_txt);
+    public function toUpper() : Text {
+        $this->_txt = mb_strtoupper($this->_txt);
+        return $this;
     }
 
     /**
@@ -113,9 +124,9 @@ class Text {
      * 
      * @param array $custom [Default empty] Custom conversion.
      * 
-     * @return string
+     * @return Text self
      */
-    public function sanitize(array $custom = []) : string {
+    public function sanitize(array $custom = []) : Text {
         $t = mb_strtolower(trim($this->_txt));
         $changes = [
             ' ' => '-',
@@ -160,7 +171,9 @@ class Text {
         foreach($changes as $k => $v) {
             $t = str_replace($k, $v, $t);
         }
-        return $t;
+
+        $this->_txt = $t;
+        return $this;
     }
 
     /**
@@ -199,14 +212,16 @@ class Text {
     /**
      * Reverse string.
      * 
-     * @return string
+     * @return Text self
      */
-    public function reverse() : string {
+    public function reverse() : Text {
         $aux = '';
         for($i = strlen($this->_txt) - 1; $i >= 0; --$i) {
             $aux .= $this->_txt[$i];
         }
-        return $aux;
+
+        $this->_txt = $aux;
+        return $this;
     }
 
     /**
@@ -229,10 +244,11 @@ class Text {
      * @param string $a
      * @param string $b
      * 
-     * @return string
+     * @return Text
      */
-    public function replace(string $a, string $b) : string {
-        return str_replace($a, $b, $this->_txt);
+    public function replace(string $a, string $b) : Text {
+        $this->_txt = str_replace($a, $b, $this->_txt);
+        return $this;
     }
 
     /**
@@ -271,10 +287,11 @@ class Text {
      * 
      * @param string $charlist
      * 
-     * @return string
+     * @return Text self
      */
-    public function trim($charlist = ' ') {
-        return trim($this->_txt, $charlist);
+    public function trim($charlist = ' ') : Text {
+        $this->_txt = trim($this->_txt, $charlist);
+        return $this;
     }
 
     /**
@@ -282,10 +299,11 @@ class Text {
      * 
      * @param string $encoding (Example: UTF-8)
      * 
-     * @return string encoded
+     * @return Text self
      */
-    public function encoding(string $encoding) {
-        return mb_convert_encoding($this->_txt, $encoding);
+    public function encoding(string $encoding) : Text {
+        $this->_txt = mb_convert_encoding($this->_txt, $encoding);
+        return $this;
     }
 
     /**
@@ -301,15 +319,35 @@ class Text {
     }
 
     /**
+     * Extract words from any text.
+     * 
+     * @return array
+     */
+    public function extractWords() {
+        $matches = [];
+        preg_match_all("/\b[a-zA-Z]+\b/", $this->_txt, $matches);
+        return $matches;
+    }
+
+    /**
+     * Check if string contains specific word.
+     * 
+     * @return bool
+     */
+    public function containsWord($word) : bool {
+        return preg_match("/\b$word\b/i", $this->_txt);
+    }
+
+    /**
      * Find parameters in the text and replace them dynamically.
      * 
      * @param string $opener
      * @param string $closer
      * @param callable $replacer
      * 
-     * @return string
+     * @return Text self
      */
-    public function replacer(string $opener, string $closer, callable $replacer) : string {
+    public function replacer(string $opener, string $closer, callable $replacer) : Text {
 
         $str = '';
         $in = false;
@@ -361,7 +399,8 @@ class Text {
 
         }
 
-        return $str;
+        $this->_txt = $str;
+        return $this;
 
     }
 

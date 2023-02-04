@@ -1,6 +1,6 @@
 <?php
 
-class TableORM implements JsonSerializable {
+class TableORM extends stdClass implements JsonSerializable {
 
     /**
      * Check if table is checked.
@@ -67,7 +67,7 @@ class TableORM implements JsonSerializable {
         return $tree;
     }
 
-    public function jsonSerialize() {
+    public function jsonSerialize() : mixed {
         $value = [];
         $cols = $this->__columns();
         foreach($cols as $col) {
@@ -150,9 +150,9 @@ class TableORM implements JsonSerializable {
     /**
      * Absorb values from a DB result.
      * 
-     * @param Generic $row
+     * @param $row
      */
-    protected function __absorbObject(Generic $row) {
+    protected function __absorbObject($row) {
         $cols = $this->__columns();
         foreach($cols as $col) {
             $name = $col['name'];

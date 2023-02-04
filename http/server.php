@@ -140,7 +140,7 @@ function _get_http_responses() {
         'not-found' => [
             404,
             'HTTP/1.0 404 Not Found',
-            'This path does not exist.'
+            'Resource not found.'
         ],
         'method-not-allowed' => [
             405,

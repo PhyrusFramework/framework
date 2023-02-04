@@ -172,7 +172,7 @@ class Yaml
         }
 
         // New YAML document
-        $string = "---\n";
+        $string = "\n"; // "---\n";
 
         // Start at the base of the array and move through it.
         if ($array) {
@@ -270,23 +270,23 @@ class Yaml
             $value  = $this->doFolding($value,$indent);
         }
 
-        if ($value === array()) {
-            $value = '[ ]';
-        }
-        if (in_array ($value, array ('true', 'TRUE', 'false', 'FALSE', 'y', 'Y', 'n', 'N', 'null', 'NULL'), true)) {
-            $value = $this->doLiteralBlock($value,$indent);
-        }
-        if (trim ($value) != $value) {
-            $value = $this->doLiteralBlock($value,$indent);
-        }
-        if (is_bool($value)) {
-            $value = ($value) ? "true" : "false";
-        }
         if ($value === null) {
             $value = 'null';
         }
-        if ($value === "'" . self::REMPTY . "'") {
+        else if ($value === "'" . self::REMPTY . "'") {
             $value = null;
+        }
+        else if ($value === array()) {
+            $value = '[ ]';
+        }
+        else if (in_array ($value, array ('true', 'TRUE', 'false', 'FALSE', 'y', 'Y', 'n', 'N', 'null', 'NULL'), true)) {
+            $value = $this->doLiteralBlock($value,$indent);
+        }
+        else if (trim ($value) != $value) {
+            $value = $this->doLiteralBlock($value,$indent);
+        }
+        else if (is_bool($value)) {
+            $value = ($value) ? "true" : "false";
         }
 
         $spaces = str_repeat(' ',$indent);

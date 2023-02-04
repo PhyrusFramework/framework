@@ -391,7 +391,7 @@ class DATABASE
         {
             $ref = $f['reference'];
             $ref = str_replace('(', '`(', $ref);
-            $q .= ', FOREIGN KEY(' . $f['field'] . ") REFERENCES `$ref";
+            $q .= ', FOREIGN KEY(`' . $f['field'] . "`) REFERENCES `$ref";
         }
     
         $q .= ');';

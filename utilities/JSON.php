@@ -1,6 +1,6 @@
 <?php
 
-class JSON {
+class JSON extends stdClass {
 
     /**
      * Array object.
@@ -108,7 +108,7 @@ class JSON {
     public static function stringify($obj, bool $pretty = false) : string {
         $flags = JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_NUMERIC_CHECK|JSON_HEX_QUOT;
         $json = json_encode($obj, $pretty ? $flags|JSON_PRETTY_PRINT : $flags);
-        return str_replace("\u0022", "\\\\\"", $json);
+        return str_replace("\u0022", "\\\"", $json);
     }
 
     /**

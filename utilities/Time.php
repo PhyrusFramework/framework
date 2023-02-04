@@ -10,6 +10,22 @@ class Time {
     private DateTime $_datetime;
 
     /**
+     * Get date as DateTime
+     * 
+     * @return DateTime
+     */
+    public function getDateTime() {
+        return $this->_datetime;
+    }
+
+    /**
+     * Get date as DateTimeImmutable
+     */
+    public function Immutable() {
+        return DateTimeImmutable::createFromMutable($this->_datetime);
+    }
+
+    /**
      * Predefined formats.
      * 
      * @var array

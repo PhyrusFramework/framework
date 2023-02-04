@@ -65,7 +65,7 @@ class AdvancedORM extends ORM {
 
     }
 
-    public function jsonSerialize() {
+    public function jsonSerialize() : mixed {
         $value = parent::jsonSerialize();
 
         if ($this->__onJson['translations'] !== null) {

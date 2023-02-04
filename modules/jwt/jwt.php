@@ -87,19 +87,15 @@ class JWT {
     /**
      * Encode data into a token
      * 
-     * @param array $payload
+     * @param $payload
      * 
      * @return string
      */
-    public function encode($payload = []) : string {
+    public function encode($payload) : string {
 
-        $data = [];
+        $data = ['value' => $payload];
         if ($this->age > 0) {
             $data['exp'] = time() + $this->age;
-        }
-
-        foreach($payload as $k => $v) {
-            $data[$k] = $v;
         }
 
         return \Firebase\JWT\JWT::encode($data, $this->key, $this->algorithm);
@@ -116,7 +112,7 @@ class JWT {
     public function decode(string $token) {
         try {
             $payload = \Firebase\JWT\JWT::decode($token, $this->key, [$this->algorithm]);
-            return $payload;
+            return $payload->value;
         } catch (Exception $e) {
             return false;
         }

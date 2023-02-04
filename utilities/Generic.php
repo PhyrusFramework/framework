@@ -1,6 +1,6 @@
 <?php
 
-class Generic {
+class Generic extends stdClass {
 
     /**
      * [Managed by Framework] Array containing the actual values.

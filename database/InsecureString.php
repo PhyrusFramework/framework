@@ -1,11 +1,15 @@
 <?php
 
-class InsecureString {
+class InsecureString implements JsonSerializable {
 
     private $text = '';
 
     public static function instance($value) {
         return new InsecureString($value);
+    }
+
+    public function jsonSerialize(): mixed {
+        return $this->text;
     }
 
     function __construct($value) {
@@ -36,7 +40,7 @@ class InsecureString {
         $t = Text::instance($this->text);
         $this->text = $t->replacer('<script', '</script>', function($content) {
             return '';
-        });
+        })->getString();
         return $this;
     }
 }

@@ -165,20 +165,35 @@ class ORM extends TableORM implements JsonSerializable {
         }
 
         if (sizeof($cols) == 0) {
+            $cols = $this->__columns();
+        } else {
+            $aux = $cols;
             $cols = [];
-            $colls = $this->__columns();
-            foreach($colls as $col) {
-                $cols[] = $col['name'];
+            foreach($this->__columns() as $col) {
+                if (in_array($col['name'], $aux)) {
+                    $cols[] = $col;
+                }
             }
         }
 
+        foreach($cols as $col) {
 
-        foreach($cols as $name) {
+            $name = $col['name'];
+
             if ($name == 'ID') {
                 continue;
             }
 
-            $q->set($name, $this->{$name});
+            $val = $this->{$name};
+            if (!empty($col['allowHTML'])) {
+                $val = InsecureString::instance($val);
+
+                if (empty($col['allowJs'])) {
+                    $val->removeScriptTags();
+                }
+            }
+
+            $q->set($name, $val);
         }
 
         $q->update();
@@ -206,7 +221,16 @@ class ORM extends TableORM implements JsonSerializable {
                 continue;
             }
 
-            $q->set($name, $this->{$name});
+            $val = $this->{$name};
+            if (!empty($col['allowHTML'])) {
+                $val = InsecureString::instance($val);
+
+                if (empty($col['allowJs'])) {
+                    $val->removeScriptTags();
+                }
+            }
+
+            $q->set($name, $val);
         }
 
         $q->insert();

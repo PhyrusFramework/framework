@@ -405,7 +405,16 @@ class DBQuery {
                 $query .= ' *';
             } else {
                 for($i = 0; $i < sizeof($this->selects); ++$i) {
-                    $query .= ' ' . $this->selects[$i];
+                    $query .= ' ';
+                    
+                    $s = $this->selects[$i];
+                    if (strpos($s, ' ') === FALSE && 
+                    strpos($s, '(') === FALSE && 
+                    strpos($s, '.') === FALSE) {
+                        $query .= "`$s`";
+                    } else {
+                        $query .= $s;
+                    }
 
                     if ($i < sizeof($this->selects) - 1) {
                         $query .= ',';
@@ -439,7 +448,7 @@ class DBQuery {
 
             $count = 0;
             foreach($this->sets as $k => $v) {
-                $query .= $k;
+                $query .= "`$k`";
 
                 if ($count < sizeof($this->sets) - 1) {
                     $query .= ', ';
@@ -482,7 +491,7 @@ class DBQuery {
             foreach($this->sets as $k => $v) {
 
                 if ($v['wrap']) {
-                    $query .= "$k = :p_$counter";
+                    $query .= "`$k` = :p_$counter";
                     $params["p_$counter"] = $v['value'];
                     ++ $counter;    
                 } else {
@@ -502,7 +511,7 @@ class DBQuery {
         if ($action != 'insert' && $this->condition->notEmpty()) {
             $r = $this->condition->toString($params, $counter);
             $counter = $r[1];
-            $query .= ' WHERE ' . $r[0];
+            $query .= empty($r[0]) ? '' : ' WHERE ' . $r[0];
         }
 
         // EXTRAS

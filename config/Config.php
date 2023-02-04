@@ -15,7 +15,7 @@ class Config {
      * @return string
      */
     private static function cachedPath() {
-        return Path::framework() . '/config.json';
+        return Path::root() . '/config.json';
     }
 
     private static function configPath() {

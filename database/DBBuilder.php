@@ -157,13 +157,40 @@ class DBBuilder {
     /**
      * Make the last column a foreign key to another table's column.
      * 
-     * @param string table(column)
+     * @param string table
+     * @param string column (otional)
      * 
      * @return DBBuilder
      */
-    public function references(string $tableColumn) : DBBuilder {
+    public function references(string $table, $column = null) : DBBuilder {
         if (!$this->lastColumn) return $this;
-        $this->definition[$this->name][$this->lastColumn]['foreign'] = $tableColumn; 
+        $t = $table;
+        if (strpos($t, '(') === FALSE) {
+            $t .= '(' . ($column ? $column : 'ID') . ')';
+        }
+        $this->definition[$this->name][$this->lastColumn]['foreign'] = $t;
+        return $this;
+    }
+
+    /**
+     * Allow HTML characters in this text column
+     * 
+     * @return DBBuilder
+     */
+    public function allowHTML() : DBBuilder {
+        if (!$this->lastColumn) return $this;
+        $this->definition[$this->name][$this->lastColumn]['allowHTML'] = true;
+        return $this;
+    }
+
+    /**
+     * Allow Javascript in a HTML column
+     * 
+     * @return DBBuilder
+     */
+    public function allowJs() : DBBuilder {
+        if (!$this->lastColumn) return $this;
+        $this->definition[$this->name][$this->lastColumn]['allowJs'] = true;
         return $this;
     }
 

@@ -1,6 +1,6 @@
 <?php
 
-class RequestData {
+class RequestData extends stdClass {
 
     /**
      * HTTP Headers
@@ -46,31 +46,120 @@ class RequestData {
         $this->{'_type'} = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
         // data
-        $postdata = file_get_contents('php://input');
-        $arr = json_decode($postdata, true);
+        $arr = $this->parseData();
         if (!is_array($arr)) $arr = [];
 
         foreach($arr as $k => $v) {
-            if ($v == 'null' || $v == 'undefined') continue;
-            $this->{$k} = $v;
+            if ($v === 'null' || $v === 'undefined') continue;
+
+            if ($v === 'true' || $v === 'false') {
+                $this->{$k} = $v === 'true';
+            } else {
+                $this->{$k} = $v;
+            }
         }
 
         foreach($_POST as $k => $v) {
-            if ($v == 'null' || $v == 'undefined') continue;
-            $this->{$k} = $v;
-            $arr[$k] = $v;
-        }
-
-        if ($urlParams) {
-            $q = URL::parameters();
-            foreach($q as $k => $v) {
-                if ($v == 'null' || $v == 'undefined') continue;
+            if ($v === 'null' || $v === 'undefined') continue;
+            if ($v === 'true' || $v === 'false') {
+                $this->{$k} = $v === 'true';
+                $arr[$k] = $v === 'true';
+            } else {
                 $this->{$k} = $v;
                 $arr[$k] = $v;
             }
         }
 
+        if ($urlParams) {
+            $q = URL::parameters();
+            foreach($q as $k => $v) {
+                if ($v === 'null' || $v === 'undefined') continue;
+                if ($v === 'true' || $v === 'false') {
+                    $this->{$k} = $v === 'true';
+                    $arr[$k] = $v === 'true';
+                } else {
+                    $this->{$k} = $v;
+                    $arr[$k] = $v;
+                }
+            }
+        }
+
         $this->_arr = $arr;
+    }
+
+    /**
+     * Parse data inside of 'php://input' file.
+     * 
+     * @return array
+     */
+    private function parseData() : array {
+        $data = file_get_contents('php://input');
+        if (empty($data)) return [];
+
+        $ContentType = $_SERVER['HTTP_CONTENT_TYPE'] ?? 'application/json';
+
+        if ($ContentType == 'application/json') {
+            return json_decode($data, true);
+        }
+
+        // Parse the data
+        $boundary = substr($data, 0, strpos($data, "\r\n"));
+        $parts = array_slice(explode($boundary, $data), 1);
+        $parts = array_map(function($part) {
+            return substr($part, 2, -2);
+        }, $parts);
+
+        $fields = [];
+        foreach ($parts as $part) {
+            if (empty($part)) continue;
+            list($raw_headers, $body) = explode("\r\n\r\n", $part, 2);
+            $headers = [];
+            foreach (explode("\r\n", $raw_headers) as $header) {
+                list($name, $value) = explode(':', $header);
+                $headers[strtolower($name)] = ltrim($value, ' ');
+            }
+
+            if (isset($headers['content-disposition'])) {
+                $filename = null;
+                $raw_name = null;
+                preg_match(
+                    '/^form-data; *name="([^"]+)"(?:; *filename="([^"]+)")?/',
+                    $headers['content-disposition'],
+                    $matches
+                );
+
+                if (sizeof($matches) > 2) {
+
+                    list(, $raw_name, $filename) = $matches;
+                    $name = rawurldecode($raw_name);
+                    if ($filename) {
+                        // Handle file fields
+                        $fields[$name] = [
+                            'name' => $filename,
+                            'type' => $headers['content-type'],
+                            'tmp_name' => $tmp_name = tempnam(sys_get_temp_dir(), 'php'),
+                            'error' => UPLOAD_ERR_OK,
+                            'size' => strlen($body),
+                        ];
+                        file_put_contents($tmp_name, $body);
+
+                        $_FILES[$name] = $fields[$name];
+                    } else {
+                        // Handle other fields
+                        $fields[$name] = $body;
+                    }
+
+                } else {
+                    list(, $raw_name) = $matches;
+                    $name = rawurldecode($raw_name);
+                    // Handle other fields
+                    $fields[$name] = $body;
+                }
+
+            }
+        }
+
+        return $fields;
     }
 
     /**

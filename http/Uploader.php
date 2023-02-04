@@ -21,6 +21,15 @@ class Uploader {
     }
 
     /**
+     * Get the file mime type
+     * 
+     * @return string
+     */
+    public function mime() : string {
+        return $this->file->type;
+    }
+
+    /**
      * Get the file name
      * 
      * @return string
