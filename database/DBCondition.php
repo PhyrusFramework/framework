@@ -50,6 +50,43 @@ class DBCondition {
         return sizeof($this->blocks) > 0;
     }
 
+    /**
+     * Prepare the name for the query.
+     * 
+     * @param string Table name
+     * 
+     * @return string Prepared name
+     */
+    private function tbName(string $name) : string {
+
+        if (strpos($name, ' ') !== FALSE ||
+        strpos($name, '(') !== FALSE) {
+            return $name;
+        }
+
+        if (strpos($name, '.') !== FALSE) {
+
+            $parts = explode('.', $name);
+            $str = '';
+            for($i = 0; $i < count($parts); ++$i) {
+                
+                $p = $parts[$i];
+                if (trim($p) == '*') $str .= $p;
+                else $str .= "`$p`";
+
+                if ($i < count($parts) - 1) {
+                    $str .= '.';
+                }
+
+            }
+
+            return $str;
+        }
+
+        if (trim($name) == '*') return $name;
+        return "`$name`";
+    }
+
     public function toString(&$params, $counter = 0) {
         if (!$this->notEmpty()) {
             return ['', $counter];
@@ -79,7 +116,8 @@ class DBCondition {
                     $op = $cond['operator'];
                     $v = $cond['value'];
 
-                    $str .= "$col $op :p_" . $c;
+                    $coll = $this->tbName($col);
+                    $str .= "$coll $op :p_" . $c;
                     $params["p_" . $c] = $v;
                     $c += 1;
                 }
@@ -90,7 +128,8 @@ class DBCondition {
                     $sub = $sub->buildQuery('select', $c);
 
                     $c = $sub[2];
-                    $str .= "$col " . ($in ? 'IN ' : 'NOT IN ');
+                    $coll = $this->tbName($col);
+                    $str .= "$coll " . ($in ? 'IN ' : 'NOT IN ');
                     $str .= '(' . $sub[0] . ')';
 
                     // Params
@@ -107,6 +146,16 @@ class DBCondition {
                         $params[$k] = $v;
                     }
                 }
+                else if ($type == 'subquery') {
+                    $col = $cond['column'];
+                    $op = $cond['operator'];
+                    $sub = $cond['subquery'];
+                    $sub = $sub->buildQuery('select', $c);
+
+                    $c = $sub[2];
+                    $coll = $this->tbName($col);
+                    $str .= "$coll $op (" . $sub[0] . ')';
+                }
 
             } else {
                 $subcond = $cond->toString($params, $c);
@@ -115,7 +164,6 @@ class DBCondition {
             }
 
         }
-
         
         if (sizeof($this->blocks) > 1) {
             $str = "($str)";

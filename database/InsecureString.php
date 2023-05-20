@@ -8,7 +8,7 @@ class InsecureString implements JsonSerializable {
         return new InsecureString($value);
     }
 
-    public function jsonSerialize(): mixed {
+    public function jsonSerialize(): string {
         return $this->text;
     }
 

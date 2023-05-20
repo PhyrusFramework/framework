@@ -229,12 +229,13 @@ class Router {
         $path = URL::path($u);
 
         /*
-        1 - Hay finders?
-        2 - Hay manual routes?
+        1 - Finders
+        2 - Manual routes
         3 - Automatic routing
         */
 
         $res = null;
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
         // Finders
         foreach(self::$finders as $finder) {
@@ -252,6 +253,10 @@ class Router {
             // Manual routing
             foreach(self::$routes as $route => $ops) {
                 $res = self::comparePaths($route, $u);
+
+                if (empty($ops[$method])) {
+                    continue;
+                }
 
                 if ($res != null) {
                     $res['options'] = $ops;
@@ -285,6 +290,9 @@ class Router {
         }
 
         header('Content-Type: application/json');
+        header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+        header("Cache-Control: post-check=0, pre-check=0", false);
+        header("Pragma: no-cache");
 
         // Load Back-End
         $ops = $res['options'];
@@ -412,7 +420,7 @@ class Router {
             foreach($json['always'] as $path) {
                 $p = $path[0] == '/' ? $path : "/$path";
                 $f = $root . $p;
-                if (!file_exists($f)) return;
+                if (!file_exists($f)) continue;
 
                 php_in($f);
             }
@@ -423,7 +431,7 @@ class Router {
             foreach($json['classByFile'] as $path) {
                 $p = $path[0] == '/' ? $path : "/$path";
                 $f = $root . $p;
-                if (!file_exists($f)) return;
+                if (!file_exists($f)) continue;
 
                 php_in($f, true);
             }
@@ -434,7 +442,7 @@ class Router {
             foreach($json['classByName'] as $name => $path) {
                 $p = $path[0] == '/' ? $path : "/$path";
                 $f = $root . $p;
-                if (!file_exists($f)) return;
+                if (!file_exists($f)) continue;
 
                 autoload($name, $f);
             }

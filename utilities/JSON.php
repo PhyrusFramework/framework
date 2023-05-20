@@ -106,7 +106,7 @@ class JSON extends stdClass {
      * @return string
      */
     public static function stringify($obj, bool $pretty = false) : string {
-        $flags = JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_NUMERIC_CHECK|JSON_HEX_QUOT;
+        $flags = JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_QUOT;
         $json = json_encode($obj, $pretty ? $flags|JSON_PRETTY_PRINT : $flags);
         return str_replace("\u0022", "\\\"", $json);
     }

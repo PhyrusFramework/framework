@@ -165,7 +165,8 @@ class DATABASE
             return 'NULL';
         }
         if ($v instanceof InsecureString) {
-            return ($quotes ? "'" : '') . $v->getString() . ($quotes ? "'" : '');
+            $val = str_replace("'", "''", $v->getString());
+            return ($quotes ? "'" : '') . $val . ($quotes ? "'" : '');
         }
         if (is_string($v)) {
             return Database::text($v, $quotes);
@@ -347,7 +348,7 @@ class DATABASE
         }
 
         if (empty($primary))
-            $q .= 'ID BIGINT NOT NULL AUTO_INCREMENT, ';
+            $q .= 'ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, ';
 
         $uniques = [];
         $foreign = [];
@@ -357,6 +358,9 @@ class DATABASE
             $type = isset($field['type']) ? $field['type'] : 'BIGINT';
             
             $q .= "`$fname` $type";
+
+            if (!empty($field['unsigned']) && $field['unsigned'])
+                $q .= ' UNSIGNED';
     
             if (!empty($field['notnull']) && $field['notnull'])
                 $q .= ' NOT NULL';

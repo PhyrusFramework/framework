@@ -1,6 +1,6 @@
 <?php
 
-class ORM extends TableORM implements JsonSerializable {
+abstract class ORM extends TableORM implements JsonSerializable {
 
     /**
      * ID
@@ -44,13 +44,14 @@ class ORM extends TableORM implements JsonSerializable {
         array_unshift($columns, [
             'name' => 'ID',
             'type' => 'BIGINT',
+            'unsigned' => true,
             'notnull' => true,
             'auto_increment' => true,
             'primary' => true
         ]);
 
         $columns[] = [
-            'name' => 'createdAt',
+            'name' => 'created_at',
             'type' => 'DATETIME',
             'notnull' => true
         ];
@@ -66,8 +67,8 @@ class ORM extends TableORM implements JsonSerializable {
     private function __findID(string $creationTime) : int {
 
         $res = DB::query($this->getTable())
-        ->where('createdAt', $creationTime)
-        ->orderBy('ID DESC')
+        ->where('created_at', $creationTime)
+        ->orderBy('ID', 'DESC')
         ->first();
 
         if (!$res) return 0;
@@ -92,7 +93,7 @@ class ORM extends TableORM implements JsonSerializable {
      */
     public function creationDate() : string {
         if (!$this->isCreated()) return '';
-        return $this->createdAt;
+        return $this->created_at;
     }
 
     /**
@@ -210,8 +211,8 @@ class ORM extends TableORM implements JsonSerializable {
 
         $columns = $this->__columns();
 
-        if (empty($this->{'createdAt'})) {
-            $this->{'createdAt'} = datenow();
+        if (empty($this->{'created_at'})) {
+            $this->{'created_at'} = datenow();
         }
 
         foreach($columns as $col) {
@@ -234,7 +235,7 @@ class ORM extends TableORM implements JsonSerializable {
         }
 
         $q->insert();
-        $this->__findID($this->createdAt);
+        $this->__findID($this->created_at);
     }
 
     /**
@@ -246,7 +247,7 @@ class ORM extends TableORM implements JsonSerializable {
 
         $arr = [
             'ID' => $this->ID,
-            'createdAt' => $this->createdAt
+            'created_at' => $this->created_at
         ];
 
         if (empty($columns)) {
@@ -281,6 +282,29 @@ class ORM extends TableORM implements JsonSerializable {
      */
     public static function findID($ID) {
         return self::findOne('ID = :ID', ['ID' => intval($ID)]);
+    }
+
+    /**
+     * Generate a dictionary array where the key is a property of the model, by default the ID.
+     * 
+     * @param callable Function to apply query conditions
+     * @param string Property to be used as key, by default ID
+     * 
+     * @return array Array of models
+     */
+    public static function dictionary(callable $queryTransform = null, string $property = 'ID') {
+        $q = self::query();
+        if ($queryTransform) {
+            $queryTransform($q);
+        }
+        $list = $q->get();
+        $dic = [];
+
+        foreach($list as $m) {
+            $dic[$m->{$property}] = $m;
+        }
+
+        return $dic;
     }
 
 }

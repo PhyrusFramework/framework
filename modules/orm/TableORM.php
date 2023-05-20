@@ -1,6 +1,6 @@
 <?php
 
-class TableORM extends stdClass implements JsonSerializable {
+abstract class TableORM extends stdClass implements JsonSerializable {
 
     /**
      * Check if table is checked.
@@ -22,6 +22,11 @@ class TableORM extends stdClass implements JsonSerializable {
      * @var array $__serializersTree
      */
     private array $__serializersTree = [];
+
+    /**
+     * List of additional properties to add in serialization.
+     */
+    private array $__additionalProperties = [];
 
     /**
      * Get the table definition.
@@ -67,7 +72,30 @@ class TableORM extends stdClass implements JsonSerializable {
         return $tree;
     }
 
-    public function jsonSerialize() : mixed {
+    /**
+     * Add an additional property to the JSON generated object, external to the model.
+     * 
+     * @param string property name
+     * @param mixed value
+     * 
+     * @return TableORM
+     */
+    public function addSerializationProperty(string $path, $val) {
+        $parts = explode('.', $path);
+        $container = &$this->__additionalProperties;
+        for($i = 0; $i < count($parts) - 1; ++$i) {
+            $k = $parts[$i];
+            if (!isset($container[$k])) {
+                $container[$k] = [];
+            }
+
+            $container = &$container[$k];
+        }
+        $container[$parts[count($parts) - 1]] = $val;
+        return $this;
+    }
+
+    public function jsonSerialize() : array {
         $value = [];
         $cols = $this->__columns();
         foreach($cols as $col) {
@@ -105,6 +133,11 @@ class TableORM extends stdClass implements JsonSerializable {
 
             $value[$col['name']] = $this->{$col['name']};
         }
+
+        foreach($this->__additionalProperties as $k => &$v) {
+            $value[$k] = $v;
+        }
+
         return $value;
     }
 
@@ -123,7 +156,7 @@ class TableORM extends stdClass implements JsonSerializable {
     protected function __inflate() {
         $def = $this->__getDefinition();
 
-        $this->createdAt = datenow();
+        $this->created_at = datenow();
         foreach($def as $table => $columns) {
             foreach($columns as $col) {
                 if (!isset($col['name'])) continue;

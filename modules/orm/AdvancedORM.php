@@ -1,6 +1,6 @@
 <?php
 
-class AdvancedORM extends ORM {
+abstract class AdvancedORM extends ORM {
 
     /**
      * Cached object meta
@@ -65,7 +65,7 @@ class AdvancedORM extends ORM {
 
     }
 
-    public function jsonSerialize() : mixed {
+    public function jsonSerialize() : array {
         $value = parent::jsonSerialize();
 
         if ($this->__onJson['translations'] !== null) {
@@ -168,7 +168,7 @@ class AdvancedORM extends ORM {
                     'type' => 'TEXT'
                 ],
                 [
-                    'name' => 'createdAt',
+                    'name' => 'created_at',
                     'type' => 'DATETIME'
                 ]
             ]);
@@ -368,7 +368,7 @@ class AdvancedORM extends ORM {
         if (sizeof($res)) {
             DB::query($t)
             ->set('meta_value', $v)
-            ->set('createdAt', datenow())
+            ->set('created_at', datenow())
             ->where($ref, $this->ID)
             ->where('meta_key', $name)
             ->update();
@@ -378,7 +378,7 @@ class AdvancedORM extends ORM {
             ->set($ref, $this->ID)
             ->set('meta_key', $name)
             ->set('meta_value', $v)
-            ->set('createdAt', datenow())
+            ->set('created_at', datenow())
             ->insert();
         }
 
@@ -658,7 +658,7 @@ class AdvancedORM extends ORM {
         if ($type == null) {
             $res = DB::query($t)
             ->where($ref, $this->ID)
-            ->orderBy('position ASC')
+            ->orderBy('position')
             ->get();
         }
         else {
@@ -668,7 +668,7 @@ class AdvancedORM extends ORM {
             $res = DB::query($t)
             ->where($ref, $this->ID)
             ->where('type', $type)
-            ->orderBy('position ASC')
+            ->orderBy('position')
             ->get();
 
         }
@@ -700,7 +700,7 @@ class AdvancedORM extends ORM {
         if (sizeof($types) == 0) {
             $res = DB::query($t)
             ->where($ref, $this->ID)
-            ->orderBy('position ASC')
+            ->orderBy('position')
             ->get();
             
             $list = [];
@@ -720,11 +720,12 @@ class AdvancedORM extends ORM {
         $res = DB::query($t)
         ->where($ref, $this->ID)
         ->where('type', 'IN', $types)
-        ->orderBy('position ASC');
+        ->orderBy('position')
+        ->get();
 
         $list = [];
 
-        foreach($res->result as $row) {
+        foreach($res as $row) {
             $list[] = $row->file;
         }
 
@@ -805,7 +806,7 @@ class AdvancedORM extends ORM {
         $res = DB::query($t)
         ->where($ref, $this->ID)
         ->where('type', $type)
-        ->orderBy('position DESC')
+        ->orderBy('position', 'DESC')
         ->first();
 
         $position = $res ? intval($res->position) + 1 : 1;
@@ -821,7 +822,7 @@ class AdvancedORM extends ORM {
         ->where($ref, $this->ID)
         ->where('type', $type)
         ->where('file', $file)
-        ->orderBy('position DESC')
+        ->orderBy('position', 'DESC')
         ->first();
 
         if ($res) {
@@ -1048,7 +1049,7 @@ class AdvancedORM extends ORM {
         ->select("$t.*")
         ->join($t, "$t.ID = $metat.$ref")
         ->where("$metat.meta_key", $name)
-        ->orderBy("$order $direction")
+        ->orderBy($order, $direction)
         ->get();
 
         $list = [];
@@ -1080,7 +1081,7 @@ class AdvancedORM extends ORM {
         $q = DB::query($tr)
         ->join($t, "$t.ID = $tr.$ref")
         ->where("$tr.name", $name)
-        ->orderBy("$tr.value $direction");
+        ->orderBy("$tr.value", $direction);
 
         if (isset($options['locale'])) {
             $q->where('locale', $options['locale']);

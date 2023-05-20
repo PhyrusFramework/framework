@@ -48,7 +48,7 @@ class CLI_Script extends CLI_Module {
             return;
         }
 
-        file_put_contents($file, "<?php\n\n//Run php cli script $name\necho 'Script works!';");
+        file_put_contents($file, "<?php\n\n//Run php phyrus script $name\necho 'Script works!';");
 
         echo "\nScript created at $file\n";
     }

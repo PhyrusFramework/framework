@@ -56,6 +56,7 @@ class Migration {
             }
             self::run($file);
             $names[] = $name;
+            echo "Migration $name completed.\n";
         }
 
         $store->add($names);

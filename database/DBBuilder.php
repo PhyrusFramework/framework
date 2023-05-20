@@ -22,12 +22,16 @@ class DBBuilder {
      * 
      * @return DBBuilder
      */
-    public static function instance() : DBBuilder {
-        return new DBBuilder();
+    public static function instance($name = null) : DBBuilder {
+        return new DBBuilder($name);
     }
 
-    function __construct() {
+    function __construct($name = null) {
         $this->definition = [];
+        
+        if ($name) {
+            $this->name($name);
+        }
     }
 
     /**
@@ -74,6 +78,17 @@ class DBBuilder {
     }
 
     /**
+     * Add a column with the format of an ID
+     * 
+     * @param string column name
+     * 
+     * @return DBBuilder
+     */
+    public function idColumn(string $name = 'ID') : DBBuilder {
+        return $this->column($name, 'BIGINT')->unsigned();
+    }
+
+    /**
      * Make the last column a primary key.
      * 
      * @return DBBuilder
@@ -105,6 +120,17 @@ class DBBuilder {
     public function default($value) : DBBuilder {
         if (!$this->lastColumn) return $this;
         $this->definition[$this->name][$this->lastColumn]['default'] = $value;
+        return $this;
+    }
+
+    /**
+     * Set last column number as unsigned
+     * 
+     * @return DBBuilder
+     */
+    public function unsigned() : DBBuilder {
+        if (!$this->lastColumn) return $this;
+        $this->definition[$this->name][$this->lastColumn]['unsigned'] = true;
         return $this;
     }
 
@@ -169,6 +195,21 @@ class DBBuilder {
             $t .= '(' . ($column ? $column : 'ID') . ')';
         }
         $this->definition[$this->name][$this->lastColumn]['foreign'] = $t;
+        return $this;
+    }
+
+    /**
+     * Creates a column referencing the ID of another table.
+     * 
+     * @param string name
+     * @param string table
+     * 
+     * @return DBBuilder
+     */
+    public function foreignId(string $name, string $table = '') : DBBuilder {
+        $this->idColumn($name);
+        $t = empty($table) ? str_replace('_id', 's', $name) : $table;
+        $this->references($t);
         return $this;
     }
 
