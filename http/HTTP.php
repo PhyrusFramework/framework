@@ -1,6 +1,6 @@
 <?php
 
-class http {
+class HTTP {
 
     /**
      * [Managed by framework] Prepare array of headers for request.

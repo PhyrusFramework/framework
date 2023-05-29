@@ -80,7 +80,7 @@ class Test {
 
         ?>
         ------ Running test <?php echo get_called_class(); ?> -------
-        [<?= datenow(); ?>]
+        [<?= now(); ?>]
         <?php
 
         self::$TEST_COUNT += 1;

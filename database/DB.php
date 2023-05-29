@@ -45,11 +45,11 @@ class DB {
      * 
      * @return Generic[]
      */
-    public static function result(string $query, array $parameters = []) : array {
+    public static function get(string $query, array $parameters = []) : array {
 
         global $DATABASE;
         if ($DATABASE == null) return [];
-        return $DATABASE->result($query, $parameters);
+        return $DATABASE->get($query, $parameters);
 
     }
 
@@ -61,11 +61,11 @@ class DB {
      * 
      * @return Generic
      */
-    public static function row(string $query, array $parameters = []) {
+    public static function first(string $query, array $parameters = []) {
         
         global $DATABASE;
         if ($DATABASE == null) return [];
-        return $DATABASE->row($query, $parameters);
+        return $DATABASE->first($query, $parameters);
     }
 
     /**

@@ -33,7 +33,40 @@ abstract class TableORM extends stdClass implements JsonSerializable {
      * 
      */
     protected function Definition(DBBuilder $builder) {
-        $builder->name(get_called_class());
+        $classname = get_called_class();
+        $builder->name( strtolower($classname) . 's' );
+
+        // Get properties from DocComments
+        $class = new ReflectionClass($classname);
+        $classfile = $class->getFileName();
+        $lastdate = last_modification_date($classfile);
+
+        // Check if Definition is already cached
+        $cacheId = "framework/models.$classname";
+        $cacheLastDate = Cache::lastWrite($cacheId);
+
+        // If class file was NOT modified after creating the cache file, use cache.
+        if (!empty($cacheLastDate) && $cacheLastDate > $lastdate) {
+            $cached = Cache::get($cacheId);
+            if (!empty($cached)) {
+                return $builder->resolveCachedObject($cached);
+            }
+        }
+
+        // Table name
+        $docsObj = $builder->parseDoc($class->getDocComment());
+        /////
+
+        $properties = $class->getProperties();
+    
+        foreach ($properties as $property) {
+            $propertyName = $property->getName();
+            $docComment = $property->getDocComment();
+
+            $builder->parseDoc($docComment, $propertyName, $docsObj);
+        }
+
+        Cache::save("framework/models.$classname", JSON::stringify($docsObj));
     }
 
     public function __construct($row = null) {
@@ -156,7 +189,7 @@ abstract class TableORM extends stdClass implements JsonSerializable {
     protected function __inflate() {
         $def = $this->__getDefinition();
 
-        $this->created_at = datenow();
+        $this->created_at = now();
         foreach($def as $table => $columns) {
             foreach($columns as $col) {
                 if (!isset($col['name'])) continue;
@@ -279,7 +312,7 @@ abstract class TableORM extends stdClass implements JsonSerializable {
      */
     public function CheckTable() : bool {
         if ($this->__table_checked) return true;
-        if (!Config::get('project.development_mode')) return true;
+        if (!Config::get('project.debug')) return true;
 
         $existed = true;
         if (!DB::tableExists($this->getTable())){
@@ -661,6 +694,31 @@ abstract class TableORM extends stdClass implements JsonSerializable {
         $cl = get_called_class();
         $sample = new $cl();
         return DB::query($sample->getTable())->setClass($cl);
+    }
+
+    /**
+     * Query objects of this model.
+     * 
+     * @param string Column name
+     * @param mixed Value or operator
+     * @param mixed Value if used operator
+     * 
+     * @return DBQuery
+     */
+    public static function where(string $column, $valueOrOperator = '=', $value = null) : DBQuery {
+        return self::query()->where($column, $valueOrOperator, $value);
+    }
+
+    /**
+     * Query objects of this model.
+     * 
+     * @param string Column name
+     * @param array|DBQuery List or subquery
+     * 
+     * @return DBConditionGroup
+     */
+    public function whereIn(string $column, array|DBQuery $value) : DBQuery {
+        return self::query()->whereIn($column, $value);
     }
 
 }

@@ -31,7 +31,7 @@ class ApiResponse {
 
         $resp = JSON::stringify($response);
 
-        if (Config::get('project.development_mode')
+        if (Config::get('project.debug')
         && sizeof(self::$_log) > 0) {
             $resp = JSON::parse($resp);
             $resp['log'] = self::$_log;

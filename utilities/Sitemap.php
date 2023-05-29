@@ -50,7 +50,7 @@ class Sitemap {
             $index .= '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";
 
             foreach($indexMaps as $map) {
-                $index .= '<sitemap><loc>'.URL::host().'/sitemap/sitemap_'.$map.'.xml</loc><lastmod>'.datenow().'</lastmod></sitemap>'."\n";
+                $index .= '<sitemap><loc>'.URL::host().'/sitemap/sitemap_'.$map.'.xml</loc><lastmod>'.now().'</lastmod></sitemap>'."\n";
             }
 
             $index .= '</sitemapindex>';

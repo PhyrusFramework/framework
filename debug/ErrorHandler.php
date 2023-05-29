@@ -136,12 +136,6 @@ class ErrorHandler {
             http_response_code(500);
         }
 
-        if (!class_exists('RequestData')) {
-
-            self::json($parameters);
-            return;
-        }
-
         self::json($parameters);
     }
 
@@ -151,13 +145,19 @@ class ErrorHandler {
      * @param array $parameters Error data
      */
     private static function json(array $parameters) {
-        echo JSON::stringify([
+
+        $info = [
             'type' => $parameters['title'],
             'subtype' => $parameters['subtitle'],
             'message' => $parameters['message'],
             'file' => $parameters['file'],
             'line' => $parameters['line']
-        ], defined('USING_CLI'));
+        ];
+
+        echo JSON::stringify($info, defined('USING_CLI'));
+        Log::error($info, [
+            'where' => false
+        ]);
     }
 
     /**

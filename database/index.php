@@ -11,11 +11,11 @@ require_once(__DIR__.'/Medoo.php');
 require_once(__DIR__.'/Database.php');
 require_once(__DIR__.'/DBQueryResult.php');
 require_once(__DIR__.'/DB.php');
-require_once(__DIR__.'/DBCondition.php');
-require_once(__DIR__.'/DBQuery.php');
+require_once(__DIR__.'/query/index.php');
 require_once(__DIR__.'/DBTable.php');
 require_once(__DIR__.'/BackupDatabase.php');
 require_once(__DIR__.'/DBBuilder.php');
+require_once(__DIR__.'/DBType.php');
 
 autoload('InsecureString', __DIR__.'/InsecureString.php');
 

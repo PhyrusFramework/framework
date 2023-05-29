@@ -41,8 +41,7 @@ class Path {
      */
     public static function root(bool $relative = false) : string {
         if ($relative) return '';
-        global $PROJECT_PATH;
-        return $PROJECT_PATH;
+        return PROJECT_PATH;
     }
 
     /**
@@ -89,8 +88,19 @@ class Path {
      * @return string
      */
     public static function framework(bool $relative = false) : string {
-        global $FRAMEWORK_PATH;
-        return $relative ? self::toRelative($FRAMEWORK_PATH) : $FRAMEWORK_PATH;
+        return $relative ? self::toRelative(FRAMEWORK_PATH) : FRAMEWORK_PATH;
+    }
+
+    /**
+     * Get path to the cache directory.
+     * 
+     * @param bool $relative [Default false]
+     * 
+     * @return string
+     */
+    public static function cache(bool $relative = false) : string {
+        $dir = '/' . Definition('cache');
+        return $relative ? $dir : (Path::root() . $dir);
     }
 
     /**
@@ -105,7 +115,7 @@ class Path {
     }
 
     /**
-     * Get path to /src/middlewares
+     * Get path to /back-end/Middlewares
      * 
      * @param bool $relative [Default false]
      * 
@@ -116,14 +126,14 @@ class Path {
     }
 
     /**
-     * Get path to /src/routes
+     * Get path to /back-end/Controllers
      * 
      * @param bool $relative [Default false]
      * 
      * @return string
      */
-    public static function routes(bool $relative = false) : string {
-        return self::back($relative) . '/' . Definition('routes');
+    public static function controllers(bool $relative = false) : string {
+        return self::back($relative) . '/' . Definition('controllers');
     }
 
     public static function publicUploads(bool $relative = false) {

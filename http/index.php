@@ -1,9 +1,10 @@
 <?php
 require_once(__DIR__.'/server.php');
+require_once(__DIR__.'/Controller.php');
 
 spl_autoload_register(function($name) {
-    if ($name == 'http') {
-        require_once(__DIR__ . '/client.php');
+    if ($name == 'HTTP') {
+        require_once(__DIR__ . '/HTTP.php');
         return;
     }
 
@@ -12,12 +13,7 @@ spl_autoload_register(function($name) {
         return;
     }
 
-    if ($name == 'CRUD') {
-        require_once(__DIR__ . '/CRUD.php');
-    }
-
     if ($name == 'Uploader') {
         require_once(__DIR__ . '/Uploader.php');
     }
-
 });

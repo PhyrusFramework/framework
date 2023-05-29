@@ -1,6 +1,6 @@
 <?php
 
-class RequestData extends stdClass {
+class Request extends stdClass {
 
     /**
      * HTTP Headers
@@ -26,12 +26,12 @@ class RequestData extends stdClass {
     }
 
     /**
-     * Get an instance object of RequestData.
+     * Get an instance object of Request.
      * 
-     * @return RequestData
+     * @return Request
      */
-    public static function instance(bool $urlParams = false) : RequestData {
-        return new RequestData($urlParams);
+    public static function instance(bool $urlParams = false) : Request {
+        return new Request($urlParams);
     }
 
     /**
@@ -199,7 +199,7 @@ class RequestData extends stdClass {
      */
     function require(...$args) {
 
-        $dev = Config::get('project.development_mode');
+        $dev = Config::get('project.debug');
 
         foreach($args as $v) {
             if (!$this->has($v)) {
@@ -443,7 +443,7 @@ class HTTPHeaders {
      */
     public function require(...$args) {
 
-        $dev = Config::get('project.development_mode');
+        $dev = Config::get('project.debug');
 
         foreach($args as $v) {
             if (!$this->has($v)) {

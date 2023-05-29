@@ -23,9 +23,9 @@ class DBQuery {
     private array $selects = [];
 
     /**
-     * @var DBCondition condition
+     * @var DBConditionGroup condition
      */
-    private DBCondition $condition;
+    private DBConditionGroup $condition;
 
     /**
      * @var bool Next condition uses OR
@@ -86,7 +86,7 @@ class DBQuery {
         global $DATABASE;
         $this->db = $db == null ? $DATABASE : $db;
         $this->table = $table;
-        $this->condition = new DBCondition();
+        $this->condition = new DBConditionGroup();
     }
 
     /**
@@ -97,6 +97,18 @@ class DBQuery {
      */
     public static function instance(string $table, $db = null) {
         return new DBQuery($table, $db);
+    }
+
+    /**
+     * Change table for this query.
+     * 
+     * @param string Table name
+     * 
+     * @return DBQuery
+     */
+    public function from(string $table) : DBQuery {
+        $this->table = $table;
+        return $this;
     }
 
     /**
@@ -218,43 +230,14 @@ class DBQuery {
     /**
      * Add a condition
      * 
-     * @param string Column name
+     * @param string|callable Column name or group of conditions
      * @param mixed value or operator
      * @param mixed value if operator is used
      * 
      * @return DBQuery self
      */
-    public function where(string $column, $valueOrOperator = '=', $value = null) : DBQuery {
-
-        $operator = $value === null ? '=' : $valueOrOperator;
-        $val = $value === null ? $valueOrOperator : $value;
-        if ($valueOrOperator === null) {
-            $operator = 'IS';
-            $val = null;
-        }
-        else if (gettype($valueOrOperator) == 'string' && 
-        in_array(strtolower($valueOrOperator), ['is', 'is not']) && 
-        $value === null) {
-            $operator = $valueOrOperator;
-            $val = null;
-        }
-
-        if ($val instanceof DBQuery) {
-            $this->condition->add([
-                'type' => 'subquery',
-                'column' => $column,
-                'operator' => $operator,
-                'subquery' => $val
-            ]);
-        } else {
-            $this->condition->add([
-                'type' => 'simple',
-                'column' => $column,
-                'operator' => $operator,
-                'value' => $val
-            ]);
-        }
-
+    public function where(string|callable $column, $valueOrOperator = '=', $value = null) : DBQuery {
+        $this->condition->where($column, $valueOrOperator, $value);
         return $this;
 
     }
@@ -262,99 +245,90 @@ class DBQuery {
     /**
      * Add a condition
      * 
-     * @param string Column name
+     * @param string|callable Column name or group of conditions
      * @param mixed value or operator
      * @param mixed value if operator is used
      * 
      * @return DBQuery self
      */
-    public function orWhere(string $column, $valueOrOperator = '=', $value = null) : DBQuery {
-        $this->or(function($q) use ($column, $valueOrOperator, $value) {
-            $q->where($column, $valueOrOperator, $value);
-        });
-
+    public function orWhere(string|callable $column, $valueOrOperator = '=', $value = null) : DBQuery {
+        $this->condition->orWHere($column, $valueOrOperator, $value);
         return $this;
     }
 
     /**
-     * Split the previous conditions and the following with an OR operator.
+     * Add a raw SQL condition.
      * 
-     * @return DBQuery self
+     * @param string SQL Condition
+     * 
+     * @return DBQuery
      */
-    public function or(callable $block) : DBQuery {
-
-        $this->condition->openBlock('OR');
-        $block($this);
-        $this->condition->closeBlock();
-
-        return $this;
-    }
-
-    public function and(callable $block) : DBQuery {
-
-        $this->condition->openBlock('AND');
-        $block($this);
-        $this->condition->closeBlock();
-        
-        return $this;
-
-    }
-
-    /**
-     * Add a string SQL condition
-     * 
-     * @param string condition
-     * @param array parameters
-     * 
-     * @return DBQuery self
-     */
-    public function rawWhere(string $line, array $params = []) : DBQuery {
-
-        $this->condition->add([
-            'type' => 'raw',
-            'query' => $line,
-            'params' => $params
-        ]);
-
+    public function whereRaw(string $sql) : DBQuery {
+        $this->condition->whereRaw($sql);
         return $this;
     }
 
     /**
-     * Add a WHERE IN condition.
+     * Add a raw SQL condition.
      * 
-     * @param string column
-     * @param DBQuery subquery
+     * @param string SQL Condition
      * 
-     * @return DBQuery self
+     * @return DBQuery
      */
-    public function whereIn(string $column, DBQuery $subquery) : DBQuery {
-
-        $this->condition->add([
-            'type' => 'wherein',
-            'in' => true,
-            'column' => $column,
-            'subquery' => $subquery
-        ]);
+    public function orWhereRaw(string $sql) : DBQuery {
+        $this->condition->orWhereRaw($sql);
         return $this;
     }
 
     /**
-     * Add a WHERE NOT IN condition
+     * Add condition where column is in list or subquery.
      * 
-     * @param string column
-     * @param DBQuery subquery
+     * @param string Column name
+     * @param array|DBQuery List or subquery
      * 
-     * @return DBQuery self
+     * @return DBQuery
      */
-    public function whereNotIn(string $column, DBQuery $subquery) : DBQuery {
+    public function whereIn(string $column, array|DBQuery $value) : DBQuery {
+        $this->condition->whereIn($column, $value);
+        return $this;
+    }
 
-        $this->condition->add([
-            'type' => 'wherein',
-            'in' => false,
-            'column' => $column,
-            'subquery' => $subquery
-        ]);
+    /**
+     * Add condition where column is NOT in list or subquery.
+     * 
+     * @param string Column name
+     * @param array|DBQuery List or subquery
+     * 
+     * @return DBQuery
+     */
+    public function whereNotIn(string $column, array|DBQuery $value) : DBQuery {
+        $this->condition->whereNotIn($column, $value);
+        return $this;
+    }
 
+    /**
+     * Add condition where column is in list or subquery.
+     * 
+     * @param string Column name
+     * @param array|DBQuery List or subquery
+     * 
+     * @return DBQuery
+     */
+    public function orWhereIn(string $column, array|DBQuery $value) : DBQuery {
+        $this->condition->orWhereIn($column, $value);
+        return $this;
+    }
+
+    /**
+     * Add condition where column is NOT in list or subquery.
+     * 
+     * @param string Column name
+     * @param array|DBQuery List or subquery
+     * 
+     * @return DBQuery
+     */
+    public function orWhereNotIn(string $column, array|DBQuery $value) : DBQuery {
+        $this->condition->orWhereNotIn($column, $value);
         return $this;
     }
 
@@ -367,10 +341,10 @@ class DBQuery {
      * 
      * @return DBQuery self
      */
-    public function set(string $column, $value, bool $quotes = true) : DBQuery {
+    public function set(string $column, $value, bool $raw = true) : DBQuery {
         $this->sets[$column] = [
             'value' => $value,
-            'wrap' => $quotes
+            'wrap' => !$raw
         ];
         return $this;
     }
@@ -421,8 +395,8 @@ class DBQuery {
      * @return array
      */
     public function get() : array {
-        $query = $this->buildQuery('select');
-        $res = $this->db->run($query[0], $query[1])->result;
+        $query = $this->toString('select');
+        $res = $this->db->run($query)->result;
 
         if (empty($this->class)) return $res;
 
@@ -439,8 +413,8 @@ class DBQuery {
      */
     public function first() {
         $this->limit(1);
-        $query = $this->buildQuery('select');
-        $res = $this->db->run($query[0], $query[1])->result;
+        $query = $this->toString('select');
+        $res = $this->db->run($query)->result;
         if (sizeof($res) == 0) return null;
 
         if (empty($this->class)) {
@@ -458,8 +432,8 @@ class DBQuery {
      * @return DBQueryResult
      */
     public function delete() : DBQueryResult {
-        $query = $this->buildQuery('delete');
-        return $this->db->run($query[0], $query[1]);
+        $query = $this->toString('delete');
+        return $this->db->run($query);
     }
 
     /**
@@ -467,9 +441,14 @@ class DBQuery {
      * 
      * @return DBQueryResult
      */
-    public function insert() : DBQueryResult {
-        $query = $this->buildQuery('insert');
-        return $this->db->run($query[0], $query[1]);
+    public function insert(array $columns = []) : DBQueryResult {
+
+        foreach($columns as $key => $value) {
+            $this->set($key, $value);
+        }
+
+        $query = $this->toString('insert');
+        return $this->db->run($query);
     }
 
     /**
@@ -477,9 +456,14 @@ class DBQuery {
      * 
      * @return DBQueryResult
      */
-    public function update() : DBQueryResult {
-        $query = $this->buildQuery('update');
-        return $this->db->run($query[0], $query[1]);
+    public function update(array $columns = []) : DBQueryResult {
+
+        foreach($columns as $key => $value) {
+            $this->set($key, $value);
+        }
+
+        $query = $this->toString('update');
+        return $this->db->run($query);
     }
 
     /**
@@ -488,59 +472,18 @@ class DBQuery {
      * @return int
      */
     public function count() : int {
-        $query = $this->buildQuery('count');
-        return intval($this->db->run($query[0], $query[1])->first->count);
-    }
-
-    /**
-     * Prepare the name for the query.
-     * 
-     * @param string Table name
-     * 
-     * @return string Prepared name
-     */
-    private function tbName(string $name) : string {
-
-        if (strpos($name, ' ') !== FALSE ||
-        strpos($name, '(') !== FALSE) {
-            return $name;
-        }
-
-        if (strpos($name, '.') !== FALSE) {
-
-            $parts = explode('.', $name);
-            $str = '';
-            for($i = 0; $i < count($parts); ++$i) {
-                
-                $p = $parts[$i];
-                if (trim($p) == '*') $str .= $p;
-                else $str .= "`$p`";
-
-                if ($i < count($parts) - 1) {
-                    $str .= '.';
-                }
-
-            }
-
-            return $str;
-
-        }
-        
-        if (trim($name) == '*') return $name;
-        return "`$name`";
+        $query = $this->toString('count');
+        return intval($this->db->run($query)->first->count);
     }
 
     /**
      * Builds the query and returns [query, params]
      * 
      * @param string operation type 'get'|'insert'|'update'|'delete'|'count'
-     * @param int automatically managed, ignore.
      * 
-     * @return array
+     * @return string
      */
-    public function buildQuery(string $action = 'select', int $paramCounter = 0) {
-
-        $counter = $paramCounter + 0;
+    public function toString(string $action = 'select') : string {
 
         $query = 'SELECT';
         if ($action == 'delete') {
@@ -559,7 +502,7 @@ class DBQuery {
             } else {
                 for($i = 0; $i < sizeof($this->selects); ++$i) {
                     $s = $this->selects[$i];
-                    $query .= ' ' . $this->tbName($s);
+                    $query .= ' ' . Database::columnName($s);
 
                     if ($i < sizeof($this->selects) - 1) {
                         $query .= ',';
@@ -572,18 +515,18 @@ class DBQuery {
 
         // TABLE NAME
         if ($action == 'insert') {
-            $query .= ' INTO ' . $this->tbName($this->table);
+            $query .= ' INTO ' . Database::columnName($this->table);
         } else if ($action == 'update') {
-            $query .= ' ' . $this->tbName($this->table);
+            $query .= ' ' . Database::columnName($this->table);
         } else {
-            $query .= ' FROM ' . $this->tbName($this->table);
+            $query .= ' FROM ' . Database::columnName($this->table);
 
             if (!empty($this->tableAlias)) {
-                $query .= " AS " . $this->tbName($this->tableAlias);
+                $query .= " AS " . Database::columnName($this->tableAlias);
             }
 
             foreach($this->joins as $table => $on) {
-                $query .= " JOIN " . $this->tbName($table) . " ON $on";
+                $query .= " JOIN " . Database::columnName($table) . " ON $on";
             }
         }
 
@@ -597,7 +540,7 @@ class DBQuery {
 
             $count = 0;
             foreach($this->sets as $k => $v) {
-                $query .= $this->tbName($k);
+                $query .= Database::columnName($k);
 
                 if ($count < sizeof($this->sets) - 1) {
                     $query .= ', ';
@@ -611,13 +554,7 @@ class DBQuery {
             $count = 0;
             foreach($this->sets as $k => $v) {
 
-                if ($v['wrap']) {
-                    $query .= ":p_$counter";
-                    $params["p_$counter"] = $v['value'];
-                    ++ $counter;
-                } else {
-                    $query .= $v['value'];
-                }
+                $query .= $v['wrap'] ? Database::prepare($v['value']) : $v['value'];
 
                 if ($count < sizeof($this->sets) - 1) {
                     $query .= ', ';
@@ -639,13 +576,7 @@ class DBQuery {
             $count = 0;
             foreach($this->sets as $k => $v) {
 
-                if ($v['wrap']) {
-                    $query .= $this->tbName($k) . " = :p_$counter";
-                    $params["p_$counter"] = $v['value'];
-                    ++ $counter;    
-                } else {
-                    $query .= $this->tbName($k) . " = " . $v['value'];
-                }
+                $query .= Database::columnName($k) . ' = ' . ($v['wrap'] ? Database::prepare($v['value']) : $v['value']);
 
                 if ($count < sizeof($this->sets) - 1) {
                     $query .= ', ';
@@ -657,17 +588,18 @@ class DBQuery {
         }
 
         // WHEREs
-        if ($action != 'insert' && $this->condition->notEmpty()) {
-            $r = $this->condition->toString($params, $counter);
-            $counter = $r[1];
-            $query .= empty($r[0]) ? '' : ' WHERE ' . $r[0];
+        if ($action != 'insert') {
+            $con = $this->condition->toString();
+            if (!empty($con)) {
+                $query .= "WHERE $con";
+            }
         }
 
         // EXTRAS
         if ($action == 'select') {
 
             if ($this->group != '') {
-                $query .= " GROUP BY " . $this->tbName($this->group);
+                $query .= " GROUP BY " . Database::columnName($this->group);
 
                 if ($this->having != '') {
                     $query .= " HAVING $this->having";
@@ -675,7 +607,7 @@ class DBQuery {
             }
 
             if ($this->orderColumn != '') {
-                $query .= " ORDER BY ". $this->tbName($this->orderColumn) ." $this->orderDirection";
+                $query .= " ORDER BY ". Database::columnName($this->orderColumn) ." $this->orderDirection";
             }
 
             if ($this->limit > 0) {
@@ -688,7 +620,7 @@ class DBQuery {
 
         }
 
-        return [$query, $params, $counter];
+        return $query;
 
     }
 

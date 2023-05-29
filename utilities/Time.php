@@ -58,10 +58,10 @@ class Time {
      * @param string $format
      */
     public function setDate($time, string $format = 'Y-m-d H:i:s') {
-        $date = DateTime::createFromFormat($format, $time == null ? datenow() : $time);
+        $date = DateTime::createFromFormat($format, $time == null ? now() : $time);
 
         if (is_bool($date) && $format == 'Y-m-d H:i:s') {
-            $date = DateTime::createFromFormat('Y-m-d H:i', $time == null ? datenow() : $time);
+            $date = DateTime::createFromFormat('Y-m-d H:i', $time == null ? now() : $time);
         }
 
         $this->_datetime = is_bool($date) ? new DateTime() : $date;

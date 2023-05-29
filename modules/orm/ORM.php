@@ -212,7 +212,7 @@ abstract class ORM extends TableORM implements JsonSerializable {
         $columns = $this->__columns();
 
         if (empty($this->{'created_at'})) {
-            $this->{'created_at'} = datenow();
+            $this->{'created_at'} = now();
         }
 
         foreach($columns as $col) {

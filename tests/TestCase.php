@@ -50,7 +50,7 @@ class TestCase {
             'user-agent' => $options['user-agent'] ?? ''
         ])->getArray();
         
-        http::request($ops)
+        HTTP::request($ops)
         ->finally(function($response) {
             $this->response = $response;
         });

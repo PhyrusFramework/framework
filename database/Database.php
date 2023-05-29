@@ -76,7 +76,7 @@ class DATABASE
             throw new FrameworkException('Database not connected', 'Database connection not stablished. Please check your credentials in config.json');
         }
 
-        $q = $this->prepareQuery($query, $parameters);
+        $q = empty($parameters) ? $query : $this->prepareQuery($query, $parameters);
         
         try {
             $result = $this->db->query( $q );
@@ -146,6 +146,41 @@ class DATABASE
         $v = e($v);
         $v = str_replace("'", "''", $v);
         return $wrap ? "'$v'" : $v;
+    }
+
+    /**
+     * Prepares the name of a column or table to be inserted in a query, wrapping it with quotes.
+     * 
+     * @param string Name of the column. May contain . or ()
+     * 
+     * @return string
+     */
+    public static function columnName(string $name) : string {
+
+        $inText = false;
+        $str = '';
+
+        for($i = 0; $i < strlen($name); ++$i) {
+            $c = $name[$i];
+
+            if (!$inText) {
+                if (Validator::for($c)->isLetters()->validate()) {
+                    $str .= '`';
+                    $inText = true;
+                }
+            }
+            else if (!Validator::for($c)->isLetters()->validate()) {
+                $str .= '`';
+                $inText = false;
+            }
+
+            $str .= $c;
+        }
+        if ($inText) {
+            $str .= '`';
+        }
+
+        return $str;
     }
 
     /**
@@ -264,7 +299,7 @@ class DATABASE
      * 
      * @return array
      */
-    public function result(string $query, array $parameters = []) : array {
+    public function get(string $query, array $parameters = []) : array {
         
         $res = $this->run($query, $parameters);
         return $res->result;
@@ -278,7 +313,7 @@ class DATABASE
      * 
      * @return Generic
      */
-    public function row(string $query, array $parameters = []) {
+    public function first(string $query, array $parameters = []) {
         
         $res = $this->run($query, $parameters);
         return $res->something ? $res->first : null;

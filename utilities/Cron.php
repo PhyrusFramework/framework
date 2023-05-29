@@ -41,8 +41,19 @@ class Cron {
         }
     }
 
-    public function __construct($command = '') {
+    public function __construct(string $command = '') {
         $this->__command = $command;
+    }
+
+    /**
+     * Create a new Cron job.
+     * 
+     * @param ?string Cron command.
+     * 
+     * @return Cron
+     */
+    public static function instance(string $command = '') : Cron {
+        return new Cron($command);
     }
 
     /**
@@ -55,16 +66,35 @@ class Cron {
 
     /**
      * Creates the cronjob in the system.
+     * 
+     * @return bool
      */
-    public function create() {
-        if(is_string($this->__command) && !empty($this->__command) && Cron::exists($this->__command)===FALSE) {
-            exec('echo -e "`crontab -l`\n'.$this->__command.'" | crontab -', $output);
-        }
-        return $output;
+    public function create() : bool {
+
+        /*if(is_string($this->__command) && !empty($this->__command) && Cron::exists($this->__command)===FALSE) {
+            exec('echo -e "$(crontab -l)\n' . $this->__command . '" | crontab -', $output);
+        }*/
+
+        // Create a temporary file to hold the current crontab entries
+        $tempFile = tempnam(sys_get_temp_dir(), 'cron');
+
+        // Get the current crontab entries
+        exec('crontab -l > ' . $tempFile);
+
+        // Append the new cron job to the temporary file
+        file_put_contents($tempFile, $this->__command . PHP_EOL, FILE_APPEND);
+
+        // Install the modified crontab file
+        exec('crontab ' . $tempFile);
+
+        // Remove the temporary file
+        unlink($tempFile);
+
+        return true;
     }
 
     /**
-     * Deletes the Cronjob from the system.
+     * Deletes this Cronjob from the system.
      */
     public function delete() {
         $crons = Cron::list();
@@ -144,15 +174,29 @@ class Cron {
     /**
      * Get an active cronjob by command.
      * 
+     * @param string Command
+     * 
      * @return Cron
      */
-    public static function select($command) : ?Cron {
+    public static function select(string $command) : ?Cron {
         $list = Cron::list();
         foreach($list as $cron) {
             if ($command == $cron->command)
                 return $cron;
         }
         return null;
+    }
+
+    /**
+     * Get an active cronjob by its index
+     * 
+     * @param int Index
+     * 
+     * @return Cron
+     */
+    public static function byIndex(int $index) : ?Cron {
+        $list = Cron::list();
+        return count($list) <= $index ? null : $list[$index];
     }
 
     //// Edit Cron
@@ -327,7 +371,7 @@ class Cron {
      * 
      * @return Cron self
      */
-    public function action(string $command, string $type = null) : Cron {
+    public function do(string $command, string $type = null) : Cron {
 
         if ($type == 'curl') {
             $this->__action = "curl -m 120 -s $command";

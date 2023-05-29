@@ -142,7 +142,7 @@ abstract class AdvancedORM extends ORM {
             return true;
         }
 
-        if (!Config::get('project.development_mode')) return true;
+        if (!Config::get('project.debug')) return true;
 
         $existed = true;
         if (!DB::tableExists($table)){
@@ -199,7 +199,7 @@ abstract class AdvancedORM extends ORM {
             return true;
         }
 
-        if (!Config::get('project.development_mode')) return true;
+        if (!Config::get('project.debug')) return true;
 
         $existed = true;
         if (!DB::tableExists($table)){
@@ -258,7 +258,7 @@ abstract class AdvancedORM extends ORM {
             return true;
         }
 
-        if (!Config::get('project.development_mode')) return true;
+        if (!Config::get('project.debug')) return true;
 
         $existed = true;
         if (!DB::tableExists($table)){
@@ -368,7 +368,7 @@ abstract class AdvancedORM extends ORM {
         if (sizeof($res)) {
             DB::query($t)
             ->set('meta_value', $v)
-            ->set('created_at', datenow())
+            ->set('created_at', now())
             ->where($ref, $this->ID)
             ->where('meta_key', $name)
             ->update();
@@ -378,7 +378,7 @@ abstract class AdvancedORM extends ORM {
             ->set($ref, $this->ID)
             ->set('meta_key', $name)
             ->set('meta_value', $v)
-            ->set('created_at', datenow())
+            ->set('created_at', now())
             ->insert();
         }
 

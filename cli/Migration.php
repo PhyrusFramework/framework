@@ -161,12 +161,12 @@ class MigrationDBStore {
             if (intval($count) > 0) {
                 DB::run('UPDATE migrations SET migratedAt = :now WHERE name = :name', [
                     'name' => $name,
-                    'now' => datenow()
+                    'now' => now()
                 ]);
             } else {
                 DB::run('INSERT INTO migrations (name, migratedAt) VALUES (:name, :now)', [
                     'name' => $name,
-                    'now' => datenow()
+                    'now' => now()
                 ]);
             }
 
@@ -283,7 +283,7 @@ class MigrationJSONStore {
         }
 
         foreach($names as $name) {
-            $history[$name] = datenow();
+            $history[$name] = now();
         }
 
         JSON::instance($history)->saveTo($historyFile);

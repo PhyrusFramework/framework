@@ -1,52 +1,51 @@
 <?php
 
-class CLI_Config extends CLI_Module {
+class ConfigCommand extends Command {
+
+    protected $command = 'config';
 
     public function command_add() {
 
-        if (sizeof($this->params) < 1) {
+        if (!$this->first) {
             echo 'File name not specified.';
             return;
         }
 
-        $name = $this->params[0];
-
-        if (Config::hasFile($name)) {
-            echo "File $name.yaml already exists.";
+        if (Config::hasFile($this->first)) {
+            echo "File $this->first.yaml already exists.";
             return;
         }
 
-        Config::save($name, []);
-        echo "File $name.yaml created.";
+        Config::save($this->first, []);
+        echo "File $this->first.yaml created.";
 
     }
 
     public function command_set() {
 
-        if (sizeof($this->params) < 1) {
+        if (!$this->first) {
             echo 'Key not specified';
             return;
         }
 
-        if (sizeof($this->params) < 2) {
+        if (!$this->second) {
             echo 'Value not specified';
             return;
         }
 
-        Config::save($this->params[0], $this->params[1]);
+        Config::save($this->first, $this->second);
     }
 
     public function command_show() {
-        if (sizeof($this->params) == 0) {
+        if (!$this->first) {
             print_r(Config::get());
             return;
         }
         
-        $key = $this->params[0];
-        $v = Config::get($key);
+        $v = Config::get($this->first);
 
         if (empty($v)) {
-            echo "Key $key does not exist.";
+            echo "Key $this->first does not exist.";
             return;
         }
 

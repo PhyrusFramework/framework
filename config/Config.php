@@ -15,7 +15,7 @@ class Config {
      * @return string
      */
     private static function cachedPath() {
-        return Path::root() . '/config.json';
+        return Path::cache() . '/framework/config.json';
     }
 
     private static function configPath() {
@@ -81,13 +81,17 @@ class Config {
         $json = self::cachedPath();
         
         if (file_exists($json)) {
-            self::$config = arr(json_decode(file_get_contents($json), true));
 
-            if (!self::get('project.development_mode'))
+            $date = last_modification_date($json);
+            $lastConfigChange = Folder::instance(self::configPath())->lastModificationDate();
+
+            if ($date > $lastConfigChange) {
+                self::$config = arr(json_decode(file_get_contents($json), true));
                 return;
+            }
         }
 
-        // IF NOT CACHED OR IN DEVELOPMENT MODE --> READ YAMLs
+        // IF NOT CACHED --> READ YAMLs
         $folder = self::configPath();
 
         self::$config = [];
@@ -98,6 +102,10 @@ class Config {
             self::decode_folder("$folder/$env");
         }
 
+        $directory = dirname($json);
+        if (!file_exists($directory)) {
+            create_folder($directory);
+        }
         file_put_contents($json, json_encode(self::$config, JSON_UNESCAPED_UNICODE));
         self::$config = arr(self::$config);
     }
@@ -183,9 +191,8 @@ class Config {
      * @return bool
      */
     public static function hasFile($name) : bool {
-        global $PROJECT_PATH;
-        $path = "$PROJECT_PATH/config/$name.yaml";
-        return file_exists($name);
+        $path = PROJECT_PATH . "/" . Definition('config') . "/$name.yaml";
+        return file_exists($path);
     }
 
 }

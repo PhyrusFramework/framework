@@ -54,8 +54,7 @@ class Definitions {
      * [Managed by framework] Loads definitions from the framework JSON file.
      */
     public static function init() {
-        global $FRAMEWORK_PATH;
-        $def = $FRAMEWORK_PATH . '/definitions.json';
+        $def = FRAMEWORK_PATH . '/definitions.json';
         if (file_exists($def)) {
             self::$definitions = json_decode(file_get_contents($def), true);
         }

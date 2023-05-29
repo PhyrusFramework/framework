@@ -11,9 +11,18 @@ if (!defined('USING_CLI')) {
     // Headers
     $headers = Config::get('web.headers', []);
     foreach($headers as $header => $value) {
-        if ($header != 'content-security-policy')
+
+        if (!in_array($header, [
+            'content-security-policy',
+            'cache-control-front',
+            'cache-control-api'
+        ])) {
             header("$header: $value");
+        }
+            
     }
+
+    // Cache-Control is set later in the router
 
     if (isset($headers['content-security-policy'])) {
         $csp = $headers['content-security-policy'];
@@ -28,7 +37,6 @@ if (!defined('USING_CLI')) {
 
     // CORS
     $origin = Config::get('web.CORS.origin', '*');
-
     header("Access-Control-Allow-Origin: $origin");
 
     if (isset($_SERVER['HTTP_ORIGIN'])) {
@@ -57,7 +65,7 @@ if (!defined('USING_CLI')) {
     }
 }
 
-require_once(__DIR__ . '/RequestData.php');
+require_once(__DIR__ . '/Request.php');
 
 function _get_http_responses() {
 

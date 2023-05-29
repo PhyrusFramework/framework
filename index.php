@@ -1,27 +1,21 @@
 <?php
 
-global $PROJECT_PATH;
-$PROJECT_PATH = str_replace('\\', '/', realpath(__DIR__ . '/../../../'));
+define('PROJECT_PATH', str_replace('\\', '/', ROOT));
 
-if (!file_exists($PROJECT_PATH . '/config')) {
-    echo 'Error: Phyrus project not found at ' . $PROJECT_PATH;
+if (!file_exists(PROJECT_PATH . '/config')) {
+    echo 'Error: Phyrus project not found at ' . PROJECT_PATH;
     die();
 }
 
-global $FRAMEWORK_PATH;
-$FRAMEWORK_PATH = __DIR__;
+define('FRAMEWORK_PATH', str_replace('\\', '/', __DIR__));
 
 ///////////
 
 require_once(__DIR__ . '/config/index.php');
-
-autoload(['Ajax'], [__DIR__ . '/ajax/index.php']);
 autoload(['DB', 'DB*', 'DATABASE', 'Backup_Database', 'InsecureString'], [__DIR__ . '/database/index.php']);
 
-global $DATABASE_CONNECTED;
 function DBConnected() {
-    global $DATABASE_CONNECTED;
-    return $DATABASE_CONNECTED;
+    return defined('DATABASE_CONNECTED');
 }
 
 $components = [
@@ -33,4 +27,9 @@ $components = [
 ];
 foreach($components as $c) {
     require_once(__DIR__."/$c/index.php");
+}
+
+if (defined('WATCHER')) {
+    require_once(__DIR__ . '/watcher/Watcher.php');
+    Router::instance()->autoloadProjectPHPFiles();
 }

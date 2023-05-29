@@ -259,4 +259,31 @@ class Folder {
         return $this;
     }
 
+    /**
+     * Get directory last modification date, based on the newest file.
+     * 
+     * @return string
+     */
+    public function lastModificationDate() : string {
+        $newest = '0000-00-00 00:00:00';
+
+        $subfiles = $this->subfiles();
+        foreach($subfiles as $f) {
+            $date = last_modification_date($f);
+            if ($date > $newest) {
+                $newest = $date;
+            }
+        }
+
+        $subfolders = $this->subfolders();
+        foreach($subfolders as $f) {
+            $date = Folder::instance($f)->lastModificationDate();
+            if ($date > $newest) {
+                $newest = $date;
+            }
+        }
+
+        return $newest;
+    }
+
 }

@@ -46,7 +46,7 @@ class Uploader {
      * @return null|UploaderFile
      */
     public static function getFile($name = '') : ?Uploader {
-        $req = new RequestData();
+        $req = new Request();
 
         if (!$req->hasFiles()) {
             return null;

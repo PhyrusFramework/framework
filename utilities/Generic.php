@@ -41,7 +41,7 @@ class Generic extends stdClass {
         $this->__definition = $array;
         foreach($array as $k => $v) {
 
-            if (is_callable($v)) {
+            if (is_closure($v)) {
                 $this->__methods[$k] = $v;
                 continue;
             }
@@ -101,7 +101,7 @@ class Generic extends stdClass {
      * @return Generic
      */
     public function set($key, $value) : Generic {
-        if (is_callable($value)) {
+        if (is_closure($value)) {
             $this->__methods[$key] = $value;
             return $this;
         }

@@ -49,7 +49,7 @@ class EventListener {
             $this->priority += 1;
         }
 
-        if (is_callable($func)) {
+        if (is_closure($func)) {
             $ev = [
                 'func' => $func,
                 'priority' => $p

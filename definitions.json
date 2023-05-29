@@ -4,10 +4,13 @@
     "config": "config",
     "front": "front-end",
     "back": "back-end",
-    "routes": "routes",
-    "middlewares": "middlewares",
+    "controllers": "Controllers",
+    "middlewares": "Middlewares",
     "tests": "tests",
     "migrations": "migrations",
     "scripts": "scripts",
-    "watcher": "watcher"
+    "watcher": "watcher",
+    "cache": ".cache",
+    "logs": "logs",
+    "commands": "commands"
 }

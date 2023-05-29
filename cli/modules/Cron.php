@@ -1,9 +1,12 @@
 <?php
 
-class CLI_Cron extends CLI_Module {
+class CronCommand extends Command {
+
+    protected $command = 'cron';
 
     public function command_list() {
         $list = Cron::list();
+
         if (sizeof($list) == 0) {
             echo "\nThere are no active cronjobs.\n";
             return;
@@ -92,7 +95,7 @@ class CLI_Cron extends CLI_Module {
         $interval = $this->flags['interval'];
 
         $cron = new Cron();
-        $cron->action($url, "curl");
+        $cron->do($url, "curl");
         $cron->setInterval($interval);
 
         $cron->create();
